@@ -27,6 +27,7 @@
 
 use std::fmt;
 use std::sync::Arc;
+
 use zrx_scheduler::{Id, Value};
 
 mod id;

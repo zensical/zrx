@@ -26,6 +26,7 @@
 //! Sample operator.
 
 use std::marker::PhantomData;
+
 use zrx_scheduler::action::descriptor::Property;
 use zrx_scheduler::action::output::IntoOutputs;
 use zrx_scheduler::action::{Descriptor, Outputs};

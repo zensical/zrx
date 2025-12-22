@@ -26,6 +26,7 @@
 //! Scheduler.
 
 use std::time::{Duration, Instant};
+
 use zrx_diagnostic::report::Report;
 use zrx_executor::strategy::WorkSharing;
 use zrx_executor::{self, Strategy};

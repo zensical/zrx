@@ -25,9 +25,9 @@
 
 //! Barrier.
 
+use ahash::HashMap;
 use std::collections::hash_map::Iter;
 
-use ahash::HashMap;
 use zrx_scheduler::Id;
 
 mod condition;

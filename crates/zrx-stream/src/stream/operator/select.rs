@@ -26,6 +26,7 @@
 //! Select operator.
 
 use ahash::{HashMap, HashSet};
+
 use zrx_scheduler::action::descriptor::Interest;
 use zrx_scheduler::action::output::IntoOutputs;
 use zrx_scheduler::action::Descriptor;

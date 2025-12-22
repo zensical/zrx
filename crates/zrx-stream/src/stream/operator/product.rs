@@ -26,6 +26,7 @@
 //! Product operator.
 
 use ahash::HashMap;
+
 use zrx_scheduler::action::output::IntoOutputs;
 use zrx_scheduler::action::Descriptor;
 use zrx_scheduler::effect::Item;

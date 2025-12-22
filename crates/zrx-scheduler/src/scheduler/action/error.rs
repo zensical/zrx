@@ -28,6 +28,7 @@
 use std::any::Any;
 use std::{error, io, result};
 use thiserror::Error;
+
 use zrx_diagnostic::report::Report;
 
 use crate::scheduler::value;

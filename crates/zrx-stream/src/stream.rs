@@ -26,6 +26,7 @@
 //! Stream.
 
 use std::marker::PhantomData;
+
 use zrx_scheduler::{Id, Value};
 
 pub mod barrier;

@@ -26,6 +26,7 @@
 //! Schedulable action.
 
 use std::marker::PhantomData;
+
 use zrx_scheduler::action::input::TryFromInputItem;
 use zrx_scheduler::action::output::{IntoOutputs, Outputs};
 use zrx_scheduler::action::{Descriptor, Error, Input, Result};

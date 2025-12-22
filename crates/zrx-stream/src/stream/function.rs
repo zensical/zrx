@@ -26,6 +26,7 @@
 //! Functions for use in operators.
 
 use std::panic::{self, AssertUnwindSafe};
+
 use zrx_scheduler::action::Error;
 
 mod adapter;

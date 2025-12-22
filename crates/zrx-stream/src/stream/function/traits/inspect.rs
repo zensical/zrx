@@ -26,6 +26,7 @@
 //! Inspect function.
 
 use std::fmt::Display;
+
 use zrx_scheduler::action::report::IntoReport;
 use zrx_scheduler::action::Result;
 use zrx_scheduler::Value;

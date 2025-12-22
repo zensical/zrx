@@ -30,6 +30,7 @@ use crossbeam::select;
 use std::error::Error;
 use std::marker::PhantomData;
 use std::time::Instant;
+
 use zrx_diagnostic::report::Report;
 use zrx_executor::Strategy;
 
