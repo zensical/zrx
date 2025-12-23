@@ -53,18 +53,27 @@ pub use distance::Distance;
 /// executable form. It's used during [`Traversal`][], so all nodes are visited
 /// in topological order.
 ///
-/// Cloning is very cheap, since both incoming and outgoing edges are stored in
-/// [`Rc`] smart pointers, so they can be shared among multiple traversals.
+/// The [`Topology`] is just a wrapper around [`TopologyInner`] with an [`Rc`],
+/// so it can be shared between the [`Graph`][] and [`Traversal`][] structures
+/// without the need for lifetime annotations, which would render incremental
+/// and asynchronous traversals of graphs significantly more complex.
 ///
+/// [`Graph`]: crate::graph::Graph
 /// [`Traversal`]: crate::graph::traversal::Traversal
 #[derive(Clone, Debug)]
-pub struct Topology {
+pub struct Topology(Rc<TopologyInner>);
+
+// ----------------------------------------------------------------------------
+
+/// Topology inner state.
+#[derive(Debug)]
+struct TopologyInner {
     /// Outgoing edges.
-    outgoing: Rc<Adjacency>,
+    outgoing: Adjacency,
     /// Incoming edges.
-    incoming: Rc<Adjacency>,
+    incoming: Adjacency,
     /// Distance matrix.
-    distance: Rc<Distance>,
+    distance: Distance,
 }
 
 // ----------------------------------------------------------------------------
@@ -108,11 +117,11 @@ impl Topology {
     where
         W: Clone,
     {
-        Self {
-            outgoing: Rc::new(Adjacency::outgoing(builder)),
-            incoming: Rc::new(Adjacency::incoming(builder)),
-            distance: Rc::new(Distance::new(builder)),
-        }
+        Self(Rc::new(TopologyInner {
+            outgoing: Adjacency::outgoing(builder),
+            incoming: Adjacency::incoming(builder),
+            distance: Distance::new(builder),
+        }))
     }
 }
 
@@ -121,18 +130,18 @@ impl Topology {
     /// Returns a reference to the outgoing edges.
     #[inline]
     pub fn outgoing(&self) -> &Adjacency {
-        &self.outgoing
+        &self.0.outgoing
     }
 
     /// Returns a reference to the incoming edges.
     #[inline]
     pub fn incoming(&self) -> &Adjacency {
-        &self.incoming
+        &self.0.incoming
     }
 
     /// Returns a reference to the distance matrix.
     #[inline]
     pub fn distance(&self) -> &Distance {
-        &self.distance
+        &self.0.distance
     }
 }
