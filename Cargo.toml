@@ -29,7 +29,6 @@ members = ["crates/*"]
 edition = "2024"
 rust-version = "1.86"
 homepage = "https://github.com/zensical/zrx"
-documentation = "https://github.com/zensical/zrx"
 repository = "https://github.com/zensical/zrx"
 authors = ["Zensical <contributors@zensical.org>"]
 license = "MIT"
