@@ -36,10 +36,6 @@ on:
         required: true
         type: string
 
-permissions:
-  attestations: write # Required for attestations
-  id-token: write     # Required for OIDC
-
 jobs:
   build:
     name: Library (${{ matrix.name }})

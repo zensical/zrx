@@ -31,9 +31,7 @@ on:
       - master
 
 permissions:
-  contents: write     # Required for tags and releases
-  attestations: write # Required for attestations
-  id-token: write     # Required for OIDC
+  contents: write # Required for tags and releases
 
 jobs:
   build:
