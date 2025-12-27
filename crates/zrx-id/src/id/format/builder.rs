@@ -228,7 +228,11 @@ impl<'a, const N: usize> Builder<'a, N> {
         }
 
         // Return formatted string
-        Ok(Format { value: buffer, spans, flags })
+        Ok(Format {
+            value: buffer.into(),
+            spans,
+            flags,
+        })
     }
 }
 

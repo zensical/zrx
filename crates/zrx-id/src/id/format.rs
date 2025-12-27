@@ -91,7 +91,7 @@ use path::validate;
 #[derive(Clone)]
 pub struct Format<const N: usize> {
     /// String representation.
-    value: Vec<u8>,
+    value: Box<[u8]>,
     /// Set of spans.
     spans: [Range<u16>; N],
     /// Encoding flags.
@@ -335,7 +335,7 @@ impl<const N: usize> FromStr for Format<N> {
         // Return format or error on number mismatch
         if index == N - 1 {
             Ok(Format {
-                value: Vec::from(value.as_bytes()),
+                value: value.as_bytes().into(),
                 spans,
                 flags,
             })
