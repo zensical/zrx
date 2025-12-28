@@ -27,8 +27,8 @@
 
 use std::collections::VecDeque;
 
+use super::error::{Error, Result};
 use super::topology::Topology;
-use super::{Error, Result};
 
 mod iter;
 
