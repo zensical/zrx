@@ -163,7 +163,7 @@ impl Iterator for CommonAncestors<'_> {
         // Compute the next layer of common ancestors - all nodes that are not
         // ancestors of any other remaining common ancestor. This process is
         // commonly referred to as peeling, where we iteratively remove layers
-        // of from the set of common ancestors.
+        // from the set of common ancestors.
         let mut layer = Vec::new();
         for &ancestor in &self.ancestors {
             if !self.ancestors.iter().any(|&node| {

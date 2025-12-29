@@ -156,7 +156,7 @@ impl Iterator for CommonDescendants<'_> {
         // Compute the next layer of common descendants - all nodes that are not
         // descendants of any other remaining common descendant. This process is
         // commonly referred to as peeling, where we iteratively remove layers
-        // of from the set of common descendants.
+        // from the set of common descendants.
         let mut layer = Vec::new();
         for &descendant in &self.descendants {
             if !self.descendants.iter().any(|&node| {
