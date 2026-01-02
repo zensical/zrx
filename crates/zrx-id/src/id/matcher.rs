@@ -26,6 +26,7 @@
 //! Matcher.
 
 use globset::GlobSet;
+use std::borrow::Cow;
 use std::str::FromStr;
 
 use super::ToId;
@@ -135,15 +136,15 @@ impl Matcher {
         let id = id.to_id()?;
 
         // Compare components in descending variability
-        Ok(compare(&self.location, Some(id.location().as_ref()))
-            && compare(&self.context, Some(id.context().as_ref()))
-            && compare(&self.provider, Some(id.provider().as_ref()))
-            && compare(&self.resource, id.resource().as_deref())
-            && compare(&self.fragment, id.fragment().as_deref())
-            && compare(&self.variant, id.variant().as_deref()))
+        Ok(is_match(&self.location, Some(id.location()))
+            && is_match(&self.context, Some(id.context()))
+            && is_match(&self.provider, Some(id.provider()))
+            && is_match(&self.resource, id.resource())
+            && is_match(&self.fragment, id.fragment())
+            && is_match(&self.variant, id.variant()))
     }
 
-    /// Returns the match set of the selectors that match the identifier.
+    /// Returns the indices of the selectors that match the identifier.
     ///
     /// This method compares each component of the identifier against the
     /// corresponding component of a selector using the compiled globs, and
@@ -189,7 +190,7 @@ impl Matcher {
 
         // Create a vector and count the matches of each component in the slots
         // of the vector to find all selectors that match the given identifier
-        let mut slots = vec![0u8; self.provider.len()];
+        let mut slots = vec![0; self.provider.len()];
         for (component, value) in [
             (&self.location, Some(id.location())),
             (&self.context, Some(id.context())),
@@ -198,29 +199,21 @@ impl Matcher {
             (&self.fragment, id.fragment()),
             (&self.variant, id.variant()),
         ] {
-            if let Some(value) = value {
-                let matches = component.matches(value.as_ref());
-                if !matches.is_empty() {
-                    for index in matches {
-                        slots[index] += 1;
-                    }
-
-                // Short-circuit, as the current component doesn't match, so we
-                // know the result must be empty and can return immediately
-                } else {
-                    return Ok(Vec::new());
+            let matches = matches(component, value);
+            if !matches.is_empty() {
+                for index in matches {
+                    slots[index] += 1;
                 }
 
-            // Wildcard match, which means all slots must be updated
+            // Short-circuit, as the current component doesn't match, so we
+            // know the result must be empty and can return immediately
             } else {
-                for count in &mut slots {
-                    *count += 1;
-                }
+                return Ok(Vec::default());
             }
         }
 
         // Obtain match set by collecting the indices of all matching selectors,
-        // which are the slots that match exactly five components
+        // which are the slots that match exactly six components
         let iter = slots
             .iter()
             .enumerate()
@@ -275,7 +268,19 @@ impl FromStr for Matcher {
 // Functions
 // ----------------------------------------------------------------------------
 
-/// Compares a component against a value.
+/// Returns whether the given value matches any component.
+#[allow(clippy::needless_pass_by_value)]
+fn is_match(component: &GlobSet, value: Option<Cow<'_, str>>) -> bool {
+    component.is_match(prepare(value.as_deref()))
+}
+
+/// Returns the indices of the components that match the value.
+#[allow(clippy::needless_pass_by_value)]
+fn matches(component: &GlobSet, value: Option<Cow<'_, str>>) -> Vec<usize> {
+    component.matches(prepare(value.as_deref()))
+}
+
+/// Prepares a value for comparison.
 ///
 /// If the value is absent, we must consider this as a wildcard match if and
 /// only if the globset was initially constructed with wildcards (i.e. `**`).
@@ -284,6 +289,147 @@ impl FromStr for Matcher {
 ///
 /// However, falling back to `U+FFFE`, which is a non-character that should
 /// never appear in a proper UTF-8 string should be sufficient for the check.
-fn compare(component: &GlobSet, value: Option<&str>) -> bool {
-    component.is_match(value.unwrap_or("\u{FFFE}"))
+#[inline]
+fn prepare(value: Option<&str>) -> &str {
+    value.unwrap_or("\u{FFFE}")
+}
+
+// ----------------------------------------------------------------------------
+// Tests
+// ----------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+
+    mod is_match {
+        use crate::id::matcher::{Matcher, Result};
+
+        #[test]
+        fn handles_selectors() -> Result {
+            for selector in &[
+                "zrs:file:::docs:index.md:",
+                "zrs::::docs:index.md:",
+                "zrs:::::index.md:",
+                "zrs::::::",
+            ] {
+                let matcher: Matcher = selector.parse()?;
+                assert!(matcher.is_match("zri:file:::docs:index.md:")?);
+            }
+            Ok(())
+        }
+
+        #[test]
+        fn handles_wildcards() -> Result {
+            for selector in &[
+                "zrs:file:::docs:*.md:",
+                "zrs:::::*.md:",
+                "zrs:*::::*.md:",
+                "zrs:*:*:*:*:*:",
+            ] {
+                let matcher: Matcher = selector.parse()?;
+                assert!(matcher.is_match("zri:file:::docs:index.md:")?);
+            }
+            Ok(())
+        }
+
+        #[test]
+        fn handles_optionals() -> Result {
+            for selector in &[
+                "zrs:{git,file}:::{docs}:index.md:",
+                "zrs::::docs:{index,about}.md:",
+                "zrs:::::index.{md,rst}:",
+                "zrs:::::{*}:",
+            ] {
+                let matcher: Matcher = selector.parse()?;
+                assert!(matcher.is_match("zri:file:::docs:index.md:")?);
+            }
+            Ok(())
+        }
+
+        #[test]
+        fn handles_non_matches() -> Result {
+            for selector in &[
+                "zrs:file:::{docs}:index.md:anchor",
+                "zrs:{git,file}:master::::",
+                "zrs:::::about.md:",
+                "zrs::::::anchor",
+            ] {
+                let matcher: Matcher = selector.parse()?;
+                assert!(!matcher.is_match("zri:file:::docs:index.md:")?);
+            }
+            Ok(())
+        }
+    }
+
+    mod matches {
+        use crate::id::matcher::{Matcher, Result};
+
+        #[test]
+        fn handles_selectors() -> Result {
+            for selector in &[
+                "zrs:file:::docs:index.md:",
+                "zrs::::docs:index.md:",
+                "zrs:::::index.md:",
+                "zrs::::::",
+            ] {
+                let matcher: Matcher = selector.parse()?;
+                assert_eq!(
+                    matcher.matches("zri:file:::docs:index.md:")?,
+                    vec![0]
+                );
+            }
+            Ok(())
+        }
+
+        #[test]
+        fn handles_wildcards() -> Result {
+            for selector in &[
+                "zrs:file:::docs:*.md:",
+                "zrs:::::*.md:",
+                "zrs:*::::*.md:",
+                "zrs:*:*:*:*:*:",
+            ] {
+                let matcher: Matcher = selector.parse()?;
+                assert_eq!(
+                    matcher.matches("zri:file:::docs:index.md:")?,
+                    vec![0]
+                );
+            }
+            Ok(())
+        }
+
+        #[test]
+        fn handles_optionals() -> Result {
+            for selector in &[
+                "zrs:{git,file}:::{docs}:index.md:",
+                "zrs::::docs:{index,about}.md:",
+                "zrs:::::index.{md,rst}:",
+                "zrs:::::{*}:",
+            ] {
+                let matcher: Matcher = selector.parse()?;
+                assert_eq!(
+                    matcher.matches("zri:file:::docs:index.md:")?,
+                    vec![0]
+                );
+            }
+            Ok(())
+        }
+
+        #[test]
+        fn handles_non_matches() -> Result {
+            for selector in &[
+                "zrs:file:::{docs}:index.md:anchor",
+                "zrs:{git,file}:master::::",
+                "zrs:::::about.md:",
+                "zrs::::::anchor",
+            ] {
+                let matcher: Matcher = selector.parse()?;
+                assert_eq!(
+                    matcher.matches("zri:file:::docs:index.md:")?,
+                    vec![]
+                );
+            }
+            Ok(())
+        }
+    }
 }
