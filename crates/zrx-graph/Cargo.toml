@@ -23,7 +23,7 @@
 
 [package]
 name = "zrx-graph"
-version = "0.0.3"
+version = "0.0.4"
 description = "Graph construction and traversal utilities"
 edition.workspace = true
 rust-version.workspace = true
