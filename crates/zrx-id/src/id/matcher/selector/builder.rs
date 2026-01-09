@@ -70,10 +70,8 @@ impl Selector {
 
     /// Creates a builder from the selector.
     ///
-    /// This method creates a builder from the current formatted string, which
-    /// allows to modify components and build a new formatted string. This is
-    /// useful in cases when a new formatted string should be dervied from an
-    /// existing one.
+    /// This method creates a builder from the current selector, which allows
+    /// to modify components and build a new selector from an existing one.
     ///
     /// # Examples
     ///

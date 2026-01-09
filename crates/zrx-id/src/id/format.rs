@@ -103,39 +103,6 @@ pub struct Format<const N: usize> {
 // ----------------------------------------------------------------------------
 
 impl<const N: usize> Format<N> {
-    /// Converts a formatted string into a builder.
-    ///
-    /// This method creates a builder from the current formatted string, which
-    /// allows to modify components and build a new formatted string. This is
-    /// useful in cases when a new formatted string should be dervied from an
-    /// existing one. By using a builder interface, changes are batched.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::format::Format;
-    ///
-    /// // Create formatted string from string
-    /// let format: Format::<3> = "a:b:c".parse()?;
-    ///
-    /// // Create formatted string builder
-    /// let mut builder = format.to_builder();
-    /// builder.set(2, "d");
-    ///
-    /// // Create formatted string from builder
-    /// let format = builder.build()?;
-    /// assert_eq!(format.as_str(), "a:b:d");
-    /// # Ok(())
-    /// # }
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn to_builder(&self) -> Builder<'_, N> {
-        Builder::from(self)
-    }
-
     /// Returns the value at the given index.
     ///
     /// If the value is not percent-encoded, which means it does not contain a

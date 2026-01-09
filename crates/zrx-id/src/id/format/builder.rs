@@ -69,6 +69,40 @@ impl<const N: usize> Format<N> {
             values: [const { None }; N],
         }
     }
+
+    /// Creates a formatted string builder from the formatted string.
+    ///
+    /// This method creates a builder from the current formatted string, which
+    /// allows to modify components and build a new formatted string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::format::Format;
+    ///
+    /// // Create formatted string from string
+    /// let format: Format::<3> = "a:b:c".parse()?;
+    ///
+    /// // Create formatted string builder
+    /// let mut builder = format.to_builder();
+    /// builder.set(2, "d");
+    ///
+    /// // Create formatted string from builder
+    /// let format = builder.build()?;
+    /// assert_eq!(format.as_str(), "a:b:d");
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn to_builder(&self) -> Builder<'_, N> {
+        Builder {
+            source: Some(self),
+            values: [const { None }; N],
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -240,22 +274,6 @@ impl<'a, const N: usize> Builder<'a, N> {
 
 // ----------------------------------------------------------------------------
 // Trait implementations
-// ----------------------------------------------------------------------------
-
-impl<'a, const N: usize> From<&'a Format<N>> for Builder<'a, N> {
-    /// Creates a formatted string builder from a formatted string.
-    ///
-    /// This implementation is primarily provided for [`Format::to_builder`],
-    /// which allows convert a [`Format`] back into a builder.
-    #[inline]
-    fn from(format: &'a Format<N>) -> Self {
-        Self {
-            source: Some(format),
-            values: [const { None }; N],
-        }
-    }
-}
-
 // ----------------------------------------------------------------------------
 
 impl<const N: usize> Default for Builder<'_, N> {

@@ -69,10 +69,8 @@ impl Id {
 
     /// Creates a builder from the identifier.
     ///
-    /// This method creates a builder from the current formatted string, which
-    /// allows to modify components and build a new formatted string. This is
-    /// required in cases when a new formatted string should be derived from an
-    /// existing one.
+    /// This method creates a builder from the current identifier, which allows
+    /// to modify components and build a new identifier from an existing one.
     ///
     /// # Examples
     ///
