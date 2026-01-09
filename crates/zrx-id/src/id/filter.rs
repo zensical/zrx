@@ -37,7 +37,7 @@ mod iter;
 
 use condition::Condition;
 pub use error::{Error, Result};
-pub use expression::Expression;
+pub use expression::{Expression, IntoExpression};
 
 // ----------------------------------------------------------------------------
 // Structs
