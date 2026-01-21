@@ -23,7 +23,7 @@
 
 [package]
 name = "zrx-id"
-version = "0.0.6"
+version = "0.0.7"
 description = "Identifier abstractions and utilities"
 edition.workspace = true
 rust-version.workspace = true

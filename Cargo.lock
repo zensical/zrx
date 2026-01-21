@@ -344,7 +344,7 @@ dependencies = [
 
 [[package]]
 name = "zrx"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "zrx-diagnostic",
  "zrx-executor",
@@ -370,7 +370,7 @@ dependencies = [
 
 [[package]]
 name = "zrx-graph"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "ahash",
  "thiserror",
@@ -378,7 +378,7 @@ dependencies = [
 
 [[package]]
 name = "zrx-id"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "globset",
  "percent-encoding",
@@ -393,7 +393,7 @@ version = "0.0.1"
 
 [[package]]
 name = "zrx-scheduler"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "ahash",
  "crossbeam",
@@ -409,7 +409,7 @@ dependencies = [
 
 [[package]]
 name = "zrx-store"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "ahash",
  "slab",
@@ -417,7 +417,7 @@ dependencies = [
 
 [[package]]
 name = "zrx-stream"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "ahash",
  "thiserror",
