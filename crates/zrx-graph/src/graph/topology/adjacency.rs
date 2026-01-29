@@ -27,7 +27,7 @@
 
 use std::ops::{Index, Range};
 
-use super::{Builder, Edge};
+use super::Builder;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -94,12 +94,11 @@ impl Adjacency {
     #[inline]
     #[must_use]
     pub fn outgoing<T, W>(builder: &Builder<T, W>) -> Self {
-        let iter = builder.edges().iter().map(|edge| Edge {
-            source: edge.source,
-            target: edge.target,
-            weight: (),
-        });
-        Adjacency::new(builder.len(), iter.collect())
+        let iter = builder.edges().iter();
+        Adjacency::new(
+            builder.len(),
+            iter.map(|edge| (edge.source, edge.target)).collect(),
+        )
     }
 
     /// Creates an adjacency list for incoming edges.
@@ -137,12 +136,11 @@ impl Adjacency {
     #[inline]
     #[must_use]
     pub fn incoming<T, W>(builder: &Builder<T, W>) -> Self {
-        let iter = builder.edges().iter().map(|edge| Edge {
-            source: edge.target,
-            target: edge.source,
-            weight: (),
-        });
-        Adjacency::new(builder.len(), iter.collect())
+        let iter = builder.edges().iter();
+        Adjacency::new(
+            builder.len(),
+            iter.map(|edge| (edge.target, edge.source)).collect(),
+        )
     }
 
     /// Creates an adjacency list.
@@ -162,7 +160,7 @@ impl Adjacency {
     /// of functions of which a node is an argument. The latter is more likely
     /// to be violated, while still very unlikely to happen in practice. We can
     /// lift this invariant if we run into this problem in the future.
-    fn new<W>(nodes: usize, mut edges: Vec<Edge<W>>) -> Self {
+    fn new(nodes: usize, mut edges: Vec<(usize, usize)>) -> Self {
         let mut rows = vec![0; nodes + 1];
         let mut columns = Vec::new();
 
@@ -170,17 +168,17 @@ impl Adjacency {
         // allows us to construct the adjacency list in linear time. Since we
         // expect that data is (almost) sorted, we use insertion sort, which is
         // stable and runs in O(n + k), where k is the number of inversions.
-        insertion_sort(edges.as_mut_slice(), |edge| edge.source);
+        insertion_sort(edges.as_mut_slice(), |&(source, _)| source);
 
         // Process edges and add pointers for all rows until we reach the source
         // node of the current edge, representing rows without outgoing edges
         let mut r = 0;
-        for edge in edges {
-            while r <= edge.source {
+        for (source, target) in edges {
+            while r <= source {
                 rows[r] = columns.len();
                 r += 1;
             }
-            columns.push(edge.target);
+            columns.push(target);
         }
 
         // Fill in the remaining row pointers
@@ -353,9 +351,9 @@ impl IntoIterator for &Adjacency {
 
 /// Sorts the edges in-place using insertion sort based on a key function, which
 /// is more efficient than Rust's sort implementation for (almost) sorted lists.
-fn insertion_sort<W, F>(edges: &mut [Edge<W>], f: F)
+fn insertion_sort<F>(edges: &mut [(usize, usize)], f: F)
 where
-    F: Fn(&Edge<W>) -> usize,
+    F: Fn(&(usize, usize)) -> usize,
 {
     for i in 1..edges.len() {
         let mut j = i;
