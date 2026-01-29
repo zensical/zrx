@@ -28,7 +28,7 @@
 use std::cell::OnceCell;
 use std::rc::Rc;
 
-use super::builder::{Builder, Edge};
+use super::builder::Builder;
 
 mod adjacency;
 mod distance;
