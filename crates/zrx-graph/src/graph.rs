@@ -52,9 +52,6 @@ use traversal::Traversal;
 /// edges in O(1), i.e., constant time. It's built with the [`Graph::builder`]
 /// method, which allows to add nodes and edges, before building the graph.
 ///
-/// Note that this graph implementation is unweighted, which means edges do not
-/// carry associated weights, something that we don't need for our case.
-///
 /// # Examples
 ///
 /// ```
@@ -85,9 +82,11 @@ use traversal::Traversal;
 /// # }
 /// ```
 #[derive(Clone, Debug)]
-pub struct Graph<T> {
+pub struct Graph<T, W = ()> {
     /// Graph data.
     data: Vec<T>,
+    /// Graph weights.
+    weights: Vec<W>,
     /// Graph topology.
     topology: Topology,
 }
@@ -96,7 +95,7 @@ pub struct Graph<T> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, W> Graph<T, W> {
     /// Creates an empty graph.
     ///
     /// While an empty graph is not very useful, it's sometimes practical as a
@@ -115,7 +114,7 @@ impl<T> Graph<T> {
     #[inline]
     #[must_use]
     pub fn empty() -> Self {
-        Graph::builder::<()>().build()
+        Graph::builder().build()
     }
 
     /// Creates a topogical traversal starting from the given initial nodes.
@@ -208,7 +207,13 @@ impl<T> Graph<T> {
 }
 
 #[allow(clippy::must_use_candidate)]
-impl<T> Graph<T> {
+impl<T, W> Graph<T, W> {
+    /// Returns the graph weights.
+    #[inline]
+    pub fn weights(&self) -> &[W] {
+        &self.weights
+    }
+
     /// Returns the graph topology.
     #[inline]
     pub fn topology(&self) -> &Topology {
@@ -232,7 +237,7 @@ impl<T> Graph<T> {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Index<usize> for Graph<T> {
+impl<T, W> Index<usize> for Graph<T, W> {
     type Output = T;
 
     /// Returns a reference to the node at the index.
@@ -275,7 +280,7 @@ impl<T> Index<usize> for Graph<T> {
     }
 }
 
-impl<T> IndexMut<usize> for Graph<T> {
+impl<T, W> IndexMut<usize> for Graph<T, W> {
     /// Returns a mutable reference to the node at the index.
     ///
     /// # Panics
@@ -318,10 +323,7 @@ impl<T> IndexMut<usize> for Graph<T> {
 
 // ----------------------------------------------------------------------------
 
-impl<T, W> From<Builder<T, W>> for Graph<T>
-where
-    W: Clone,
-{
+impl<T, W> From<Builder<T, W>> for Graph<T, W> {
     /// Creates a graph from a builder.
     ///
     /// # Examples
@@ -354,7 +356,7 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl<T> IntoIterator for &Graph<T> {
+impl<T, W> IntoIterator for &Graph<T, W> {
     type Item = usize;
     type IntoIter = Range<usize>;
 

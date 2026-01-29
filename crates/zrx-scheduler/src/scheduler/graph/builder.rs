@@ -157,6 +157,7 @@ impl<I> Builder<I> {
         // to connect, but we must ensure that we don't add the same action
         // multiple times, since the arguments are now encoded in the ordered
         // set of dependencies between all actions.
+        #[allow(deprecated)]
         let edge_graph = self.inner.to_edge_graph();
         for edge in edge_graph.edges() {
             let node = &edge_graph[edge.source];

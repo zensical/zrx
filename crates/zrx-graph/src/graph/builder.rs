@@ -60,7 +60,7 @@ pub struct Edge<W = ()> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, W> Graph<T, W> {
     /// Creates a graph builder.
     ///
     /// # Examples
@@ -82,7 +82,7 @@ impl<T> Graph<T> {
     /// ```
     #[inline]
     #[must_use]
-    pub fn builder<W>() -> Builder<T, W> {
+    pub fn builder() -> Builder<T, W> {
         Builder {
             nodes: Vec::new(),
             edges: Vec::new(),
@@ -202,6 +202,10 @@ impl<T, W> Builder<T, W> {
     /// # Ok(())
     /// # }
     /// ```
+    #[deprecated(
+        since = "0.0.6",
+        note = "Edge graphs are no longer needed for action graphs"
+    )]
     #[must_use]
     pub fn to_edge_graph(&self) -> Builder<Edge<W>>
     where
@@ -264,10 +268,12 @@ impl<T, W> Builder<T, W> {
     /// # }
     /// ```
     #[must_use]
-    pub fn build(self) -> Graph<T> {
+    pub fn build(self) -> Graph<T, W> {
+        let topology = Topology::from(&self);
         Graph {
-            topology: Topology::new(&self),
             data: self.nodes,
+            weights: self.edges.into_iter().map(|edge| edge.weight).collect(),
+            topology,
         }
     }
 }
@@ -345,10 +351,7 @@ impl<T, W> Index<usize> for Builder<T, W> {
 
 // ----------------------------------------------------------------------------
 
-impl<T, W> Default for Builder<T, W>
-where
-    W: Clone,
-{
+impl<T, W> Default for Builder<T, W> {
     /// Creates a graph builder.
     ///
     /// # Examples
