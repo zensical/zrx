@@ -202,6 +202,10 @@ impl<T, W> Builder<T, W> {
     /// # Ok(())
     /// # }
     /// ```
+    #[deprecated(
+        since = "0.0.6",
+        note = "Edge graphs are no longer needed for action graphs"
+    )]
     #[must_use]
     pub fn to_edge_graph(&self) -> Builder<Edge<W>>
     where
