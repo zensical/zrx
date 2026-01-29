@@ -46,7 +46,7 @@ pub struct CommonAncestors<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, W> Graph<T, W> {
     /// Creates an iterator over the common ancestors of the set of nodes.
     ///
     /// This method creates an iterator over the common ancestores of a given

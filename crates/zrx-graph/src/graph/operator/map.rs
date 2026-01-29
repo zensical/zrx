@@ -31,7 +31,7 @@ use crate::graph::Graph;
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, W> Graph<T, W> {
     /// Maps the nodes to a different type.
     ///
     /// # Examples
@@ -58,13 +58,14 @@ impl<T> Graph<T> {
     /// # }
     /// ```
     #[inline]
-    pub fn map<F, U>(self, f: F) -> Graph<U>
+    pub fn map<F, U>(self, f: F) -> Graph<U, W>
     where
         F: FnMut(T) -> U,
     {
         Graph {
             data: self.data.into_iter().map(f).collect(),
             topology: self.topology,
+            weights: self.weights,
         }
     }
 }

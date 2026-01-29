@@ -48,7 +48,7 @@ pub struct Descendants<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, W> Graph<T, W> {
     /// Creates an iterator over the descendants of the given node.
     ///
     /// # Panics

@@ -46,7 +46,7 @@ pub struct CommonDescendants<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, W> Graph<T, W> {
     /// Creates an iterator over the common descendants of the set of nodes.
     ///
     /// # Panics

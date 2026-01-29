@@ -31,7 +31,7 @@ use super::Graph;
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, W> Graph<T, W> {
     /// Returns whether the given node is a source.
     ///
     /// # Panics

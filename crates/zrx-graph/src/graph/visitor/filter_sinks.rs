@@ -46,7 +46,7 @@ pub struct FilterSinks<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, W> Graph<T, W> {
     /// Creates an iterator over the sinks in the given set of nodes.
     ///
     /// This method creates a view over the provided set of nodes, representing
