@@ -262,7 +262,7 @@ impl<T> Builder<T> {
     /// ```
     #[must_use]
     pub fn build(self) -> Graph<T> {
-        let topology = Topology::from(&self);
+        let topology = Topology::new(self.nodes.len(), &self.edges);
         Graph { data: self.nodes, topology }
     }
 }

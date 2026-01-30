@@ -28,7 +28,7 @@
 use std::cell::OnceCell;
 use std::rc::Rc;
 
-use super::builder::Builder;
+use super::builder::Edge;
 
 mod adjacency;
 mod distance;
@@ -83,36 +83,7 @@ struct TopologyInner {
 // Implementations
 // ----------------------------------------------------------------------------
 
-#[allow(clippy::must_use_candidate)]
 impl Topology {
-    /// Returns a reference to the outgoing edges.
-    #[inline]
-    pub fn outgoing(&self) -> &Adjacency {
-        &self.0.outgoing
-    }
-
-    /// Returns a reference to the incoming edges.
-    #[inline]
-    pub fn incoming(&self) -> &Adjacency {
-        &self.0.incoming
-    }
-
-    /// Returns a reference to the distance matrix.
-    #[inline]
-    pub fn distance(&self) -> &Distance {
-        self.0.distance.get_or_init(|| {
-            // Compute distance matrix on first access, since this incurs cost
-            // of O(n³) because of the usage of the Floyd-Warshall algorithm.
-            Distance::new(&self.0.outgoing)
-        })
-    }
-}
-
-// ----------------------------------------------------------------------------
-// Trait implementations
-// ----------------------------------------------------------------------------
-
-impl<T> From<&Builder<T>> for Topology {
     /// Creates a topology of the given graph.
     ///
     /// This method constructs a topology from a graph builder, one of the key
@@ -140,15 +111,41 @@ impl<T> From<&Builder<T>> for Topology {
     /// builder.add_edge(b, c)?;
     ///
     /// // Create topology
-    /// let topology = Topology::from(&builder);
+    /// let topology = Topology::new(builder.len(), builder.edges());
     /// # Ok(())
     /// # }
     /// ```
-    fn from(builder: &Builder<T>) -> Self {
+    #[must_use]
+    pub fn new(nodes: usize, edges: &[Edge]) -> Self {
         Self(Rc::new(TopologyInner {
-            outgoing: Adjacency::outgoing(builder),
-            incoming: Adjacency::incoming(builder),
+            outgoing: Adjacency::outgoing(nodes, edges),
+            incoming: Adjacency::incoming(nodes, edges),
             distance: OnceCell::new(),
         }))
+    }
+}
+
+#[allow(clippy::must_use_candidate)]
+impl Topology {
+    /// Returns a reference to the outgoing edges.
+    #[inline]
+    pub fn outgoing(&self) -> &Adjacency {
+        &self.0.outgoing
+    }
+
+    /// Returns a reference to the incoming edges.
+    #[inline]
+    pub fn incoming(&self) -> &Adjacency {
+        &self.0.incoming
+    }
+
+    /// Returns a reference to the distance matrix.
+    #[inline]
+    pub fn distance(&self) -> &Distance {
+        self.0.distance.get_or_init(|| {
+            // Compute distance matrix on first access, since this incurs cost
+            // of O(n³) because of the usage of the Floyd-Warshall algorithm.
+            Distance::new(&self.0.outgoing)
+        })
     }
 }

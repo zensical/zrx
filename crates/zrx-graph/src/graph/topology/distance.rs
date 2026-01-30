@@ -121,7 +121,7 @@ impl Index<usize> for Distance {
     /// builder.add_edge(b, c)?;
     ///
     /// // Create topology
-    /// let topology = Topology::from(&builder);
+    /// let topology = Topology::new(builder.len(), builder.edges());
     ///
     /// // Obtain distance matrix
     /// let dist = topology.distance();
