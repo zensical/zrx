@@ -81,8 +81,8 @@ impl Adjacency {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create adjacency list
     /// let adj = Adjacency::outgoing(&builder);
@@ -93,7 +93,7 @@ impl Adjacency {
     /// ```
     #[inline]
     #[must_use]
-    pub fn outgoing<T, W>(builder: &Builder<T, W>) -> Self {
+    pub fn outgoing<T>(builder: &Builder<T>) -> Self {
         let iter = builder.edges().iter();
         Adjacency::new(
             builder.len(),
@@ -123,8 +123,8 @@ impl Adjacency {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create adjacency list
     /// let adj = Adjacency::incoming(&builder);
@@ -135,7 +135,7 @@ impl Adjacency {
     /// ```
     #[inline]
     #[must_use]
-    pub fn incoming<T, W>(builder: &Builder<T, W>) -> Self {
+    pub fn incoming<T>(builder: &Builder<T>) -> Self {
         let iter = builder.edges().iter();
         Adjacency::new(
             builder.len(),
@@ -218,8 +218,8 @@ impl Adjacency {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create iterator over adjacency list
     /// let adj = Adjacency::outgoing(&builder);
@@ -285,8 +285,8 @@ impl Index<usize> for Adjacency {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create adjacency list
     /// let adj = Adjacency::outgoing(&builder);
@@ -328,8 +328,8 @@ impl IntoIterator for &Adjacency {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create iterator over adjacency list
     /// let adj = Adjacency::outgoing(&builder);

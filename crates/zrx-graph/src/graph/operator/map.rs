@@ -31,7 +31,7 @@ use crate::graph::Graph;
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T, W> Graph<T, W> {
+impl<T> Graph<T> {
     /// Maps the nodes to a different type.
     ///
     /// # Examples
@@ -48,8 +48,8 @@ impl<T, W> Graph<T, W> {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder and map data
     /// let graph = builder.build();
@@ -58,14 +58,13 @@ impl<T, W> Graph<T, W> {
     /// # }
     /// ```
     #[inline]
-    pub fn map<F, U>(self, f: F) -> Graph<U, W>
+    pub fn map<F, U>(self, f: F) -> Graph<U>
     where
         F: FnMut(T) -> U,
     {
         Graph {
             data: self.data.into_iter().map(f).collect(),
             topology: self.topology,
-            weights: self.weights,
         }
     }
 }

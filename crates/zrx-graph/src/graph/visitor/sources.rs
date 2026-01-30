@@ -44,7 +44,7 @@ pub struct Sources<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T, W> Graph<T, W> {
+impl<T> Graph<T> {
     /// Creates an iterator over the sources.
     ///
     /// This method returns an iterator over the source node indices of the
@@ -64,8 +64,8 @@ impl<T, W> Graph<T, W> {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
     /// let graph = builder.build();

@@ -25,6 +25,7 @@
 
 //! Action graph builder.
 
+use ahash::HashSet;
 use std::any::Any;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -41,7 +42,7 @@ use super::{Action, Graph, Marker, Source};
 #[derive(Debug, Default)]
 pub struct Builder<I> {
     /// Inner graph builder.
-    inner: graph::Builder<Descriptor, usize>,
+    inner: graph::Builder<Descriptor>,
     /// Actions.
     actions: Vec<Box<dyn Action<I>>>,
 }
@@ -82,7 +83,7 @@ impl<I> Builder<I> {
 
         // Add action marker for source
         self.actions.push(Box::new(Marker));
-        self.inner.add_edge(from, node, 0).expect("invariant");
+        self.inner.add_edge(from, node).expect("invariant");
         node
     }
 
@@ -118,7 +119,7 @@ impl<I> Builder<I> {
         // only retain information for efficient querying and construction.
         let mut offset = 0;
         for edge in self.inner.edges() {
-            offset += edge.weight;
+            offset += degrees[edge.target];
 
             // The first thing we need to know is which edges refer to the same
             // action, as the number of incoming edges per action corresponds to
@@ -159,18 +160,17 @@ impl<I> Builder<I> {
         // set of dependencies between all actions.
         #[allow(deprecated)]
         let edge_graph = self.inner.to_edge_graph();
+        let mut seen = HashSet::default();
         for edge in edge_graph.edges() {
-            let node = &edge_graph[edge.source];
-
             // Add edge to graph in case we haven't added it yet. We only want
             // to add the unique actions to the graph, or we would process the
             // same action multiple times. Since every action has at least one
             // argument, we can just filter by argument index 0. If we run into
             // an error here, it denotes a bug in our implementation, as the
             // invariants must be upheld by this implementation.
-            if node.weight == 0 {
+            if seen.insert(edge.target) {
                 builder
-                    .add_edge(actions[edge.source], actions[edge.target], ())
+                    .add_edge(actions[edge.source], actions[edge.target])
                     .expect("invariant");
             }
         }
@@ -203,12 +203,12 @@ impl<I> Connector<'_, I> {
         // from the given sources. Thus, we create an edge for each given source
         // and connect it to the target node of the action.
         let target = self.builder.inner.add_node(self.descriptor);
-        for (weight, source) in sources.into_iter().enumerate() {
+        for source in sources {
             // Panic in case the source or target node does not exist, as this
             // denotes a bug in the graph construction of the scheduler
             self.builder
                 .inner
-                .add_edge(source, target, weight)
+                .add_edge(source, target)
                 .expect("invariant");
         }
         target

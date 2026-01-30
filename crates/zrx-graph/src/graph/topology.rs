@@ -43,17 +43,17 @@ pub use distance::Distance;
 /// Topology.
 ///
 /// This data type represents the topology of a graph, which allows to find the
-/// outgoing and incoming edges for each node in linear time. Edge weights are
-/// not stored in the topology, but in the [`Graph`][] structure, so we don't
-/// need further [`Rc`] smart pointers to share it among different consumers of
-/// graphs. The topology also contains the lazily computed [`Distance`] matrix
-/// that allows to find the shortest path between two nodes in the graph, or
-/// determine whether they're reachable at all.
+/// outgoing and incoming edges for each node in linear time by using efficient
+/// adjacency lists. Note that our implementation does not support edge weights,
+/// as they're not necessary for scheduling purposes, and they would only add
+/// unnecessary complexity and overhead. The topology also contains the lazily
+/// computed [`Distance`] matrix that allows to find the shortest path between
+/// two nodes in the graph, or determine whether they're reachable at all.
 ///
 /// The graph topology must be considered immutable, as [`Adjacency`] lists
 /// can't be mutated anyway, and represents the conversion of a graph into an
-/// executable form. It's used during [`Traversal`][], so all nodes are visited
-/// in topological order.
+/// executable form. In order to modify the graph, convert it back into a
+/// builder using the [`Graph::into_builder`][] method.
 ///
 /// The [`Topology`] data type is just a wrapper around [`TopologyInner`] with
 /// an [`Rc`], so it can be shared between the [`Graph`][] and [`Traversal`][]
@@ -61,6 +61,7 @@ pub use distance::Distance;
 /// incremental and asynchronous traversals of graphs more complex.
 ///
 /// [`Graph`]: crate::graph::Graph
+/// [`Graph::into_builder`]: crate::graph::Graph::into_builder
 /// [`Traversal`]: crate::graph::traversal::Traversal
 #[derive(Clone, Debug)]
 pub struct Topology(Rc<TopologyInner>);
@@ -111,7 +112,7 @@ impl Topology {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<T, W> From<&Builder<T, W>> for Topology {
+impl<T> From<&Builder<T>> for Topology {
     /// Creates a topology of the given graph.
     ///
     /// This method constructs a topology from a graph builder, one of the key
@@ -135,15 +136,15 @@ impl<T, W> From<&Builder<T, W>> for Topology {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create topology
     /// let topology = Topology::from(&builder);
     /// # Ok(())
     /// # }
     /// ```
-    fn from(builder: &Builder<T, W>) -> Self {
+    fn from(builder: &Builder<T>) -> Self {
         Self(Rc::new(TopologyInner {
             outgoing: Adjacency::outgoing(builder),
             incoming: Adjacency::incoming(builder),

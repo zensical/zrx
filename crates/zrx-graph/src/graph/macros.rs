@@ -61,7 +61,7 @@ macro_rules! graph_builder {
         // We can just swallow the result here, since nodes are guaranteed to
         // exist and point to valid indices, so errors can't possibly occur
         $(
-            let _ = builder.add_edge(nodes[$source], nodes[$target], ());
+            let _ = builder.add_edge(nodes[$source], nodes[$target]);
         )*
         builder
     }};
