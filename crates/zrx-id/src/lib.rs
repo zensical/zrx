@@ -25,6 +25,8 @@
 
 //! Identifier abstractions and utilities.
 
+#![allow(clippy::match_same_arms)]
+
 mod id;
 
 pub use id::filter::expression::Expression;
