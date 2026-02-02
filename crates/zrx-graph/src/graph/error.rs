@@ -38,7 +38,6 @@ pub enum Error {
     /// Node not found.
     #[error("node not found: {0}")]
     NotFound(usize),
-
     /// Node found.
     #[error("node found: {0}")]
     Found(usize),

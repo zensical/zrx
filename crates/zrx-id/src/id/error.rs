@@ -40,11 +40,9 @@ pub enum Error {
     /// Format error.
     #[error(transparent)]
     Format(#[from] format::Error),
-
     /// Invalid prefix.
     #[error("invalid prefix")]
     Prefix,
-
     /// Missing component.
     #[error("missing component: {0}")]
     Component(&'static str),

@@ -38,11 +38,9 @@ pub enum Error {
     /// Path must not start at '/'.
     #[error("path must not start at '/'")]
     RootDir,
-
     /// Path must not contain '..'.
     #[error("path must not contain '..'")]
     ParentDir,
-
     /// Path must not contain '\\'.
     #[error("path must not contain '\\'")]
     Backslash,
