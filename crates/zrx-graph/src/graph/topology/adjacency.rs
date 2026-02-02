@@ -61,11 +61,6 @@ pub struct Adjacency {
 impl Adjacency {
     /// Creates an adjacency list for outgoing edges.
     ///
-    /// This method constructs an adjacency list from the graph builder, where
-    /// each entry represents a node and the values represent the nodes that are
-    /// reachable from that node via outgoing edges. If you need the adjacency
-    /// list for all incoming edges, use [`Adjacency::incoming`].
-    ///
     /// # Examples
     ///
     /// ```
@@ -98,11 +93,6 @@ impl Adjacency {
     }
 
     /// Creates an adjacency list for incoming edges.
-    ///
-    /// This method constructs an adjacency list from the graph builder, where
-    /// each entry represents a node and the values represent the nodes that are
-    /// reachable from that node via incoming edges. If you need the adjacency
-    /// list for all outgoing edges, use [`Adjacency::outgoing`].
     ///
     /// # Examples
     ///
