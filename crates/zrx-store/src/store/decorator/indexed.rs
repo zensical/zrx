@@ -697,7 +697,6 @@ where
 
 // ----------------------------------------------------------------------------
 
-#[allow(clippy::implicit_hasher)]
 impl<K, V> Default for Indexed<K, V>
 where
     K: Key,

@@ -465,7 +465,6 @@ where
 
 // ----------------------------------------------------------------------------
 
-#[allow(clippy::implicit_hasher)]
 impl<K, V> Default for Ordered<K, V>
 where
     K: Key,

@@ -503,8 +503,7 @@ where
 
 // ----------------------------------------------------------------------------
 
-#[allow(clippy::implicit_hasher)]
-impl<K, V> Default for Queue<K, V, HashMap<K, Item>>
+impl<K, V> Default for Queue<K, V>
 where
     K: Key,
 {
