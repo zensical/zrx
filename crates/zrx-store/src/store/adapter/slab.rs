@@ -27,6 +27,7 @@
 
 use slab::Slab;
 use std::borrow::Borrow;
+use std::mem;
 
 use crate::store::key::Key;
 use crate::store::{Store, StoreMut, StoreMutRef};
@@ -124,7 +125,7 @@ where
     fn insert(&mut self, key: K, value: V) -> Option<V> {
         for (_, (check, prior)) in self.iter_mut() {
             if check == &key {
-                return Some(std::mem::replace(prior, value));
+                return Some(mem::replace(prior, value));
             }
         }
 
