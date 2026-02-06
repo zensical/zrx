@@ -69,7 +69,7 @@ where
     V: Ord,
     S: Store<K, V>,
 {
-    /// Creates an iterator over a range of items in a store.
+    /// Creates an iterator over a range of items of the store.
     ///
     /// This method is not implemented as part of [`StoreRange`][], because it
     /// deviates from the trait, as it uses numeric indices instead of keys.
@@ -141,7 +141,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the items of a store.
+    /// Creates an iterator over the items of the store.
     ///
     /// # Examples
     ///
@@ -177,7 +177,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the keys of a store.
+    /// Creates an iterator over the keys of the store.
     ///
     /// # Examples
     ///
@@ -209,7 +209,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the values of a store.
+    /// Creates an iterator over the values of the store.
     ///
     /// # Examples
     ///

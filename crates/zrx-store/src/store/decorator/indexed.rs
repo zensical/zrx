@@ -125,7 +125,7 @@ where
     V: Ord,
     S: Store<K, V>,
 {
-    /// Creates an indexing decorator over a store.
+    /// Creates an indexing decorator over the store.
     ///
     /// # Examples
     ///
@@ -672,7 +672,7 @@ where
     type Item = (&'a K, &'a V);
     type IntoIter = Iter<'a, K, V, S>;
 
-    /// Creates an iterator over the items of a store.
+    /// Creates an iterator over the items of the store.
     ///
     /// # Examples
     ///

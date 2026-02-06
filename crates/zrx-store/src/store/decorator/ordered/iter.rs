@@ -75,7 +75,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the items of a store.
+    /// Creates an iterator over the items of the store.
     ///
     /// # Examples
     ///
@@ -111,7 +111,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the keys of a store.
+    /// Creates an iterator over the keys of the store.
     ///
     /// # Examples
     ///
@@ -146,7 +146,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the values of a store.
+    /// Creates an iterator over the values of the store.
     ///
     /// # Examples
     ///

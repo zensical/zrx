@@ -231,7 +231,7 @@ where
         K: 'a,
         V: 'a;
 
-    /// Creates an iterator over the items of a store.
+    /// Creates an iterator over the items of the store.
     fn iter(&self) -> Self::Iter<'_>;
 }
 
@@ -265,7 +265,7 @@ where
         K: 'a,
         V: 'a;
 
-    /// Creates a mutable iterator over the items of a store.
+    /// Creates a mutable iterator over the items of the store.
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
 }
 
@@ -298,7 +298,7 @@ where
         Self: 'a,
         K: 'a;
 
-    /// Creates an iterator over the keys of a store.
+    /// Creates an iterator over the keys of the store.
     fn keys(&self) -> Self::Keys<'_>;
 }
 
@@ -331,7 +331,7 @@ where
         Self: 'a,
         V: 'a;
 
-    /// Creates an iterator over the values of a store.
+    /// Creates an iterator over the values of the store.
     fn values(&self) -> Self::Values<'_>;
 }
 
@@ -366,7 +366,7 @@ where
         K: 'a,
         V: 'a;
 
-    /// Creates an iterator over a range of items in a store.
+    /// Creates an iterator over a range of items of the store.
     fn range<R>(&self, range: R) -> Self::Range<'_>
     where
         R: RangeBounds<K>;
@@ -408,7 +408,7 @@ where
 /// Creates a store from an iterator.
 pub trait StoreFromIterator<K, V>: FromIterator<(K, V)> {}
 
-/// Creates an iterator over the items of a store.
+/// Creates an iterator over the items of the store.
 pub trait StoreIntoIterator<K, V>: IntoIterator<Item = (K, V)> {}
 
 // ----------------------------------------------------------------------------
