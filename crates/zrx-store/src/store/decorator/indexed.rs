@@ -703,12 +703,13 @@ where
     K: Key,
     V: Ord,
 {
-    /// Creates an indexing decorator with [`HashMap::default`] as a store.
+    /// Creates an indexing decorator with [`HashMap::default`][] as a store.
     ///
     /// Note that this method does not allow to customize the [`BuildHasher`][],
     /// but uses [`ahash`] by default, which is the fastest known hasher.
     ///
     /// [`BuildHasher`]: std::hash::BuildHasher
+    /// [`HashMap::default`]: Default::default
     ///
     /// # Examples
     ///
