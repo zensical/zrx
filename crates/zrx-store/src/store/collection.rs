@@ -26,6 +26,7 @@
 //! Collection.
 
 use std::any::Any;
+use std::fmt::Debug;
 
 use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreKeys, StoreMut, StoreValues};
@@ -48,13 +49,13 @@ use crate::store::{Store, StoreIterable, StoreKeys, StoreMut, StoreValues};
 /// - [`StoreValues`]
 ///
 /// Additionally, implementors must implement [`Any`], so a [`Collection`] can
-/// be downcast to an immutable or mutable reference of its original type, if
-/// necessary and known. This allows for maximum flexibility, either using the
-/// collection as a trait object or downcasting to a concrete type when needed.
+/// be downcast to an immutable or mutable reference of its concrete type, if
+/// necessary and known, as well as [`Debug`], in order to conveniently print
+/// the contents of the collection.
 ///
 /// We also provide a blanket implementation for implementors which fulfill all
 /// of the aforementioned traits, so that they can be used as a [`Collection`].
-pub trait Collection<K, V>: Any {
+pub trait Collection<K, V>: Any + Debug {
     /// Returns a reference to the value identified by the key.
     fn get(&self, key: &K) -> Option<&V>;
 
@@ -136,8 +137,8 @@ impl<K, V, S> Collection<K, V> for S
 where
     K: Key,
     V: Value,
-    S: Any
-        + Store<K, V>
+    S: Any + Debug,
+    S: Store<K, V>
         + StoreMut<K, V>
         + StoreIterable<K, V>
         + StoreKeys<K, V>
