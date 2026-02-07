@@ -30,7 +30,7 @@ use std::collections::hash_map::{self, HashMap};
 use std::hash::BuildHasher;
 use std::ops::RangeBounds;
 
-use crate::store::key::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{
     StoreIterable, StoreIterableMut, StoreKeys, StoreRange, StoreValues,
 };
@@ -42,6 +42,7 @@ use crate::store::{
 impl<K, V, S> StoreIterable<K, V> for HashMap<K, V, S>
 where
     K: Key,
+    V: Value,
     S: BuildHasher,
 {
     type Iter<'a> = hash_map::Iter<'a, K, V>
@@ -74,6 +75,7 @@ where
 impl<K, V, S> StoreIterableMut<K, V> for HashMap<K, V, S>
 where
     K: Key,
+    V: Value,
     S: BuildHasher,
 {
     type IterMut<'a> = hash_map::IterMut<'a, K, V>
@@ -138,6 +140,7 @@ where
 impl<K, V, S> StoreValues<K, V> for HashMap<K, V, S>
 where
     K: Key,
+    V: Value,
     S: BuildHasher,
 {
     type Values<'a> = hash_map::Values<'a, K, V>
@@ -172,6 +175,7 @@ where
 impl<K, V> StoreIterable<K, V> for BTreeMap<K, V>
 where
     K: Key,
+    V: Value,
 {
     type Iter<'a> = btree_map::Iter<'a, K, V>
     where
@@ -203,6 +207,7 @@ where
 impl<K, V> StoreIterableMut<K, V> for BTreeMap<K, V>
 where
     K: Key,
+    V: Value,
 {
     type IterMut<'a> = btree_map::IterMut<'a, K, V>
     where
@@ -265,6 +270,7 @@ where
 impl<K, V> StoreValues<K, V> for BTreeMap<K, V>
 where
     K: Key,
+    V: Value,
 {
     type Values<'a> = btree_map::Values<'a, K, V>
     where
@@ -296,6 +302,7 @@ where
 impl<K, V> StoreRange<K, V> for BTreeMap<K, V>
 where
     K: Key,
+    V: Value,
 {
     type Range<'a> = btree_map::Range<'a, K, V>
     where

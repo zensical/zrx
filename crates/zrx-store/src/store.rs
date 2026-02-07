@@ -33,10 +33,10 @@ pub mod behavior;
 pub mod collection;
 pub mod comparator;
 pub mod decorator;
-pub mod key;
+pub mod item;
 
 use comparator::Comparator;
-use key::Key;
+use item::{Key, Value};
 
 // ----------------------------------------------------------------------------
 // Traits
@@ -225,12 +225,11 @@ where
 pub trait StoreIterable<K, V>: Store<K, V>
 where
     K: Key,
+    V: Value,
 {
     type Iter<'a>: Iterator<Item = (&'a K, &'a V)>
     where
-        Self: 'a,
-        K: 'a,
-        V: 'a;
+        Self: 'a;
 
     /// Creates an iterator over the items of the store.
     fn iter(&self) -> Self::Iter<'_>;
@@ -259,12 +258,11 @@ where
 pub trait StoreIterableMut<K, V>: StoreMut<K, V>
 where
     K: Key,
+    V: Value,
 {
     type IterMut<'a>: Iterator<Item = (&'a K, &'a mut V)>
     where
-        Self: 'a,
-        K: 'a,
-        V: 'a;
+        Self: 'a;
 
     /// Creates a mutable iterator over the items of the store.
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
@@ -296,8 +294,7 @@ where
 {
     type Keys<'a>: Iterator<Item = &'a K>
     where
-        Self: 'a,
-        K: 'a;
+        Self: 'a;
 
     /// Creates an iterator over the keys of the store.
     fn keys(&self) -> Self::Keys<'_>;
@@ -326,11 +323,11 @@ where
 pub trait StoreValues<K, V>: Store<K, V>
 where
     K: Key,
+    V: Value,
 {
     type Values<'a>: Iterator<Item = &'a V>
     where
-        Self: 'a,
-        V: 'a;
+        Self: 'a;
 
     /// Creates an iterator over the values of the store.
     fn values(&self) -> Self::Values<'_>;
@@ -360,12 +357,11 @@ where
 pub trait StoreRange<K, V>: Store<K, V>
 where
     K: Key,
+    V: Value,
 {
     type Range<'a>: Iterator<Item = (&'a K, &'a V)>
     where
-        Self: 'a,
-        K: 'a,
-        V: 'a;
+        Self: 'a;
 
     /// Creates an iterator over a range of items of the store.
     fn range<R>(&self, range: R) -> Self::Range<'_>

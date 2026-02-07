@@ -25,7 +25,7 @@
 
 //! Store delta behavior.
 
-use crate::store::key::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{StoreIterable, StoreMut};
 
 // ----------------------------------------------------------------------------
@@ -60,7 +60,7 @@ where
 impl<K, V, S> StoreDelta<K, V> for S
 where
     K: Key,
-    V: Clone + Eq,
+    V: Value + Clone + Eq,
     S: StoreMut<K, V> + StoreIterable<K, V>,
 {
     /// Updates the store and returns the changes as an iterator.

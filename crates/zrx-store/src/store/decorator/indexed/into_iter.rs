@@ -29,7 +29,7 @@ use ahash::HashMap;
 use std::marker::PhantomData;
 use std::vec;
 
-use crate::store::key::Key;
+use crate::store::item::Key;
 use crate::store::StoreMut;
 
 use super::Indexed;

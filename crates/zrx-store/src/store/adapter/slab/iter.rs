@@ -27,7 +27,7 @@
 
 use slab::Slab;
 
-use crate::store::key::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{StoreIterable, StoreIterableMut, StoreKeys, StoreValues};
 
 // ----------------------------------------------------------------------------
@@ -65,6 +65,7 @@ pub struct Values<'a, K, V> {
 impl<K, V> StoreIterable<K, V> for Slab<(K, V)>
 where
     K: Key,
+    V: Value,
 {
     type Iter<'a> = Iter<'a, K, V>
     where
@@ -96,6 +97,7 @@ where
 impl<K, V> StoreIterableMut<K, V> for Slab<(K, V)>
 where
     K: Key,
+    V: Value,
 {
     type IterMut<'a> = IterMut<'a, K, V>
     where
@@ -158,6 +160,7 @@ where
 impl<K, V> StoreValues<K, V> for Slab<(K, V)>
 where
     K: Key,
+    V: Value,
 {
     type Values<'a> = Values<'a, K, V>
     where

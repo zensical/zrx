@@ -27,7 +27,7 @@
 
 use std::any::Any;
 
-use crate::store::key::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreKeys, StoreMut, StoreValues};
 
 // ----------------------------------------------------------------------------
@@ -115,8 +115,8 @@ impl<K, V> dyn Collection<K, V> {
 
 impl<'a, K, V> IntoIterator for &'a dyn Collection<K, V>
 where
-    K: 'static,
-    V: 'static,
+    K: Key,
+    V: Value,
 {
     type Item = (&'a K, &'a V);
     type IntoIter = Iter<'a, K, V>;
@@ -134,8 +134,8 @@ where
 
 impl<K, V, S> Collection<K, V> for S
 where
-    K: Key + 'static,
-    V: 'static,
+    K: Key,
+    V: Value,
     S: Any
         + Store<K, V>
         + StoreMut<K, V>

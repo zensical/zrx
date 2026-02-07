@@ -29,7 +29,7 @@ use slab::Slab;
 use std::borrow::Borrow;
 use std::mem;
 
-use crate::store::key::Key;
+use crate::store::item::Key;
 use crate::store::{Store, StoreMut, StoreMutRef};
 
 mod iter;

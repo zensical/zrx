@@ -31,7 +31,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 
 use crate::store::comparator::{Ascending, Comparable, Comparator};
-use crate::store::key::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreMut, StoreWithComparator};
 
 mod into_iter;
@@ -435,6 +435,7 @@ where
 impl<'a, K, V, S, C> IntoIterator for &'a Ordered<K, V, S, C>
 where
     K: Key,
+    V: Value,
     S: StoreIterable<K, V>,
 {
     type Item = (&'a K, &'a V);

@@ -30,7 +30,7 @@ use std::marker::PhantomData;
 use std::ops::{Bound, RangeBounds};
 use std::slice;
 
-use crate::store::key::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreKeys, StoreValues};
 
 use super::Indexed;
@@ -135,6 +135,7 @@ where
 impl<K, V, S, C> StoreIterable<K, V> for Indexed<K, V, S, C>
 where
     K: Key,
+    V: Value,
     S: Store<K, V>,
 {
     type Iter<'a> = Iter<'a, K, V, S>
@@ -203,6 +204,7 @@ where
 impl<K, V, S, C> StoreValues<K, V> for Indexed<K, V, S, C>
 where
     K: Key,
+    V: Value,
     S: Store<K, V>,
 {
     type Values<'a> = Values<'a, K, V, S>
@@ -241,7 +243,7 @@ where
 impl<'a, K, V, S> Iterator for Iter<'a, K, V, S>
 where
     K: Key,
-    V: 'a,
+    V: Value,
     S: Store<K, V>,
 {
     type Item = (&'a K, &'a V);
@@ -263,7 +265,7 @@ where
 impl<'a, K, V, S> ExactSizeIterator for Iter<'a, K, V, S>
 where
     K: Key,
-    V: 'a,
+    V: Value,
     S: Store<K, V>,
 {
     /// Returns the exact remaining length of the iterator.
@@ -278,7 +280,7 @@ where
 impl<'a, K, V, S> Iterator for Values<'a, K, V, S>
 where
     K: Key,
-    V: 'a,
+    V: Value,
     S: Store<K, V>,
 {
     type Item = &'a V;
@@ -300,7 +302,7 @@ where
 impl<'a, K, V, S> ExactSizeIterator for Values<'a, K, V, S>
 where
     K: Key,
-    V: 'a,
+    V: Value,
     S: Store<K, V>,
 {
     /// Returns the exact remaining length of the iterator.
