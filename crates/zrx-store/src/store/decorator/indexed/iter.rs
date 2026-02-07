@@ -262,7 +262,7 @@ where
     }
 }
 
-impl<'a, K, V, S> ExactSizeIterator for Iter<'a, K, V, S>
+impl<K, V, S> ExactSizeIterator for Iter<'_, K, V, S>
 where
     K: Key,
     V: Value,
@@ -299,7 +299,7 @@ where
     }
 }
 
-impl<'a, K, V, S> ExactSizeIterator for Values<'a, K, V, S>
+impl<K, V, S> ExactSizeIterator for Values<'_, K, V, S>
 where
     K: Key,
     V: Value,
