@@ -39,6 +39,3 @@ workspace = true
 [dependencies]
 ahash.workspace = true
 slab.workspace = true
-
-[features]
-default = []
