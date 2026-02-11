@@ -29,7 +29,7 @@ use std::collections::btree_map;
 use std::vec;
 
 use crate::store::comparator::{Ascending, Comparable};
-use crate::store::key::Key;
+use crate::store::item::Key;
 use crate::store::Store;
 
 use super::Ordered;

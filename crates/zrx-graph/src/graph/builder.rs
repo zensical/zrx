@@ -38,29 +38,27 @@ use super::Graph;
 
 /// Graph builder.
 #[derive(Clone, Debug)]
-pub struct Builder<T, W = ()> {
+pub struct Builder<T> {
     /// Nodes of the graph.
     nodes: Vec<T>,
     /// Edges of the graph.
-    edges: Vec<Edge<W>>,
+    edges: Vec<Edge>,
 }
 
 /// Graph edge.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Edge<W = ()> {
+pub struct Edge {
     /// Source node index.
     pub source: usize,
     /// Target node index.
     pub target: usize,
-    /// Weight.
-    pub weight: W,
 }
 
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T, W> Graph<T, W> {
+impl<T> Graph<T> {
     /// Creates a graph builder.
     ///
     /// # Examples
@@ -76,13 +74,13 @@ impl<T, W> Graph<T, W> {
     /// let b = builder.add_node("b");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
+    /// builder.add_edge(a, b)?;
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
     #[must_use]
-    pub fn builder() -> Builder<T, W> {
+    pub fn builder() -> Builder<T> {
         Builder {
             nodes: Vec::new(),
             edges: Vec::new(),
@@ -92,7 +90,7 @@ impl<T, W> Graph<T, W> {
 
 // ----------------------------------------------------------------------------
 
-impl<T, W> Builder<T, W> {
+impl<T> Builder<T> {
     /// Adds a node to the graph.
     ///
     /// # Examples
@@ -108,7 +106,7 @@ impl<T, W> Builder<T, W> {
     /// let b = builder.add_node("b");
     /// #
     /// # // Create edges between nodes
-    /// # builder.add_edge(a, b, 0)?;
+    /// # builder.add_edge(a, b)?;
     /// # Ok(())
     /// # }
     /// ```
@@ -147,14 +145,12 @@ impl<T, W> Builder<T, W> {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn add_edge(
-        &mut self, source: usize, target: usize, weight: W,
-    ) -> Result {
+    pub fn add_edge(&mut self, source: usize, target: usize) -> Result {
         if source >= self.nodes.len() {
             return Err(Error::NotFound(source));
         }
@@ -163,7 +159,7 @@ impl<T, W> Builder<T, W> {
         }
 
         // Add edge, as both nodes were found
-        self.edges.push(Edge { source, target, weight });
+        self.edges.push(Edge { source, target });
         Ok(())
     }
 
@@ -193,8 +189,8 @@ impl<T, W> Builder<T, W> {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create edge graph
     /// let edges = builder.to_edge_graph();
@@ -207,11 +203,8 @@ impl<T, W> Builder<T, W> {
         note = "Edge graphs are no longer needed for action graphs"
     )]
     #[must_use]
-    pub fn to_edge_graph(&self) -> Builder<Edge<W>>
-    where
-        W: Clone,
-    {
-        // We expect that the edges are ordered by target an weight, since the
+    pub fn to_edge_graph(&self) -> Builder<Edge> {
+        // We expect that the edges are ordered by target and weight, since the
         // former represents the corresponding action, and the latter the index
         // of the argument in the action. This is also why we index sources by
         // targets and not the other way around, i.e., to keep the ordering.
@@ -228,7 +221,7 @@ impl<T, W> Builder<T, W> {
         for (target, edge) in self.edges.iter().enumerate() {
             if let Some(sources) = targets.get(&edge.source) {
                 for &source in sources {
-                    edges.push(Edge { source, target, weight: () });
+                    edges.push(Edge { source, target });
                 }
             }
         }
@@ -259,8 +252,8 @@ impl<T, W> Builder<T, W> {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
     /// let graph = builder.build();
@@ -268,18 +261,14 @@ impl<T, W> Builder<T, W> {
     /// # }
     /// ```
     #[must_use]
-    pub fn build(self) -> Graph<T, W> {
-        let topology = Topology::from(&self);
-        Graph {
-            data: self.nodes,
-            weights: self.edges.into_iter().map(|edge| edge.weight).collect(),
-            topology,
-        }
+    pub fn build(self) -> Graph<T> {
+        let topology = Topology::new(self.nodes.len(), &self.edges);
+        Graph { data: self.nodes, topology }
     }
 }
 
 #[allow(clippy::must_use_candidate)]
-impl<T, W> Builder<T, W> {
+impl<T> Builder<T> {
     /// Returns a reference to the nodes.
     #[inline]
     pub fn nodes(&self) -> &[T] {
@@ -288,7 +277,7 @@ impl<T, W> Builder<T, W> {
 
     /// Returns a reference to the edges.
     #[inline]
-    pub fn edges(&self) -> &[Edge<W>] {
+    pub fn edges(&self) -> &[Edge] {
         &self.edges
     }
 
@@ -309,7 +298,7 @@ impl<T, W> Builder<T, W> {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<T, W> Index<usize> for Builder<T, W> {
+impl<T> Index<usize> for Builder<T> {
     type Output = T;
 
     /// Returns a reference to the node at the index.
@@ -333,8 +322,8 @@ impl<T, W> Index<usize> for Builder<T, W> {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Obtain references to nodes
     /// assert_eq!(&builder[a], &"a");
@@ -351,7 +340,7 @@ impl<T, W> Index<usize> for Builder<T, W> {
 
 // ----------------------------------------------------------------------------
 
-impl<T, W> Default for Builder<T, W> {
+impl<T> Default for Builder<T> {
     /// Creates a graph builder.
     ///
     /// # Examples
@@ -367,7 +356,7 @@ impl<T, W> Default for Builder<T, W> {
     /// # let b = builder.add_node("b");
     /// #
     /// # // Create edges between nodes
-    /// # builder.add_edge(a, b, 0)?;
+    /// # builder.add_edge(a, b)?;
     /// # Ok(())
     /// # }
     /// ```

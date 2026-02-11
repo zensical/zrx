@@ -52,6 +52,13 @@ use traversal::Traversal;
 /// edges in O(1), i.e., constant time. It's built with the [`Graph::builder`]
 /// method, which allows to add nodes and edges, before building the graph.
 ///
+/// Note that this implementation is heavily opinionated – it does not support
+/// edge weights or undirected edges, as it's built solely for our own purposes.
+/// It does by no means attempt to be a general-purpose graph library. For this,
+/// please refer to libraries such as [`petgraph`].
+///
+/// [`petgraph`]: https://docs.rs/petgraph/
+///
 /// # Examples
 ///
 /// ```
@@ -66,8 +73,8 @@ use traversal::Traversal;
 /// let c = builder.add_node("c");
 ///
 /// // Create edges between nodes
-/// builder.add_edge(a, b, 0)?;
-/// builder.add_edge(b, c, 0)?;
+/// builder.add_edge(a, b)?;
+/// builder.add_edge(b, c)?;
 ///
 /// // Create graph from builder
 /// let graph = builder.build();
@@ -82,11 +89,9 @@ use traversal::Traversal;
 /// # }
 /// ```
 #[derive(Clone, Debug)]
-pub struct Graph<T, W = ()> {
+pub struct Graph<T> {
     /// Graph data.
     data: Vec<T>,
-    /// Graph weights.
-    weights: Vec<W>,
     /// Graph topology.
     topology: Topology,
 }
@@ -95,7 +100,7 @@ pub struct Graph<T, W = ()> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T, W> Graph<T, W> {
+impl<T> Graph<T> {
     /// Creates an empty graph.
     ///
     /// While an empty graph is not very useful, it's sometimes practical as a
@@ -121,7 +126,7 @@ impl<T, W> Graph<T, W> {
     ///
     /// This method creates a topological traversal of the graph, which allows
     /// to visit nodes in a topological order, i.e., visiting a node only after
-    /// all its dependencies have been visited. The traversal is initialized
+    /// all of its dependencies have been visited. The traversal is initialized
     /// with the given initial nodes, which are the starting points.
     ///
     /// Note that an arbitrary number of parallel traversals can be created
@@ -141,8 +146,8 @@ impl<T, W> Graph<T, W> {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
     /// let graph = builder.build();
@@ -186,8 +191,8 @@ impl<T, W> Graph<T, W> {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
     /// let graph = builder.build();
@@ -207,13 +212,7 @@ impl<T, W> Graph<T, W> {
 }
 
 #[allow(clippy::must_use_candidate)]
-impl<T, W> Graph<T, W> {
-    /// Returns the graph weights.
-    #[inline]
-    pub fn weights(&self) -> &[W] {
-        &self.weights
-    }
-
+impl<T> Graph<T> {
     /// Returns the graph topology.
     #[inline]
     pub fn topology(&self) -> &Topology {
@@ -237,7 +236,7 @@ impl<T, W> Graph<T, W> {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<T, W> Index<usize> for Graph<T, W> {
+impl<T> Index<usize> for Graph<T> {
     type Output = T;
 
     /// Returns a reference to the node at the index.
@@ -261,8 +260,8 @@ impl<T, W> Index<usize> for Graph<T, W> {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
     /// let graph = builder.build();
@@ -280,7 +279,7 @@ impl<T, W> Index<usize> for Graph<T, W> {
     }
 }
 
-impl<T, W> IndexMut<usize> for Graph<T, W> {
+impl<T> IndexMut<usize> for Graph<T> {
     /// Returns a mutable reference to the node at the index.
     ///
     /// # Panics
@@ -302,8 +301,8 @@ impl<T, W> IndexMut<usize> for Graph<T, W> {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
     /// let mut graph = builder.build();
@@ -323,7 +322,7 @@ impl<T, W> IndexMut<usize> for Graph<T, W> {
 
 // ----------------------------------------------------------------------------
 
-impl<T, W> From<Builder<T, W>> for Graph<T, W> {
+impl<T> From<Builder<T>> for Graph<T> {
     /// Creates a graph from a builder.
     ///
     /// # Examples
@@ -340,8 +339,8 @@ impl<T, W> From<Builder<T, W>> for Graph<T, W> {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
     /// let graph = Graph::from(builder);
@@ -349,14 +348,14 @@ impl<T, W> From<Builder<T, W>> for Graph<T, W> {
     /// # }
     /// ```
     #[inline]
-    fn from(builder: Builder<T, W>) -> Self {
+    fn from(builder: Builder<T>) -> Self {
         builder.build()
     }
 }
 
 // ----------------------------------------------------------------------------
 
-impl<T, W> IntoIterator for &Graph<T, W> {
+impl<T> IntoIterator for &Graph<T> {
     type Item = usize;
     type IntoIter = Range<usize>;
 
@@ -380,8 +379,8 @@ impl<T, W> IntoIterator for &Graph<T, W> {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
     /// let graph = builder.build();

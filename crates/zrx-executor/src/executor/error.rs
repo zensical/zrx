@@ -41,7 +41,6 @@ pub enum Error {
     /// Task submission failed.
     #[error("task submission failed")]
     Submit(Box<dyn Task>),
-
     /// Signal poisoned.
     #[error("signal poisoned")]
     Signal,

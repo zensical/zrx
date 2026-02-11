@@ -30,7 +30,7 @@ use std::ptr;
 use std::time::Instant;
 
 use crate::store::decorator::ordered;
-use crate::store::key::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{
     StoreIterable, StoreIterableMut, StoreKeys, StoreMut, StoreValues,
 };
@@ -45,7 +45,7 @@ use super::Queue;
 /// Iterator over the items of a [`Queue`].
 pub struct Iter<'a, K, V>
 where
-    K: Key + 'a,
+    K: Key,
 {
     /// Inner iterator.
     inner: ordered::Iter<'a, K, Item>,
@@ -58,7 +58,7 @@ where
 /// Mutable iterator over the items of a [`Queue`].
 pub struct IterMut<'a, K, V>
 where
-    K: Key + 'a,
+    K: Key,
 {
     /// Inner iterator.
     inner: ordered::Iter<'a, K, Item>,
@@ -71,7 +71,7 @@ where
 /// Iterator over the keys of a [`Queue`].
 pub struct Keys<'a, K>
 where
-    K: Key + 'a,
+    K: Key,
 {
     /// Inner iterator.
     inner: ordered::Iter<'a, K, Item>,
@@ -82,7 +82,7 @@ where
 /// Iterator over the values of a [`Queue`].
 pub struct Values<'a, K, V>
 where
-    K: Key + 'a,
+    K: Key,
 {
     /// Inner iterator.
     inner: ordered::Values<'a, K, Item>,
@@ -99,6 +99,7 @@ where
 impl<K, V, S> StoreIterable<K, V> for Queue<K, V, S>
 where
     K: Key,
+    V: Value,
     S: StoreIterable<K, Item>,
 {
     type Iter<'a> = Iter<'a, K, V>
@@ -135,6 +136,7 @@ where
 impl<K, V, S> StoreIterableMut<K, V> for Queue<K, V, S>
 where
     K: Key,
+    V: Value,
     S: StoreMut<K, Item> + StoreIterable<K, Item>,
 {
     type IterMut<'a> = IterMut<'a, K, V>
@@ -206,13 +208,14 @@ where
 impl<K, V, S> StoreValues<K, V> for Queue<K, V, S>
 where
     K: Key,
+    V: Value,
     S: StoreValues<K, Item>,
 {
     type Values<'a> = Values<'a, K, V>
     where
         Self: 'a;
 
-    /// Creates an iterator over the values of a store.
+    /// Creates an iterator over the values of the store.
     ///
     /// # Examples
     ///
@@ -244,7 +247,6 @@ where
 impl<'a, K, V> Iterator for Iter<'a, K, V>
 where
     K: Key,
-    V: 'a,
 {
     type Item = (&'a K, &'a V);
 
@@ -267,7 +269,6 @@ where
 impl<'a, K, V> Iterator for IterMut<'a, K, V>
 where
     K: Key,
-    V: 'a,
 {
     type Item = (&'a K, &'a mut V);
 
@@ -318,7 +319,6 @@ where
 impl<'a, K, V> Iterator for Values<'a, K, V>
 where
     K: Key,
-    V: 'a,
 {
     type Item = &'a V;
 

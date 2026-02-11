@@ -30,9 +30,10 @@ mod store;
 
 pub use store::adapter;
 pub use store::behavior;
+pub use store::collection::{self, Collection};
 pub use store::comparator::{self, Comparator};
 pub use store::decorator;
-pub use store::key::Key;
+pub use store::item::{Key, Value};
 pub use store::{
     Store, StoreFromIterator, StoreIntoIterator, StoreIterable,
     StoreIterableMut, StoreKeys, StoreMut, StoreMutRef, StoreRange,

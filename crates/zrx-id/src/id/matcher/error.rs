@@ -40,7 +40,6 @@ pub enum Error {
     /// Globset error.
     #[error(transparent)]
     Glob(#[from] globset::Error),
-
     /// Identifier error.
     #[error(transparent)]
     Id(#[from] id::Error),

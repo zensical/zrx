@@ -30,7 +30,7 @@ use std::marker::PhantomData;
 use std::ops::{Bound, RangeBounds};
 use std::slice;
 
-use crate::store::key::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreKeys, StoreValues};
 
 use super::Indexed;
@@ -69,7 +69,7 @@ where
     V: Ord,
     S: Store<K, V>,
 {
-    /// Creates an iterator over a range of items in a store.
+    /// Creates an iterator over a range of items of the store.
     ///
     /// This method is not implemented as part of [`StoreRange`][], because it
     /// deviates from the trait, as it uses numeric indices instead of keys.
@@ -135,13 +135,14 @@ where
 impl<K, V, S, C> StoreIterable<K, V> for Indexed<K, V, S, C>
 where
     K: Key,
+    V: Value,
     S: Store<K, V>,
 {
     type Iter<'a> = Iter<'a, K, V, S>
     where
         Self: 'a;
 
-    /// Creates an iterator over the items of a store.
+    /// Creates an iterator over the items of the store.
     ///
     /// # Examples
     ///
@@ -177,7 +178,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the keys of a store.
+    /// Creates an iterator over the keys of the store.
     ///
     /// # Examples
     ///
@@ -203,13 +204,14 @@ where
 impl<K, V, S, C> StoreValues<K, V> for Indexed<K, V, S, C>
 where
     K: Key,
+    V: Value,
     S: Store<K, V>,
 {
     type Values<'a> = Values<'a, K, V, S>
     where
         Self: 'a;
 
-    /// Creates an iterator over the values of a store.
+    /// Creates an iterator over the values of the store.
     ///
     /// # Examples
     ///
@@ -241,7 +243,7 @@ where
 impl<'a, K, V, S> Iterator for Iter<'a, K, V, S>
 where
     K: Key,
-    V: 'a,
+    V: Value,
     S: Store<K, V>,
 {
     type Item = (&'a K, &'a V);
@@ -260,10 +262,10 @@ where
     }
 }
 
-impl<'a, K, V, S> ExactSizeIterator for Iter<'a, K, V, S>
+impl<K, V, S> ExactSizeIterator for Iter<'_, K, V, S>
 where
     K: Key,
-    V: 'a,
+    V: Value,
     S: Store<K, V>,
 {
     /// Returns the exact remaining length of the iterator.
@@ -278,7 +280,7 @@ where
 impl<'a, K, V, S> Iterator for Values<'a, K, V, S>
 where
     K: Key,
-    V: 'a,
+    V: Value,
     S: Store<K, V>,
 {
     type Item = &'a V;
@@ -297,10 +299,10 @@ where
     }
 }
 
-impl<'a, K, V, S> ExactSizeIterator for Values<'a, K, V, S>
+impl<K, V, S> ExactSizeIterator for Values<'_, K, V, S>
 where
     K: Key,
-    V: 'a,
+    V: Value,
     S: Store<K, V>,
 {
     /// Returns the exact remaining length of the iterator.

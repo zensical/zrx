@@ -48,7 +48,6 @@ pub enum Instruction {
 #[allow(clippy::must_use_candidate)]
 impl Instruction {
     /// Returns the operator.
-    #[allow(clippy::match_same_arms)]
     #[inline]
     pub fn operator(&self) -> Operator {
         match *self {

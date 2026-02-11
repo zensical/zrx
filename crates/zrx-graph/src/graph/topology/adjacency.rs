@@ -27,7 +27,7 @@
 
 use std::ops::{Index, Range};
 
-use super::Builder;
+use super::Edge;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -35,13 +35,13 @@ use super::Builder;
 
 /// Adjacency list.
 ///
-/// Since we only work with immutable graphs, we can model adjacencies of nodes
+/// As we optimize for extremely fast traversal, we model adjacencies of nodes
 /// using the Compressed Sparse Row (CSR) format, which minimizes the necessary
 /// storage needed. This is ideal for our use case, since it offers enumeration
 /// of adjacent nodes in O(1), i.e., constant time.
 ///
 /// We also compute the in- or out-degree for each node, depending on whether
-/// an adjacency list for the incoming or outgoing edges is constructed, as
+/// an adjacency list for the incoming or outgoing edges is constructed, since
 /// that's what we need when traversing the graph, and computing them once to
 /// clone them saves a lot of time.
 #[derive(Debug)]
@@ -61,11 +61,6 @@ pub struct Adjacency {
 impl Adjacency {
     /// Creates an adjacency list for outgoing edges.
     ///
-    /// This method constructs an adjacency list from the graph builder, where
-    /// each entry represents a node and the values represent the nodes that are
-    /// reachable from that node via outgoing edges. If you need the adjacency
-    /// list for all incoming edges, use [`Adjacency::incoming`].
-    ///
     /// # Examples
     ///
     /// ```
@@ -81,11 +76,11 @@ impl Adjacency {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create adjacency list
-    /// let adj = Adjacency::outgoing(&builder);
+    /// let adj = Adjacency::outgoing(builder.len(), builder.edges());
     /// assert_eq!(&adj[a], &[b]);
     /// assert_eq!(&adj[b], &[c]);
     /// # Ok(())
@@ -93,20 +88,11 @@ impl Adjacency {
     /// ```
     #[inline]
     #[must_use]
-    pub fn outgoing<T, W>(builder: &Builder<T, W>) -> Self {
-        let iter = builder.edges().iter();
-        Adjacency::new(
-            builder.len(),
-            iter.map(|edge| (edge.source, edge.target)).collect(),
-        )
+    pub fn outgoing(nodes: usize, edges: &[Edge]) -> Self {
+        Adjacency::new(nodes, edges.iter().cloned())
     }
 
     /// Creates an adjacency list for incoming edges.
-    ///
-    /// This method constructs an adjacency list from the graph builder, where
-    /// each entry represents a node and the values represent the nodes that are
-    /// reachable from that node via incoming edges. If you need the adjacency
-    /// list for all outgoing edges, use [`Adjacency::outgoing`].
     ///
     /// # Examples
     ///
@@ -123,11 +109,11 @@ impl Adjacency {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create adjacency list
-    /// let adj = Adjacency::incoming(&builder);
+    /// let adj = Adjacency::incoming(builder.len(), builder.edges());
     /// assert_eq!(&adj[b], &[a]);
     /// assert_eq!(&adj[c], &[b]);
     /// # Ok(())
@@ -135,11 +121,13 @@ impl Adjacency {
     /// ```
     #[inline]
     #[must_use]
-    pub fn incoming<T, W>(builder: &Builder<T, W>) -> Self {
-        let iter = builder.edges().iter();
+    pub fn incoming(nodes: usize, edges: &[Edge]) -> Self {
         Adjacency::new(
-            builder.len(),
-            iter.map(|edge| (edge.target, edge.source)).collect(),
+            nodes,
+            edges.iter().map(|edge| Edge {
+                source: edge.target,
+                target: edge.source,
+            }),
         )
     }
 
@@ -160,7 +148,10 @@ impl Adjacency {
     /// of functions of which a node is an argument. The latter is more likely
     /// to be violated, while still very unlikely to happen in practice. We can
     /// lift this invariant if we run into this problem in the future.
-    fn new(nodes: usize, mut edges: Vec<(usize, usize)>) -> Self {
+    fn new<E>(nodes: usize, edges: E) -> Self
+    where
+        E: Iterator<Item = Edge>,
+    {
         let mut rows = vec![0; nodes + 1];
         let mut columns = Vec::new();
 
@@ -168,17 +159,18 @@ impl Adjacency {
         // allows us to construct the adjacency list in linear time. Since we
         // expect that data is (almost) sorted, we use insertion sort, which is
         // stable and runs in O(n + k), where k is the number of inversions.
-        insertion_sort(edges.as_mut_slice(), |&(source, _)| source);
+        let mut edges = edges.collect::<Vec<_>>();
+        insertion_sort(&mut edges, |edge| edge.source);
 
         // Process edges and add pointers for all rows until we reach the source
         // node of the current edge, representing rows without outgoing edges
         let mut r = 0;
-        for (source, target) in edges {
-            while r <= source {
+        for edge in edges {
+            while r <= edge.source {
                 rows[r] = columns.len();
                 r += 1;
             }
-            columns.push(target);
+            columns.push(edge.target);
         }
 
         // Fill in the remaining row pointers
@@ -218,11 +210,11 @@ impl Adjacency {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create iterator over adjacency list
-    /// let adj = Adjacency::outgoing(&builder);
+    /// let adj = Adjacency::outgoing(builder.len(), builder.edges());
     /// for node in adj.iter() {
     ///     println!("{node:?} -> {:?}", &adj[node]);
     /// }
@@ -285,11 +277,11 @@ impl Index<usize> for Adjacency {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create adjacency list
-    /// let adj = Adjacency::outgoing(&builder);
+    /// let adj = Adjacency::outgoing(builder.len(), builder.edges());
     /// assert_eq!(&adj[a], &[b]);
     /// # Ok(())
     /// # }
@@ -328,11 +320,11 @@ impl IntoIterator for &Adjacency {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create iterator over adjacency list
-    /// let adj = Adjacency::outgoing(&builder);
+    /// let adj = Adjacency::outgoing(builder.len(), builder.edges());
     /// for node in &adj {
     ///     println!("{node:?} -> {:?}", &adj[node]);
     /// }
@@ -351,9 +343,9 @@ impl IntoIterator for &Adjacency {
 
 /// Sorts the edges in-place using insertion sort based on a key function, which
 /// is more efficient than Rust's sort implementation for (almost) sorted lists.
-fn insertion_sort<F>(edges: &mut [(usize, usize)], f: F)
+fn insertion_sort<F>(edges: &mut [Edge], f: F)
 where
-    F: Fn(&(usize, usize)) -> usize,
+    F: Fn(&Edge) -> usize,
 {
     for i in 1..edges.len() {
         let mut j = i;

@@ -69,7 +69,6 @@ impl Condition {
     /// on the stack. Although this might theoretically happen, it practically
     /// never should, since conditions are going through optimization, which
     /// combines all term operands into a single instance of [`Matches`].
-    #[allow(clippy::match_same_arms)]
     #[must_use]
     pub fn satisfies(&self, matches: &Matches) -> bool {
         let mut stack = 0u64;

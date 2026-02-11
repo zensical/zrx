@@ -23,8 +23,9 @@
 
 // ----------------------------------------------------------------------------
 
-//! Store key.
+//! Store key and value.
 
+use std::fmt::Debug;
 use std::hash::Hash;
 
 // ----------------------------------------------------------------------------
@@ -38,15 +39,32 @@ use std::hash::Hash;
 /// [`Ord`][] for ordered keys, since we would lose the ability to allow for
 /// using [`Borrow`][] to generalize the key type.
 ///
-/// Thus, keys must implement [`Clone`], [`Eq`], [`Hash`] and [`Ord`], which we
-/// consider a reasonable requirement and a good trade-off for a generic API.
+/// Keys must implement [`Clone`], [`Debug`], [`Eq`], [`Hash`] and [`Ord`], all
+/// of which we consider reasonable requirements for a generic API.
+///
+/// __Warning__: The `'static` lifetime which is required by this trait is a
+/// deliberate design choice to simplify trait bounds across the code base. If
+/// we would not require the lifetime, we would need to add a lifetime parameter
+/// to almost all types using this trait, which makes it cumbersome to use.
 ///
 /// [`Borrow`]: std::borrow::Borrow
 /// [`Store`]: crate::store::Store
-pub trait Key: Clone + Eq + Hash + Ord {}
+pub trait Key: Clone + Debug + Eq + Hash + Ord + 'static {}
+
+/// Store value.
+///
+/// __Warning__: The `'static` lifetime which is required by this trait is a
+/// deliberate design choice to simplify trait bounds across the code base. If
+/// we would not require the lifetime, we would need to add a lifetime parameter
+/// to almost all types using this trait, which makes it cumbersome to use.
+///
+/// [`Store`]: crate::store::Store
+pub trait Value: Debug + 'static {}
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Key for T where T: Clone + Eq + Hash + Ord {}
+impl<T> Key for T where T: Clone + Debug + Eq + Hash + Ord + 'static {}
+
+impl<T> Value for T where T: Debug + 'static {}

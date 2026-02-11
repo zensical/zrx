@@ -32,7 +32,7 @@ use std::time::Instant;
 use std::{fmt, mem};
 
 use crate::store::decorator::Ordered;
-use crate::store::key::Key;
+use crate::store::item::Key;
 use crate::store::{Store, StoreIterable, StoreMut, StoreMutRef};
 
 mod item;
@@ -503,8 +503,7 @@ where
 
 // ----------------------------------------------------------------------------
 
-#[allow(clippy::implicit_hasher)]
-impl<K, V> Default for Queue<K, V, HashMap<K, Item>>
+impl<K, V> Default for Queue<K, V>
 where
     K: Key,
 {

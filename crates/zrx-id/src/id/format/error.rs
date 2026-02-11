@@ -40,11 +40,9 @@ pub enum Error {
     /// Path error.
     #[error(transparent)]
     Path(#[from] path::Error),
-
     /// Span number mismatch.
     #[error("span number mismatch")]
     Mismatch,
-
     /// Span offset overflow.
     #[error("span offset overflow")]
     Overflow,

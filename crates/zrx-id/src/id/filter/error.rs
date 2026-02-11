@@ -42,7 +42,6 @@ pub enum Error {
     /// Expression error.
     #[error(transparent)]
     Expression(#[from] expression::Error),
-
     /// Matcher error.
     #[error(transparent)]
     Matcher(#[from] matcher::Error),

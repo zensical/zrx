@@ -33,7 +33,7 @@ use std::marker::PhantomData;
 use std::ops::{Index, Range};
 
 use crate::store::comparator::{Ascending, Comparator};
-use crate::store::key::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreMut, StoreWithComparator};
 
 mod into_iter;
@@ -125,7 +125,7 @@ where
     V: Ord,
     S: Store<K, V>,
 {
-    /// Creates an indexing decorator over a store.
+    /// Creates an indexing decorator over the store.
     ///
     /// # Examples
     ///
@@ -667,12 +667,13 @@ where
 impl<'a, K, V, S, C> IntoIterator for &'a Indexed<K, V, S, C>
 where
     K: Key,
+    V: Value,
     S: StoreIterable<K, V>,
 {
     type Item = (&'a K, &'a V);
     type IntoIter = Iter<'a, K, V, S>;
 
-    /// Creates an iterator over the items of a store.
+    /// Creates an iterator over the items of the store.
     ///
     /// # Examples
     ///
@@ -697,18 +698,18 @@ where
 
 // ----------------------------------------------------------------------------
 
-#[allow(clippy::implicit_hasher)]
 impl<K, V> Default for Indexed<K, V>
 where
     K: Key,
     V: Ord,
 {
-    /// Creates an indexing decorator with [`HashMap::default`] as a store.
+    /// Creates an indexing decorator with [`HashMap::default`][] as a store.
     ///
     /// Note that this method does not allow to customize the [`BuildHasher`][],
     /// but uses [`ahash`] by default, which is the fastest known hasher.
     ///
     /// [`BuildHasher`]: std::hash::BuildHasher
+    /// [`HashMap::default`]: Default::default
     ///
     /// # Examples
     ///

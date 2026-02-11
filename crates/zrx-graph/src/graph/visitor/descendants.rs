@@ -48,7 +48,7 @@ pub struct Descendants<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T, W> Graph<T, W> {
+impl<T> Graph<T> {
     /// Creates an iterator over the descendants of the given node.
     ///
     /// # Panics
@@ -74,8 +74,8 @@ impl<T, W> Graph<T, W> {
     /// let c = builder.add_node("c");
     ///
     /// // Create edges between nodes
-    /// builder.add_edge(a, b, 0)?;
-    /// builder.add_edge(b, c, 0)?;
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
     /// let graph = builder.build();

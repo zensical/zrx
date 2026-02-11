@@ -29,7 +29,7 @@ use std::collections::btree_map;
 use std::slice;
 
 use crate::store::comparator::{Ascending, Comparable};
-use crate::store::key::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreKeys, StoreValues};
 
 use super::Ordered;
@@ -69,13 +69,14 @@ pub struct Values<'a, K, V, C = Ascending> {
 impl<K, V, S, C> StoreIterable<K, V> for Ordered<K, V, S, C>
 where
     K: Key,
+    V: Value,
     S: Store<K, V>,
 {
     type Iter<'a> = Iter<'a, K, V, C>
     where
         Self: 'a;
 
-    /// Creates an iterator over the items of a store.
+    /// Creates an iterator over the items of the store.
     ///
     /// # Examples
     ///
@@ -111,7 +112,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the keys of a store.
+    /// Creates an iterator over the keys of the store.
     ///
     /// # Examples
     ///
@@ -140,13 +141,14 @@ where
 impl<K, V, S, C> StoreValues<K, V> for Ordered<K, V, S, C>
 where
     K: Key,
+    V: Value,
     S: Store<K, V>,
 {
     type Values<'a> = Values<'a, K, V, C>
     where
         Self: 'a;
 
-    /// Creates an iterator over the values of a store.
+    /// Creates an iterator over the values of the store.
     ///
     /// # Examples
     ///
@@ -174,7 +176,6 @@ where
 impl<'a, K, V, C> Iterator for Iter<'a, K, V, C>
 where
     K: Key,
-    V: 'a,
 {
     type Item = (&'a K, &'a V);
 
@@ -248,7 +249,6 @@ where
 impl<'a, K, V, C> Iterator for Values<'a, K, V, C>
 where
     K: Key,
-    V: 'a,
 {
     type Item = &'a V;
 
