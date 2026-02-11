@@ -96,12 +96,13 @@ where
     )]
     fn handle(&mut self, item: Self::Item<'_>) -> impl IntoOutputs<I> {
         let (data, condition) = item.data;
+        let mut deletions = Vec::new();
 
         // Update internal state
         if let Some(data) = data {
             self.items.insert(item.id.clone(), data.clone());
-        } else {
-            self.items.remove(item.id);
+        } else if self.items.remove(item.id).is_some() {
+            deletions.push(Item::new(item.id.clone(), None));
         }
 
         // In case there's a condition, register a new barrier
@@ -130,6 +131,7 @@ where
                     .map(|(key, value)| {
                         Item::new((*key).clone(), Some(value.clone()))
                     })
+                    .chain(deletions.iter().cloned())
                     .collect::<Delta<_, _>>();
 
                 // Add delta to items
