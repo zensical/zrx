@@ -37,10 +37,10 @@ use crate::store::{Store, StoreIterable, StoreKeys, StoreMut, StoreValues};
 
 /// Collection.
 ///
-/// This trait combines the following traits, which all are not dyn-compatible
-/// for reasons of flexibility, into a single trait object that allows to erase
-/// the type of the underlying store, while preserving the types of the key and
-/// and value type parameters, `K` and `V`:
+/// This trait combines the following traits, which are not dyn-compatible for
+/// reasons of flexibility, into a single trait object that allows to erase the
+/// type of the underlying store while preserving the types of the key and value
+/// type parameters, `K` and `V`:
 ///
 /// - [`Store`]
 /// - [`StoreMut`]
