@@ -28,8 +28,9 @@
 use ahash::HashMap;
 use slab::Slab;
 use std::borrow::Borrow;
+use std::fmt::{self, Debug};
+use std::mem;
 use std::time::Instant;
-use std::{fmt, mem};
 
 use crate::store::decorator::Ordered;
 use crate::store::item::Key;
@@ -537,9 +538,9 @@ where
 
 impl<K, V, S> fmt::Debug for Queue<K, V, S>
 where
-    K: fmt::Debug + Key,
-    V: fmt::Debug,
-    S: fmt::Debug + Store<K, Item>,
+    K: Debug + Key,
+    V: Debug,
+    S: Debug + Store<K, Item>,
 {
     /// Formats the queue for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

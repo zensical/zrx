@@ -27,7 +27,7 @@
 
 use std::borrow::Borrow;
 use std::cmp::Ordering;
-use std::fmt;
+use std::fmt::{self, Debug};
 use std::ops::Deref;
 
 use super::{Ascending, Comparator};
@@ -220,7 +220,7 @@ where
 
 impl<T, C> fmt::Debug for Comparable<T, C>
 where
-    T: fmt::Debug,
+    T: Debug,
 {
     /// Formats the comparator for debugging.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

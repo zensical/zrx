@@ -28,7 +28,7 @@
 use ahash::HashMap;
 use std::borrow::Borrow;
 use std::collections::BTreeMap;
-use std::fmt;
+use std::fmt::{self, Debug};
 
 use crate::store::comparator::{Ascending, Comparable, Comparator};
 use crate::store::item::{Key, Value};
@@ -501,9 +501,9 @@ where
 
 impl<K, V, S, C> fmt::Debug for Ordered<K, V, S, C>
 where
-    K: fmt::Debug + Key,
-    V: fmt::Debug,
-    S: fmt::Debug + Store<K, V>,
+    K: Debug + Key,
+    V: Debug,
+    S: Debug + Store<K, V>,
 {
     /// Formats the ordering decorator for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
