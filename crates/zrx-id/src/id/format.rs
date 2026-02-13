@@ -103,7 +103,7 @@ pub struct Format<const N: usize> {
 // ----------------------------------------------------------------------------
 
 impl<const N: usize> Format<N> {
-    /// Returns the value at the given index.
+    /// Returns the value at the index.
     ///
     /// If the value is not percent-encoded, which means it does not contain a
     /// `:` character, a borrowed reference is returned which is essentially a
