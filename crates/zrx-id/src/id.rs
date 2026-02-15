@@ -333,10 +333,10 @@ impl FromStr for Id {
 impl Hash for Id {
     /// Hashes the identifier.
     ///
-    /// Since identifiers are immutable, we can use a precomputed hash for
-    /// fast hashing. This is especially useful when identifiers are used as
-    /// keys in hash maps or hash sets, where hashing is a frequent operation,
-    /// as the performance gains are significant with constant time.
+    /// Since identifiers are immutable, we can use a precomputed hash for fast
+    /// hashing. This is especially useful when identifiers are used as keys in
+    /// hash maps or hash sets, where hashing is a frequent operation, as the
+    /// performance gains are significant with constant time.
     #[inline]
     fn hash<H>(&self, state: &mut H)
     where

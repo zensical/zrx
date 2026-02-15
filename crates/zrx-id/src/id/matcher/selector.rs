@@ -309,10 +309,10 @@ impl TryFrom<Term> for Selector {
 impl Hash for Selector {
     /// Hashes the selector.
     ///
-    /// Since selectors are also immutable, we can use a precomputed hash for
-    /// fast hashing. This is especially useful when selectors are used as
-    /// keys in hash maps or hash sets, where hashing is a frequent operation,
-    /// as the performance gains are significant.
+    /// Since selectors are immutable, we can use a precomputed hash for fast
+    /// hashing. This is especially useful when selectors are used as keys in
+    /// hash maps or hash sets, where hashing is a frequent operation, as the
+    /// performance gains are significant.
     #[inline]
     fn hash<H>(&self, state: &mut H)
     where
