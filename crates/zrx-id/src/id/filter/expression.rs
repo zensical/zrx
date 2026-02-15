@@ -35,9 +35,7 @@ mod operand;
 pub use builder::Builder;
 pub use convert::IntoExpression;
 pub use error::{Error, Result};
-pub use operand::Term;
-
-pub(super) use operand::{Operand, Operator};
+pub use operand::{Operand, Operator, Term};
 
 // ----------------------------------------------------------------------------
 // Structs
