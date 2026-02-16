@@ -26,7 +26,6 @@
 //! Iterator implementations for [`Ordered`].
 
 use std::collections::btree_set;
-use std::slice;
 
 use crate::store::comparator::{Ascending, Comparable};
 use crate::store::item::{Key, Value};
