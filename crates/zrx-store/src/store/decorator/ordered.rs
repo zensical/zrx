@@ -27,7 +27,7 @@
 
 use ahash::HashMap;
 use std::borrow::Borrow;
-use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use std::fmt::{self, Debug};
 
 use crate::store::comparator::{Ascending, Comparable, Comparator};
@@ -51,8 +51,8 @@ pub use iter::{Iter, Keys, Values};
 /// them. This is ideal for cases like scheduling, where deadlines must be able
 /// to change, while items must be addressable by identifier.
 ///
-/// This implementation uses a [`BTreeMap`] over a [`BinaryHeap`][], because the
-/// latter does not expose an efficient API for maintaining the heap invariant.
+/// This implementation uses a [`BTreeSet`] instead of a [`BinaryHeap`][], since
+/// the latter doesn't expose an API to be able to maintain the heap invariant.
 /// Note that it's a good idea to use [`Ordered::default`][], since it leverages
 /// [`ahash`] as a [`BuildHasher`][], which is the fastest known hasher.
 ///
@@ -87,7 +87,7 @@ where
     /// Underlying store.
     store: S,
     /// Ordering of values.
-    ordering: BTreeMap<Comparable<V, C>, Vec<K>>,
+    ordering: BTreeSet<(Comparable<V, C>, K)>,
     /// Comparator.
     comparator: C,
 }
@@ -134,40 +134,22 @@ where
     S: Store<K, V>,
     C: Comparator<V> + Clone,
 {
-    /// Updates the given key-value pair in the ordering.
-    fn update_ordering(&mut self, value: V, key: K) {
-        self.ordering
-            .entry(Comparable::new(value, self.comparator.clone()))
-            .or_insert_with(|| Vec::with_capacity(1))
-            .push(key);
+    /// Inserts the given key-value pair into the ordering.
+    fn insert_ordering(&mut self, key: K, value: V) {
+        let value = Comparable::new(value, self.comparator.clone());
+        self.ordering.insert((value, key));
     }
 
     /// Removes the given key-value pair from the ordering.
-    fn remove_ordering<Q>(&mut self, value: V, key: &Q) -> V
-    where
-        K: Borrow<Q>,
-        Q: Key,
-    {
-        // Technically, `Comparable<T, C>` implements `Borrow<T>`, which means
-        // that querying or removing the value from the map that manages all of
-        // the orderings should work without problems. However, for some reason,
-        // it doesn't, as the values don't match. All efforts to reproduce and
-        // debug this issue have failed so far, as it works perfectly when done
-        // with a mint `BTreeMap`. Thus, we temporarily just wrap the value and
-        // remove it from the map that way, and then unpack it again and return
-        // it, so it can be returned by the calling method. In case we find out
-        // why this happened, we can revert the exact commit that introduced
-        // this workaround to fix the issue.
+    fn remove_ordering(&mut self, key: K, value: V) -> Option<(K, V)> {
         let value = Comparable::new(value, self.comparator.clone());
-        if let Some(keys) = self.ordering.get_mut(&value) {
-            keys.retain(|check| check.borrow() != key);
-            if keys.is_empty() {
-                self.ordering.remove(&value);
-            }
-        }
 
-        // Unpack and return value
-        value.into_inner()
+        // Remove the entry from the ordering, and return the key and value, as
+        // we need to return it to the caller. Note that we can be sure that the
+        // value and key exist, because the ordering is synchronized with the
+        // store, but we just pass it through as an option for ergonomics.
+        let opt = self.ordering.take(&(value, key));
+        opt.map(|(value, key)| (key, value.into_inner()))
     }
 }
 
@@ -261,11 +243,12 @@ where
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
         if let Some(prior) = self.store.insert(key.clone(), value.clone()) {
-            let prior = self.remove_ordering(prior, &key);
-            self.update_ordering(value, key);
-            Some(prior)
+            self.remove_ordering(key, prior).map(|(key, prior)| {
+                self.insert_ordering(key, value);
+                prior
+            })
         } else {
-            self.update_ordering(value, key);
+            self.insert_ordering(key, value);
             None
         }
     }
@@ -292,10 +275,9 @@ where
         K: Borrow<Q>,
         Q: Key,
     {
-        self.store.remove(key).map(|value| {
-            // We remove the prior ordering entry, and then return the value -
-            // see the comment in the called function for why this is necessary
-            self.remove_ordering(value, key)
+        self.store.remove_entry(key).and_then(|(key, value)| {
+            // Remove entry from ordering and return value
+            self.remove_ordering(key, value).map(|(_, value)| value)
         })
     }
 
@@ -321,9 +303,9 @@ where
         K: Borrow<Q>,
         Q: Key,
     {
-        self.store.remove_entry(key).map(|(key, value)| {
-            let value = self.remove_ordering(value, key.borrow());
-            (key, value)
+        self.store.remove_entry(key).and_then(|(key, value)| {
+            // Remove entry from ordering and return entry
+            self.remove_ordering(key, value)
         })
     }
 
@@ -378,7 +360,7 @@ where
     fn with_comparator(comparator: C) -> Self {
         Self {
             store: S::default(),
-            ordering: BTreeMap::new(),
+            ordering: BTreeSet::new(),
             comparator,
         }
     }

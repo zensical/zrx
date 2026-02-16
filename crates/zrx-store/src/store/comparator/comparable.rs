@@ -25,7 +25,6 @@
 
 //! Comparable value.
 
-use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::fmt::{self, Debug};
 use std::ops::Deref;
@@ -120,17 +119,6 @@ impl<T> From<T> for Comparable<T> {
 }
 
 // ----------------------------------------------------------------------------
-
-impl<T, C> Borrow<T> for Comparable<T, C>
-where
-    C: Comparator<T>,
-{
-    /// Borrows the wrapped value.
-    #[inline]
-    fn borrow(&self) -> &T {
-        &self.0
-    }
-}
 
 impl<T, C> Deref for Comparable<T, C> {
     type Target = T;
