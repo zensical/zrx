@@ -147,7 +147,7 @@ where
         // Remove the entry from the ordering, and return the key and value, as
         // we need to return it to the caller. Note that we can be sure that the
         // value and key exist, because the ordering is synchronized with the
-        // store, but we just pass it through as an option for ergonomics.
+        // store, so we just pass it through as an option for ergonomics.
         let opt = self.ordering.take(&(value, key));
         opt.map(|(value, key)| (key, value.into_inner()))
     }
