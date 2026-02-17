@@ -346,19 +346,11 @@ impl<T> Default for Builder<T> {
     /// # Examples
     ///
     /// ```
-    /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use zrx_graph::Builder;
     ///
     /// // Create graph builder
     /// let mut builder = Builder::default();
-    /// # let a = builder.add_node("a");
-    /// # let b = builder.add_node("b");
-    /// #
-    /// # // Create edges between nodes
-    /// # builder.add_edge(a, b)?;
-    /// # Ok(())
-    /// # }
+    /// # let _: Builder<()> = builder;
     /// ```
     #[inline]
     fn default() -> Self {
