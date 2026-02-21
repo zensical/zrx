@@ -72,7 +72,7 @@ impl From<Selector> for Term {
 
 impl Display for Term {
     /// Formats the term for display.
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Term::Id(id) => Display::fmt(id, f),
             Term::Selector(selector) => Display::fmt(selector, f),
@@ -82,7 +82,7 @@ impl Display for Term {
 
 impl Debug for Term {
     /// Formats the term for debugging.
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Term::Id(id) => Debug::fmt(id, f),
             Term::Selector(selector) => Debug::fmt(selector, f),

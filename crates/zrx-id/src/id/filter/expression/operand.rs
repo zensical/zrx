@@ -77,7 +77,7 @@ where
 
 impl Debug for Operand {
     /// Formats the operand for debugging.
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Operand::Expression(expr) => Debug::fmt(expr, f),
             Operand::Term(term) => Debug::fmt(term, f),
