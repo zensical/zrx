@@ -218,7 +218,7 @@ impl Default for Immediate {
     /// ```
     #[inline]
     fn default() -> Self {
-        Self::new()
+        Self
     }
 }
 
