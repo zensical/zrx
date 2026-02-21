@@ -81,10 +81,7 @@ impl<T> Graph<T> {
     #[inline]
     #[must_use]
     pub fn builder() -> Builder<T> {
-        Builder {
-            nodes: Vec::new(),
-            edges: Vec::new(),
-        }
+        Builder::default()
     }
 }
 
@@ -354,6 +351,9 @@ impl<T> Default for Builder<T> {
     /// ```
     #[inline]
     fn default() -> Self {
-        Graph::builder()
+        Builder {
+            nodes: Vec::default(),
+            edges: Vec::default(),
+        }
     }
 }
