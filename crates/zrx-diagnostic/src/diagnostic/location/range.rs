@@ -25,7 +25,7 @@
 
 //! Range.
 
-use std::fmt::{self, Write};
+use std::fmt::{self, Display, Write};
 
 use super::position::Position;
 
@@ -104,13 +104,13 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Display for Range {
+impl Display for Range {
     /// Formats the range for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.start.fmt(f)?;
+        Display::fmt(&self.start, f)?;
         if self.start != self.end {
             f.write_char('-')?;
-            self.end.fmt(f)?;
+            Display::fmt(&self.end, f)?;
         }
 
         // No errors occurred

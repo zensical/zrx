@@ -25,7 +25,7 @@
 
 //! Output collection.
 
-use std::fmt;
+use std::fmt::{self, Debug};
 use std::vec::IntoIter;
 
 use super::Output;
@@ -313,9 +313,9 @@ impl<I> Default for Outputs<I> {
 
 // ----------------------------------------------------------------------------
 
-impl<I> fmt::Debug for Outputs<I>
+impl<I> Debug for Outputs<I>
 where
-    I: fmt::Debug,
+    I: Debug,
 {
     /// Formats the output collection for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

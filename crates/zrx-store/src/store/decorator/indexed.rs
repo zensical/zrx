@@ -731,7 +731,7 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl<K, V, S, C> fmt::Debug for Indexed<K, V, S, C>
+impl<K, V, S, C> Debug for Indexed<K, V, S, C>
 where
     K: Debug + Key,
     S: Debug + Store<K, V>,

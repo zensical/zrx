@@ -27,6 +27,7 @@
 
 use std::any::Any;
 use std::cell::RefCell;
+use std::fmt::Debug;
 use std::rc::{Rc, Weak};
 
 use zrx_scheduler::graph::Builder;
@@ -71,7 +72,7 @@ pub struct WorkspaceInner<I> {
 
 impl<I> Workspace<I>
 where
-    I: std::fmt::Debug,
+    I: Debug,
 {
     /// Creates a workspace.
     #[must_use]

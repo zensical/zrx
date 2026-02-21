@@ -26,10 +26,11 @@
 //! Work-sharing execution strategy.
 
 use crossbeam::channel::{bounded, Sender};
+use std::fmt::{self, Debug};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread::{self, Builder, JoinHandle};
-use std::{cmp, fmt, panic};
+use std::{cmp, panic};
 
 use crate::executor::strategy::Strategy;
 use crate::executor::task::Task;
@@ -373,7 +374,7 @@ impl Drop for WorkSharing {
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Debug for WorkSharing {
+impl Debug for WorkSharing {
     /// Formats the execution strategy for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("WorkSharing")

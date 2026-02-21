@@ -25,7 +25,7 @@
 
 //! Task.
 
-use std::fmt;
+use std::fmt::{self, Debug};
 use std::panic::UnwindSafe;
 
 mod collection;
@@ -85,7 +85,7 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Debug for Box<dyn Task> {
+impl Debug for Box<dyn Task> {
     /// Formats the task for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str("Box<dyn Task>")

@@ -25,7 +25,7 @@
 
 //! Diagnostic tag.
 
-use std::fmt;
+use std::fmt::{self, Display};
 
 // ----------------------------------------------------------------------------
 // Enums
@@ -51,7 +51,7 @@ pub enum Tag {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl fmt::Display for Tag {
+impl Display for Tag {
     /// Formats the diagnostic tag for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

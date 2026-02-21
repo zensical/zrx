@@ -206,12 +206,12 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl<T, C> fmt::Debug for Comparable<T, C>
+impl<T, C> Debug for Comparable<T, C>
 where
     T: Debug,
 {
     /// Formats the comparator for debugging.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        Debug::fmt(&self.0, f)
     }
 }

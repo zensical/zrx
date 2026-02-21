@@ -536,7 +536,7 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl<K, V, S> fmt::Debug for Queue<K, V, S>
+impl<K, V, S> Debug for Queue<K, V, S>
 where
     K: Debug + Key,
     V: Debug,

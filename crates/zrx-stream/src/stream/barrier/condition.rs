@@ -25,7 +25,7 @@
 
 //! Condition.
 
-use std::fmt;
+use std::fmt::{self, Debug};
 use std::sync::Arc;
 
 use zrx_scheduler::{Id, Value};
@@ -120,7 +120,7 @@ impl<I> Value for Condition<I> where I: Id {}
 
 // ----------------------------------------------------------------------------
 
-impl<I> fmt::Debug for Condition<I> {
+impl<I> Debug for Condition<I> {
     /// Formats the condition for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let function = "Box<dyn ConditionFn>";

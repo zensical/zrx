@@ -26,11 +26,12 @@
 //! Work-stealing execution strategy.
 
 use crossbeam::deque::{Injector, Steal, Stealer, Worker};
+use std::fmt::{self, Debug};
 use std::iter::repeat_with;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread::{self, Builder, JoinHandle};
-use std::{cmp, fmt, panic};
+use std::{cmp, panic};
 
 use crate::executor::strategy::{Signal, Strategy};
 use crate::executor::task::Task;
@@ -406,7 +407,7 @@ impl Drop for WorkStealing {
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Debug for WorkStealing {
+impl Debug for WorkStealing {
     /// Formats the execution strategy for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("WorkStealing")

@@ -26,7 +26,7 @@
 //! Selector.
 
 use std::borrow::Cow;
-use std::fmt;
+use std::fmt::{self, Debug, Display};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -351,14 +351,14 @@ impl Eq for Selector {}
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Display for Selector {
+impl Display for Selector {
     /// Formats the selector for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.format.fmt(f)
+        Display::fmt(&self.format, f)
     }
 }
 
-impl fmt::Debug for Selector {
+impl Debug for Selector {
     /// Formats the selector for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Selector")

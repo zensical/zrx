@@ -27,7 +27,7 @@
 
 use std::borrow::Cow;
 use std::cmp::Ordering;
-use std::fmt;
+use std::fmt::{self, Debug, Display};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -429,14 +429,14 @@ impl Ord for Id {
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Display for Id {
+impl Display for Id {
     /// Formats the identifier for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.format.fmt(f)
+        Display::fmt(&self.format, f)
     }
 }
 
-impl fmt::Debug for Id {
+impl Debug for Id {
     /// Formats the identifier for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Id")
