@@ -39,7 +39,7 @@ use super::Selector;
 // ----------------------------------------------------------------------------
 
 /// Selector builder.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Builder<'a> {
     /// Format builder.
     format: format::Builder<'a, 7>,
@@ -63,9 +63,7 @@ impl Selector {
     #[inline]
     #[must_use]
     pub fn builder<'a>() -> Builder<'a> {
-        Builder {
-            format: Format::builder().with(0, "zrs"),
-        }
+        Builder::default()
     }
 
     /// Creates a builder from the selector.
@@ -384,5 +382,28 @@ impl<'a> Builder<'a> {
 
         // No errors occurred
         Ok(Selector { format: Arc::new(format), hash })
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Trait implementations
+// ----------------------------------------------------------------------------
+
+impl Default for Builder<'_> {
+    /// Creates a selector builder.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_id::Selector;
+    ///
+    /// // Create selector builder
+    /// let mut builder = Selector::builder();
+    /// ```
+    #[inline]
+    fn default() -> Self {
+        Self {
+            format: Format::builder().with(0, "zrs"),
+        }
     }
 }

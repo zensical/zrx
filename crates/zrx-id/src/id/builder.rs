@@ -38,7 +38,7 @@ use super::Id;
 // ----------------------------------------------------------------------------
 
 /// Identifier builder.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Builder<'a> {
     /// Format builder.
     format: format::Builder<'a, 7>,
@@ -62,9 +62,7 @@ impl Id {
     #[inline]
     #[must_use]
     pub fn builder<'a>() -> Builder<'a> {
-        Builder {
-            format: Format::builder().with(0, "zri"),
-        }
+        Builder::default()
     }
 
     /// Creates a builder from the identifier.
@@ -398,5 +396,28 @@ impl<'a> Builder<'a> {
 
         // No errors occurred
         Ok(Id { format: Arc::new(format), hash })
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Trait implementations
+// ----------------------------------------------------------------------------
+
+impl Default for Builder<'_> {
+    /// Creates an identifier builder.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_id::Id;
+    ///
+    /// // Create identifier builder
+    /// let mut builder = Id::builder();
+    /// ```
+    #[inline]
+    fn default() -> Self {
+        Self {
+            format: Format::builder().with(0, "zri"),
+        }
     }
 }
