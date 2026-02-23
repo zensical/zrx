@@ -62,17 +62,28 @@ pub trait Collection<K, V>: Any + Debug {
     /// Returns whether the collection contains the key.
     fn contains_key(&self, id: &K) -> bool;
 
-    /// Inserts the value identified by the key.
-    fn insert(&mut self, key: K, value: V) -> Option<V>;
-
-    /// Removes the value identified by the key.
-    fn remove(&mut self, key: &K) -> Option<V>;
-
     /// Returns the number of items in the collection.
     fn len(&self) -> usize;
 
     /// Returns whether the collection is empty.
     fn is_empty(&self) -> bool;
+
+    /// Inserts the value identified by the key.
+    fn insert(&mut self, key: K, value: V) -> Option<V>;
+
+    /// Inserts the value identified by the key if it changed.
+    fn insert_if_changed(&mut self, key: &K, value: &V) -> bool
+    where
+        V: Clone + Eq;
+
+    /// Removes the value identified by the key.
+    fn remove(&mut self, key: &K) -> Option<V>;
+
+    /// Removes the value identified by the key and returns both.
+    fn remove_entry(&mut self, key: &K) -> Option<(K, V)>;
+
+    /// Clears the collection, removing all items.
+    fn clear(&mut self);
 
     /// Creates an iterator over the items of the collection.
     fn iter(&self) -> Iter<'_, K, V>;
@@ -162,12 +173,6 @@ where
         StoreMut::insert(self, key, value)
     }
 
-    /// Removes the value identified by the key.
-    #[inline]
-    fn remove(&mut self, key: &K) -> Option<V> {
-        StoreMut::remove(self, key)
-    }
-
     /// Returns the number of items in the collection.
     #[inline]
     fn len(&self) -> usize {
@@ -178,6 +183,33 @@ where
     #[inline]
     fn is_empty(&self) -> bool {
         Store::is_empty(self)
+    }
+
+    /// Inserts the value identified by the key if it changed.
+    #[inline]
+    fn insert_if_changed(&mut self, key: &K, value: &V) -> bool
+    where
+        V: Clone + Eq,
+    {
+        StoreMut::insert_if_changed(self, key, value)
+    }
+
+    /// Removes the value identified by the key.
+    #[inline]
+    fn remove(&mut self, key: &K) -> Option<V> {
+        StoreMut::remove(self, key)
+    }
+
+    /// Removes the value identified by the key and returns both.
+    #[inline]
+    fn remove_entry(&mut self, key: &K) -> Option<(K, V)> {
+        StoreMut::remove_entry(self, key)
+    }
+
+    /// Clears the collection, removing all items.
+    #[inline]
+    fn clear(&mut self) {
+        StoreMut::clear(self);
     }
 
     /// Creates an iterator over the items of the collection.
