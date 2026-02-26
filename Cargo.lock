@@ -380,6 +380,7 @@ dependencies = [
 name = "zrx-id"
 version = "0.0.8"
 dependencies = [
+ "ahash",
  "globset",
  "percent-encoding",
  "slab",

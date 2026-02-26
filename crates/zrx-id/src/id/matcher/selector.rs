@@ -25,9 +25,10 @@
 
 //! Selector.
 
+use ahash::AHasher;
 use std::borrow::Cow;
 use std::fmt::{self, Debug, Display};
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -225,7 +226,7 @@ impl FromStr for Selector {
 
         // Precompute hash for fast hashing
         let hash = {
-            let mut hasher = DefaultHasher::new();
+            let mut hasher = AHasher::default();
             format.hash(&mut hasher);
             hasher.finish()
         };
@@ -266,7 +267,7 @@ impl TryFrom<Id> for Selector {
 
         // Precompute hash for fast hashing
         let hash = {
-            let mut hasher = DefaultHasher::new();
+            let mut hasher = AHasher::default();
             format.hash(&mut hasher);
             hasher.finish()
         };

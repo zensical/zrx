@@ -25,8 +25,9 @@
 
 //! Identifier builder.
 
+use ahash::AHasher;
 use std::borrow::Cow;
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
 use super::error::{Error, Result};
@@ -389,7 +390,7 @@ impl<'a> Builder<'a> {
 
         // Precompute hash for fast hashing
         let hash = {
-            let mut hasher = DefaultHasher::new();
+            let mut hasher = AHasher::default();
             format.hash(&mut hasher);
             hasher.finish()
         };
