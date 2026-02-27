@@ -108,7 +108,7 @@ impl IntoIterator for Expression {
     type Item = Operand;
     type IntoIter = IntoIter<Self::Item>;
 
-    /// Creates an iterator over the expression.
+    /// Creates a consuming iterator over the expression.
     ///
     /// # Examples
     ///
