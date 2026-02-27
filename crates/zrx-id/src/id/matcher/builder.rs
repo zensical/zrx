@@ -29,7 +29,7 @@ use globset::{Glob, GlobBuilder};
 
 use super::component;
 use super::error::Result;
-use super::selector::TryIntoSelector;
+use super::selector::TryToSelector;
 use super::Matcher;
 
 // ----------------------------------------------------------------------------
@@ -106,7 +106,7 @@ impl Builder {
     #[inline]
     pub fn with<T>(mut self, selector: &T) -> Result<Self>
     where
-        T: TryIntoSelector,
+        T: TryToSelector,
     {
         self.add(selector)?;
         Ok(self)
@@ -139,9 +139,9 @@ impl Builder {
     /// ```
     pub fn add<T>(&mut self, selector: &T) -> Result<&mut Self>
     where
-        T: TryIntoSelector,
+        T: TryToSelector,
     {
-        let selector = selector.try_into_selector()?;
+        let selector = selector.try_to_selector()?;
 
         // Compile and add each component of the given selector
         self.provider.add(compile(selector.provider().as_deref())?);

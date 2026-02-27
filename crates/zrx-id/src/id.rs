@@ -46,7 +46,7 @@ pub mod matcher;
 pub mod uri;
 
 pub use builder::Builder;
-pub use convert::TryIntoId;
+pub use convert::TryToId;
 pub use error::{Error, Result};
 use format::Format;
 use uri::Uri;

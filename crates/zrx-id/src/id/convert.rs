@@ -34,27 +34,27 @@ use super::Id;
 // Traits
 // ----------------------------------------------------------------------------
 
-/// Attempt conversion into [`Id`].
+/// Attempt conversion to [`Id`].
 ///
-/// This trait allows to convert an arbitrary value into an identifier, using a
+/// This trait allows to convert an arbitrary value to an identifier, using a
 /// [`Cow`] smart pointer to avoid unnecessary cloning, e.g. for references.
-pub trait TryIntoId {
-    /// Attempts to convert into an identifier.
+pub trait TryToId {
+    /// Attempts to convert to an identifier.
     ///
     /// # Errors
     ///
     /// In case conversion fails, an error should be returned.
-    fn try_into_id(&self) -> Result<Cow<'_, Id>>;
+    fn try_to_id(&self) -> Result<Cow<'_, Id>>;
 }
 
 // ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl TryIntoId for Id {
-    /// Attempts to convert into an identifier.
+impl TryToId for Id {
+    /// Attempts to convert to an identifier.
     #[inline]
-    fn try_into_id(&self) -> Result<Cow<'_, Id>> {
+    fn try_to_id(&self) -> Result<Cow<'_, Id>> {
         Ok(Cow::Borrowed(self))
     }
 }
@@ -63,11 +63,11 @@ impl TryIntoId for Id {
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<T> TryIntoId for T
+impl<T> TryToId for T
 where
     T: AsRef<str>,
 {
-    /// Attempts to convert into an identifier.
+    /// Attempts to convert to an identifier.
     ///
     /// # Errors
     ///
@@ -85,15 +85,15 @@ where
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{Id, TryIntoId};
+    /// use zrx_id::{Id, TryToId};
     ///
     /// // Create identifier from string
-    /// let id = "zri:file:::docs:index.md:".try_into_id()?;
+    /// let id = "zri:file:::docs:index.md:".try_to_id()?;
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
-    fn try_into_id(&self) -> Result<Cow<'_, Id>> {
+    fn try_to_id(&self) -> Result<Cow<'_, Id>> {
         self.as_ref().parse().map(Cow::Owned)
     }
 }

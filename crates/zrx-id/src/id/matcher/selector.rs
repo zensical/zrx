@@ -41,7 +41,7 @@ mod convert;
 mod macros;
 
 pub use builder::Builder;
-pub use convert::TryIntoSelector;
+pub use convert::TryToSelector;
 
 // ----------------------------------------------------------------------------
 // Structs
