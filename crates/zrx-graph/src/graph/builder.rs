@@ -26,7 +26,7 @@
 //! Graph builder.
 
 use std::collections::BTreeMap;
-use std::ops::Index;
+use std::ops::{Index, Range};
 
 use super::error::{Error, Result};
 use super::topology::Topology;
@@ -230,6 +230,42 @@ impl<T> Builder<T> {
         }
     }
 
+    /// Creates an iterator over the graph builder.
+    ///
+    /// This iterator emits the node indices, which is exactly the same as
+    /// iterating over the adjacency list using `0..self.len()`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_graph::topology::Adjacency;
+    /// use zrx_graph::Graph;
+    ///
+    /// // Create graph builder and add nodes
+    /// let mut builder = Graph::builder();
+    /// let a = builder.add_node("a");
+    /// let b = builder.add_node("b");
+    /// let c = builder.add_node("c");
+    ///
+    /// // Create edges between nodes
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
+    ///
+    /// // Create iterator over graph builder
+    /// for node in builder.iter() {
+    ///     println!("{node:?}");
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn iter(&self) -> Range<usize> {
+        0..self.nodes.len()
+    }
+
     /// Builds the graph.
     ///
     /// This method creates the actual graph from the builder, which brings the
@@ -332,6 +368,48 @@ impl<T> Index<usize> for Builder<T> {
     #[inline]
     fn index(&self, index: usize) -> &Self::Output {
         &self.nodes[index]
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl<T> IntoIterator for &Builder<T> {
+    type Item = usize;
+    type IntoIter = Range<usize>;
+
+    /// Creates an iterator over the graph builder.
+    ///
+    /// This iterator emits the node indices, which is exactly the same as
+    /// iterating over the adjacency list using `0..self.len()`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_graph::topology::Adjacency;
+    /// use zrx_graph::Graph;
+    ///
+    /// // Create graph builder and add nodes
+    /// let mut builder = Graph::builder();
+    /// let a = builder.add_node("a");
+    /// let b = builder.add_node("b");
+    /// let c = builder.add_node("c");
+    ///
+    /// // Create edges between nodes
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
+    ///
+    /// // Create iterator over graph builder
+    /// for node in &builder {
+    ///     println!("{node:?}");
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 
