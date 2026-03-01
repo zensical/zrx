@@ -76,8 +76,8 @@ pub struct WorkSharing {
     sender: Option<Sender<Box<dyn Task>>>,
     /// Join handles of worker threads.
     threads: Vec<JoinHandle<()>>,
-    /// Counter for running tasks.
-    running: Arc<AtomicUsize>,
+    /// Counter for pending tasks.
+    pending: Arc<AtomicUsize>,
 }
 
 // ----------------------------------------------------------------------------
@@ -139,8 +139,8 @@ impl WorkSharing {
     pub fn with_capacity(num_workers: usize, capacity: usize) -> Self {
         let (sender, receiver) = bounded::<Box<dyn Task>>(capacity);
 
-        // Keep track of running tasks
-        let running = Arc::new(AtomicUsize::new(0));
+        // Keep track of pending tasks
+        let pending = Arc::new(AtomicUsize::new(0));
 
         // Initialize worker threads
         let iter = (0..num_workers).map(|index| {
@@ -148,17 +148,15 @@ impl WorkSharing {
 
             // Create worker thread and poll the receiver until the sender is
             // dropped, automatically exiting the loop. Additionally, we keep
-            // track of the number of running tasks to provide a simple way to
+            // track of the number of pending tasks to provide a simple way to
             // monitor the load of the thread pool.
-            let running = Arc::clone(&running);
+            let pending = Arc::clone(&pending);
             let h = move || {
                 while let Ok(task) = receiver.recv() {
-                    running.fetch_add(1, Ordering::Release);
-
                     // Execute task and immediately execute all subtasks on the
                     // same worker, if any, as the work-sharing strategy has no
                     // means of distributing work to other workers threads. We
-                    // also keep the running count due to sequential execution,
+                    // also keep the pending count due to sequential execution,
                     // and catch panics, as we're running user-land code that
                     // might be sloppy. However, since the executor has no way
                     // of reporting panics, tasks should wrap execution as we
@@ -172,8 +170,8 @@ impl WorkSharing {
                         }
                     });
 
-                    // Update number of running tasks
-                    running.fetch_sub(1, Ordering::Acquire);
+                    // Update number of pending tasks
+                    pending.fetch_sub(1, Ordering::Acquire);
                 }
             };
 
@@ -190,7 +188,7 @@ impl WorkSharing {
         Self {
             sender: Some(sender),
             threads,
-            running,
+            pending,
         }
     }
 }
@@ -236,6 +234,13 @@ impl Strategy for WorkSharing {
     /// # }
     /// ```
     fn submit(&self, task: Box<dyn Task>) -> Result {
+        // We track the total number of pending tasks, and when queried for the
+        // number of running tasks, compute those dynamically. Otherwise, there
+        // is the possibiliy of a race condition, where the task is acquired by
+        // a worker, before the running count can be incremented.
+        self.pending.fetch_add(1, Ordering::Release);
+
+        // Submit the task to the sender
         match self.sender.as_ref() {
             Some(sender) => Ok(sender.try_send(task)?),
             None => unreachable!(),
@@ -274,7 +279,7 @@ impl Strategy for WorkSharing {
     /// ```
     #[inline]
     fn num_tasks_running(&self) -> usize {
-        self.running.load(Ordering::Relaxed)
+        self.num_tasks_pending() - self.sender.as_ref().map_or(0, Sender::len)
     }
 
     /// Returns the number of pending tasks.
@@ -293,7 +298,7 @@ impl Strategy for WorkSharing {
     /// ```
     #[inline]
     fn num_tasks_pending(&self) -> usize {
-        self.sender.as_ref().map_or(0, Sender::len)
+        self.pending.load(Ordering::Relaxed)
     }
 
     /// Returns the capacity, if bounded.
