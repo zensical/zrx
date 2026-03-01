@@ -25,7 +25,7 @@
 
 //! Position.
 
-use std::fmt::{self, Write};
+use std::fmt::{self, Display, Write};
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -95,11 +95,11 @@ impl From<(u32, u32)> for Position {
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Display for Position {
+impl Display for Position {
     /// Formats the position for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.line.saturating_add(1).fmt(f)?;
+        Display::fmt(&self.line.saturating_add(1), f)?;
         f.write_char(':')?;
-        self.column.saturating_add(1).fmt(f)
+        Display::fmt(&self.column.saturating_add(1), f)
     }
 }

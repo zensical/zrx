@@ -25,7 +25,7 @@
 
 //! Action.
 
-use std::fmt;
+use std::fmt::{self, Debug};
 
 pub mod descriptor;
 mod error;
@@ -99,7 +99,7 @@ pub trait Action<I> {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I> fmt::Debug for Box<dyn Action<I>> {
+impl<I> Debug for Box<dyn Action<I>> {
     /// Formats the action for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str("Box<dyn Action>")

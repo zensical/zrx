@@ -26,7 +26,7 @@
 //! URI representation.
 
 use std::borrow::Cow;
-use std::fmt;
+use std::fmt::{self, Display};
 use std::path::Path;
 
 use zrx_path::PathExt;
@@ -120,9 +120,9 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Display for Uri<'_> {
+impl Display for Uri<'_> {
     /// Formats the URI for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Display::fmt(&self.inner, f)
     }
 }

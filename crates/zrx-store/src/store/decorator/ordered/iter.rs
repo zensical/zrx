@@ -25,8 +25,7 @@
 
 //! Iterator implementations for [`Ordered`].
 
-use std::collections::btree_map;
-use std::slice;
+use std::collections::btree_set;
 
 use crate::store::comparator::{Ascending, Comparable};
 use crate::store::item::{Key, Value};
@@ -41,25 +40,19 @@ use super::Ordered;
 /// Iterator over the items of an [`Ordered`] store.
 pub struct Iter<'a, K, V, C = Ascending> {
     /// Ordering of values.
-    ordering: btree_map::Iter<'a, Comparable<V, C>, Vec<K>>,
-    /// Current value.
-    value: Option<&'a V>,
-    /// Current keys.
-    keys: slice::Iter<'a, K>,
+    ordering: btree_set::Iter<'a, (Comparable<V, C>, K)>,
 }
 
 /// Iterator over the keys of an [`Ordered`] store.
 pub struct Keys<'a, K, V, C = Ascending> {
     /// Ordering of values.
-    ordering: btree_map::Values<'a, Comparable<V, C>, Vec<K>>,
-    /// Current keys.
-    keys: slice::Iter<'a, K>,
+    ordering: btree_set::Iter<'a, (Comparable<V, C>, K)>,
 }
 
 /// Iterator over the values of an [`Ordered`] store.
 pub struct Values<'a, K, V, C = Ascending> {
     /// Ordering of values.
-    ordering: btree_map::Keys<'a, Comparable<V, C>, Vec<K>>,
+    ordering: btree_set::Iter<'a, (Comparable<V, C>, K)>,
 }
 
 // ----------------------------------------------------------------------------
@@ -95,11 +88,7 @@ where
     /// ```
     #[inline]
     fn iter(&self) -> Self::Iter<'_> {
-        Iter {
-            ordering: self.ordering.iter(),
-            value: None,
-            keys: slice::Iter::default(),
-        }
+        Iter { ordering: self.ordering.iter() }
     }
 }
 
@@ -131,10 +120,7 @@ where
     /// ```
     #[inline]
     fn keys(&self) -> Self::Keys<'_> {
-        Keys {
-            ordering: self.ordering.values(),
-            keys: slice::Iter::default(),
-        }
+        Keys { ordering: self.ordering.iter() }
     }
 }
 
@@ -167,7 +153,7 @@ where
     /// ```
     #[inline]
     fn values(&self) -> Self::Values<'_> {
-        Values { ordering: self.ordering.keys() }
+        Values { ordering: self.ordering.iter() }
     }
 }
 
@@ -182,23 +168,7 @@ where
     /// Returns the next item.
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            // Check if we have keys left with the current value
-            if let Some(key) = self.keys.next() {
-                return self.value.map(|value| (key, value));
-            }
-
-            // Fetch the next value and associated keys
-            if let Some((value, keys)) = self.ordering.next() {
-                self.value = Some(value);
-                self.keys = keys.iter();
-            } else {
-                break;
-            }
-        }
-
-        // No more items to return
-        None
+        self.ordering.next().map(|(value, key)| (key, &**value))
     }
 
     /// Returns the bounds on the remaining length of the iterator.
@@ -219,22 +189,7 @@ where
     /// Returns the next item.
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            // Check if we have keys left with the current value
-            if let Some(key) = self.keys.next() {
-                return Some(key);
-            }
-
-            // Fetch the next value and associated keys
-            if let Some(keys) = self.ordering.next() {
-                self.keys = keys.iter();
-            } else {
-                break;
-            }
-        }
-
-        // No more items to return
-        None
+        self.ordering.next().map(|(_, key)| key)
     }
 
     /// Returns the bounds on the remaining length of the iterator.
@@ -255,7 +210,7 @@ where
     /// Returns the next item.
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.ordering.next().map(|value| &**value)
+        self.ordering.next().map(|(value, _)| &**value)
     }
 
     /// Returns the bounds on the remaining length of the iterator.

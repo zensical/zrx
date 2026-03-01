@@ -247,7 +247,7 @@ impl IntoIterator for Tasks {
     type Item = Box<dyn Task>;
     type IntoIter = IntoIter<Self::Item>;
 
-    /// Creates an iterator over the task collection.
+    /// Creates a consuming iterator over the task collection.
     ///
     /// # Examples
     ///

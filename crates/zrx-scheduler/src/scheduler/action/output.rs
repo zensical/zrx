@@ -25,7 +25,7 @@
 
 //! Output.
 
-use std::fmt;
+use std::fmt::{self, Debug};
 
 use crate::scheduler::effect::{Item, Task, Timer};
 use crate::scheduler::value::Value;
@@ -127,16 +127,16 @@ impl<I> From<Timer<I>> for Output<I> {
 
 // ----------------------------------------------------------------------------
 
-impl<I> fmt::Debug for Output<I>
+impl<I> Debug for Output<I>
 where
-    I: fmt::Debug,
+    I: Debug,
 {
     /// Formats the output for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Output::Item(item) => item.fmt(f),
-            Output::Task(task) => task.fmt(f),
-            Output::Timer(timer) => timer.fmt(f),
+            Output::Item(item) => Debug::fmt(item, f),
+            Output::Task(task) => Debug::fmt(task, f),
+            Output::Timer(timer) => Debug::fmt(timer, f),
         }
     }
 }

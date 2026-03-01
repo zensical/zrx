@@ -25,8 +25,7 @@
 
 //! Consuming iterator implementation for [`Ordered`].
 
-use std::collections::btree_map;
-use std::vec;
+use std::collections::btree_set;
 
 use crate::store::comparator::{Ascending, Comparable};
 use crate::store::item::Key;
@@ -42,11 +41,7 @@ use super::Ordered;
 #[derive(Debug)]
 pub struct IntoIter<K, V, C = Ascending> {
     /// Ordering of values.
-    ordering: btree_map::IntoIter<Comparable<V, C>, Vec<K>>,
-    /// Current value.
-    value: Option<V>,
-    /// Current keys.
-    keys: vec::IntoIter<K>,
+    ordering: btree_set::IntoIter<(Comparable<V, C>, K)>,
 }
 
 // ----------------------------------------------------------------------------
@@ -83,8 +78,6 @@ where
     fn into_iter(self) -> Self::IntoIter {
         IntoIter {
             ordering: self.ordering.into_iter(),
-            value: None,
-            keys: vec::IntoIter::default(),
         }
     }
 }
@@ -101,23 +94,8 @@ where
     /// Returns the next item.
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            // Check if we have keys left with the current value
-            if let Some(key) = self.keys.next() {
-                return self.value.clone().map(|value| (key, value));
-            }
-
-            // Fetch the next value and associated keys
-            if let Some((value, keys)) = self.ordering.next() {
-                self.value = Some(value.into_inner());
-                self.keys = keys.into_iter();
-            } else {
-                break;
-            }
-        }
-
-        // No more items to return
-        None
+        let opt = self.ordering.next();
+        opt.map(|(value, key)| (key, value.into_inner()))
     }
 
     /// Returns the bounds on the remaining length of the iterator.

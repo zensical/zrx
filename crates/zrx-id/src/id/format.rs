@@ -25,12 +25,13 @@
 
 //! Formatted string.
 
+use std::array;
 use std::borrow::Cow;
 use std::cmp::Ordering;
+use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::ops::Range;
 use std::str::{from_utf8_unchecked, FromStr};
-use std::{array, fmt};
 
 mod builder;
 mod encoding;
@@ -103,7 +104,7 @@ pub struct Format<const N: usize> {
 // ----------------------------------------------------------------------------
 
 impl<const N: usize> Format<N> {
-    /// Returns the value at the given index.
+    /// Returns the value at the index.
     ///
     /// If the value is not percent-encoded, which means it does not contain a
     /// `:` character, a borrowed reference is returned which is essentially a
@@ -360,14 +361,14 @@ impl<const N: usize> Ord for Format<N> {
 
 // ----------------------------------------------------------------------------
 
-impl<const N: usize> fmt::Display for Format<N> {
+impl<const N: usize> Display for Format<N> {
     /// Formats the formatted string for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(self.as_str())
     }
 }
 
-impl<const N: usize> fmt::Debug for Format<N> {
+impl<const N: usize> Debug for Format<N> {
     /// Formats the formatted string for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Format")

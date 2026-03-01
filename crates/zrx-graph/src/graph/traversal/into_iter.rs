@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Consuming iterator over topological traversal.
+//! Consuming iterator implementation for [`Traversal`].
 
 use super::Traversal;
 
@@ -31,12 +31,7 @@ use super::Traversal;
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Consuming iterator over topological traversal.
-///
-/// This iterator consumes a [`Traversal`], emitting nodes in topological order.
-/// It offers a simplified API for synchronous iteration if nodes don't need to
-/// be deliberately completed, but can be considered done once the iterator
-/// has emitted them.
+/// Consuming iterator for [`Traversal`].
 #[derive(Debug)]
 pub struct IntoIter {
     /// Traversal.

@@ -30,7 +30,7 @@ use std::iter::Peekable;
 
 use crate::id::matcher::matches::IntoIter;
 use crate::id::matcher::Matches;
-use crate::id::TryIntoId;
+use crate::id::TryToId;
 
 use super::condition::Condition;
 use super::error::Result;
@@ -100,7 +100,7 @@ impl Filter {
     #[inline]
     pub fn candidates<T>(&self, id: &T) -> Result<Candidates<'_>>
     where
-        T: TryIntoId,
+        T: TryToId,
     {
         let matches = self.matcher.matches(id)?;
         Ok(Candidates {

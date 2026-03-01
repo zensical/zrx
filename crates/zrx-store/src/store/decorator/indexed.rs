@@ -28,7 +28,7 @@
 use ahash::HashMap;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
-use std::fmt;
+use std::fmt::{self, Debug};
 use std::marker::PhantomData;
 use std::ops::{Index, Range};
 
@@ -731,11 +731,11 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl<K, V, S, C> fmt::Debug for Indexed<K, V, S, C>
+impl<K, V, S, C> Debug for Indexed<K, V, S, C>
 where
-    K: fmt::Debug + Key,
-    S: fmt::Debug + Store<K, V>,
-    C: fmt::Debug,
+    K: Debug + Key,
+    S: Debug + Store<K, V>,
+    C: Debug,
 {
     /// Formats the indexing decorator for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -25,7 +25,7 @@
 
 //! Location.
 
-use std::fmt::{self, Write};
+use std::fmt::{self, Display, Write};
 use std::panic;
 
 mod macros;
@@ -108,11 +108,11 @@ impl From<&panic::Location<'_>> for Location {
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Display for Location {
+impl Display for Location {
     /// Formats the location for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.uri.fmt(f)?;
+        Display::fmt(&self.uri, f)?;
         f.write_char(':')?;
-        self.range.fmt(f)
+        Display::fmt(&self.range, f)
     }
 }

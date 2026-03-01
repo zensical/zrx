@@ -60,22 +60,6 @@ pub struct Builder {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl Component {
-    /// Creates a component builder.
-    #[inline]
-    #[must_use]
-    pub fn builder() -> Builder {
-        Builder {
-            globset: GlobSetBuilder::new(),
-            mapping: Vec::new(),
-            matches: Matches::new(),
-            total: 0,
-        }
-    }
-}
-
-// ----------------------------------------------------------------------------
-
 impl Builder {
     /// Adds a pattern to the component.
     ///
@@ -118,6 +102,11 @@ impl Default for Builder {
     /// Creates a component builder.
     #[inline]
     fn default() -> Self {
-        Component::builder()
+        Builder {
+            globset: GlobSetBuilder::new(),
+            mapping: Vec::new(),
+            matches: Matches::new(),
+            total: 0,
+        }
     }
 }

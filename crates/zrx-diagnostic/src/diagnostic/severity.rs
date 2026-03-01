@@ -25,7 +25,7 @@
 
 //! Diagnostic severity.
 
-use std::fmt;
+use std::fmt::{self, Display};
 
 // ----------------------------------------------------------------------------
 // Enums
@@ -56,7 +56,7 @@ pub enum Severity {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl fmt::Display for Severity {
+impl Display for Severity {
     /// Formats the diagnostic severity for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

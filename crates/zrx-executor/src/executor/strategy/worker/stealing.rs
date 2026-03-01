@@ -26,11 +26,12 @@
 //! Work-stealing execution strategy.
 
 use crossbeam::deque::{Injector, Steal, Stealer, Worker};
+use std::fmt::{self, Debug};
 use std::iter::repeat_with;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread::{self, Builder, JoinHandle};
-use std::{cmp, fmt, panic};
+use std::{cmp, panic};
 
 use crate::executor::strategy::{Signal, Strategy};
 use crate::executor::task::Task;
@@ -264,11 +265,14 @@ impl Strategy for WorkStealing {
     /// ```
     fn submit(&self, task: Box<dyn Task>) -> Result {
         // As workers can steal tasks from the injector, we must manually track
-        // the number of pending tasks. For this reason, we increment the count
-        // by one to signal a new task was added, hand the task to the injector,
-        // and then wake any waiting worker threads.
-        self.injector.push(task);
+        // the number of pending tasks. Note that we must increment the counter
+        // before pushing the task to the injector, to ensure that the count is
+        // accurate at all times, even if the task is stolen immediately.
         self.pending.fetch_add(1, Ordering::Release);
+
+        // Submit the task to the injector and wake up waiting worker threads,
+        // so they can steal the task and execute it as soon as possible
+        self.injector.push(task);
         self.signal.notify();
 
         // No errors occurred
@@ -406,7 +410,7 @@ impl Drop for WorkStealing {
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Debug for WorkStealing {
+impl Debug for WorkStealing {
     /// Formats the execution strategy for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("WorkStealing")

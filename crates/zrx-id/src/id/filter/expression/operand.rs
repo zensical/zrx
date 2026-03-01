@@ -25,7 +25,7 @@
 
 //! Operand.
 
-use std::fmt;
+use std::fmt::{self, Debug};
 
 use super::Expression;
 
@@ -75,12 +75,12 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Debug for Operand {
+impl Debug for Operand {
     /// Formats the operand for debugging.
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Operand::Expression(expr) => expr.fmt(f),
-            Operand::Term(term) => term.fmt(f),
+            Operand::Expression(expr) => Debug::fmt(expr, f),
+            Operand::Term(term) => Debug::fmt(term, f),
         }
     }
 }

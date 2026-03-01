@@ -25,7 +25,7 @@
 
 //! Task.
 
-use std::fmt;
+use std::fmt::{self, Debug};
 
 use crate::scheduler::action::output::{IntoOutputs, Outputs};
 use crate::scheduler::action::Result;
@@ -137,7 +137,7 @@ impl<I> Task<I> {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I> fmt::Debug for Task<I> {
+impl<I> Debug for Task<I> {
     /// Formats the task for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let function = "Box<dyn TaskFn>";

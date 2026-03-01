@@ -100,12 +100,8 @@ where
     /// Returns the next item.
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(key) = self.ordering.next() {
-            return self.store.remove(&key).map(|value| (key, value));
-        }
-
-        // No more items to return
-        None
+        let opt = self.ordering.next();
+        opt.and_then(|key| self.store.remove(&key).map(|value| (key, value)))
     }
 
     /// Returns the bounds on the remaining length of the iterator.

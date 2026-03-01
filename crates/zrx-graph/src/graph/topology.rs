@@ -50,18 +50,12 @@ pub use distance::Distance;
 /// computed [`Distance`] matrix that allows to find the shortest path between
 /// two nodes in the graph, or determine whether they're reachable at all.
 ///
-/// The graph topology must be considered immutable, as [`Adjacency`] lists
-/// can't be mutated anyway, and represents the conversion of a graph into an
-/// executable form. In order to modify the graph, convert it back into a
-/// builder using the [`Graph::into_builder`][] method.
-///
 /// The [`Topology`] data type is just a wrapper around [`TopologyInner`] with
 /// an [`Rc`], so it can be shared between the [`Graph`][] and [`Traversal`][]
 /// structures without the need for lifetime annotations, which would render
 /// incremental and asynchronous traversals of graphs more complex.
 ///
 /// [`Graph`]: crate::graph::Graph
-/// [`Graph::into_builder`]: crate::graph::Graph::into_builder
 /// [`Traversal`]: crate::graph::traversal::Traversal
 #[derive(Clone, Debug)]
 pub struct Topology(Rc<TopologyInner>);

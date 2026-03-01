@@ -25,7 +25,7 @@
 
 //! Term.
 
-use std::fmt;
+use std::fmt::{self, Debug, Display};
 
 use crate::id::matcher::selector::Selector;
 use crate::id::Id;
@@ -70,22 +70,22 @@ impl From<Selector> for Term {
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Display for Term {
+impl Display for Term {
     /// Formats the term for display.
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Term::Id(id) => id.fmt(f),
-            Term::Selector(selector) => selector.fmt(f),
+            Term::Id(id) => Display::fmt(id, f),
+            Term::Selector(selector) => Display::fmt(selector, f),
         }
     }
 }
 
-impl fmt::Debug for Term {
+impl Debug for Term {
     /// Formats the term for debugging.
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Term::Id(id) => id.fmt(f),
-            Term::Selector(selector) => selector.fmt(f),
+            Term::Id(id) => Debug::fmt(id, f),
+            Term::Selector(selector) => Debug::fmt(selector, f),
         }
     }
 }

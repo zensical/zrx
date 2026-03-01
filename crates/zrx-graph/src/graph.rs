@@ -171,10 +171,8 @@ impl<T> Graph<T> {
 
     /// Creates an iterator over the graph.
     ///
-    /// This iterator emits the data `T` associated with each node. If you need
-    /// to iterate over the node indices of a graph, use [`Graph::topology`] to
-    /// obtain the [`Topology::incoming`] or [`Topology::outgoing`] adjacency
-    /// list, and iterate over those.
+    /// This iterator emits the node indices, which is exactly the same as
+    /// iterating over the adjacency list using `0..self.len()`.
     ///
     /// # Examples
     ///

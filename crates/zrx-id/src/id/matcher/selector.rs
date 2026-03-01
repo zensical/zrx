@@ -25,9 +25,10 @@
 
 //! Selector.
 
+use ahash::AHasher;
 use std::borrow::Cow;
-use std::fmt;
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::fmt::{self, Debug, Display};
+use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -40,7 +41,7 @@ mod convert;
 mod macros;
 
 pub use builder::Builder;
-pub use convert::TryIntoSelector;
+pub use convert::TryToSelector;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -225,7 +226,7 @@ impl FromStr for Selector {
 
         // Precompute hash for fast hashing
         let hash = {
-            let mut hasher = DefaultHasher::new();
+            let mut hasher = AHasher::default();
             format.hash(&mut hasher);
             hasher.finish()
         };
@@ -266,7 +267,7 @@ impl TryFrom<Id> for Selector {
 
         // Precompute hash for fast hashing
         let hash = {
-            let mut hasher = DefaultHasher::new();
+            let mut hasher = AHasher::default();
             format.hash(&mut hasher);
             hasher.finish()
         };
@@ -309,10 +310,10 @@ impl TryFrom<Term> for Selector {
 impl Hash for Selector {
     /// Hashes the selector.
     ///
-    /// Since selectors are also immutable, we can use a precomputed hash for
-    /// fast hashing. This is especially useful when selectors are used as
-    /// keys in hash maps or hash sets, where hashing is a frequent operation,
-    /// as the performance gains are significant.
+    /// Since selectors are immutable, we can use a precomputed hash for fast
+    /// hashing. This is especially useful when selectors are used as keys in
+    /// hash maps or hash sets, where hashing is a frequent operation, as the
+    /// performance gains are significant.
     #[inline]
     fn hash<H>(&self, state: &mut H)
     where
@@ -351,14 +352,14 @@ impl Eq for Selector {}
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Display for Selector {
+impl Display for Selector {
     /// Formats the selector for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.format.fmt(f)
+        Display::fmt(&self.format, f)
     }
 }
 
-impl fmt::Debug for Selector {
+impl Debug for Selector {
     /// Formats the selector for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Selector")

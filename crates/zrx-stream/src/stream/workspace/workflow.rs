@@ -27,6 +27,7 @@
 
 use std::any::Any;
 use std::cell::RefCell;
+use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
@@ -68,7 +69,7 @@ pub struct WorkflowInner<I> {
 
 impl<I> Workflow<I>
 where
-    I: std::fmt::Debug,
+    I: Debug,
 {
     /// Creates a new workflow.
     #[must_use]

@@ -35,9 +35,7 @@ mod operand;
 pub use builder::Builder;
 pub use convert::IntoExpression;
 pub use error::{Error, Result};
-pub use operand::Term;
-
-pub(super) use operand::{Operand, Operator};
+pub use operand::{Operand, Operator, Term};
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -110,7 +108,7 @@ impl IntoIterator for Expression {
     type Item = Operand;
     type IntoIter = IntoIter<Self::Item>;
 
-    /// Creates an iterator over the expression.
+    /// Creates a consuming iterator over the expression.
     ///
     /// # Examples
     ///

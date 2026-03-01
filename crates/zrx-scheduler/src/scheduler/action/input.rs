@@ -25,7 +25,7 @@
 
 //! Input.
 
-use std::fmt;
+use std::fmt::{self, Debug};
 
 use crate::scheduler::effect::{Item, Signal};
 use crate::scheduler::value::Values;
@@ -66,15 +66,15 @@ pub enum Input<'a, I> {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I> fmt::Debug for Input<'_, I>
+impl<I> Debug for Input<'_, I>
 where
-    I: fmt::Debug,
+    I: Debug,
 {
     /// Formats the input for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Input::Item(item) => item.fmt(f),
-            Input::Signal(signal) => signal.fmt(f),
+            Input::Item(item) => Debug::fmt(item, f),
+            Input::Signal(signal) => Debug::fmt(signal, f),
         }
     }
 }

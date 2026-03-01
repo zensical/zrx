@@ -27,7 +27,7 @@
 
 use std::str::FromStr;
 
-use super::convert::TryIntoId;
+use super::convert::TryToId;
 
 mod builder;
 mod component;
@@ -136,7 +136,7 @@ impl Matcher {
     #[inline]
     pub fn is_match<T>(&self, id: &T) -> Result<bool>
     where
-        T: TryIntoId,
+        T: TryToId,
     {
         self.matches(id).map(|matches| !matches.is_empty())
     }
@@ -180,9 +180,9 @@ impl Matcher {
     #[allow(clippy::missing_panics_doc)]
     pub fn matches<T>(&self, id: &T) -> Result<Matches>
     where
-        T: TryIntoId,
+        T: TryToId,
     {
-        let id = id.try_into_id()?;
+        let id = id.try_to_id()?;
 
         // Query all components from highest to lowest variability, and
         // intersect the resulting match sets, keeping only full matches

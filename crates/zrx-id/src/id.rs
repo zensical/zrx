@@ -25,10 +25,11 @@
 
 //! Identifier.
 
+use ahash::AHasher;
 use std::borrow::Cow;
 use std::cmp::Ordering;
-use std::fmt;
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::fmt::{self, Debug, Display};
+use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -45,7 +46,7 @@ pub mod matcher;
 pub mod uri;
 
 pub use builder::Builder;
-pub use convert::TryIntoId;
+pub use convert::TryToId;
 pub use error::{Error, Result};
 use format::Format;
 use uri::Uri;
@@ -318,7 +319,7 @@ impl FromStr for Id {
 
         // Precompute hash for fast hashing
         let hash = {
-            let mut hasher = DefaultHasher::new();
+            let mut hasher = AHasher::default();
             format.hash(&mut hasher);
             hasher.finish()
         };
@@ -333,10 +334,10 @@ impl FromStr for Id {
 impl Hash for Id {
     /// Hashes the identifier.
     ///
-    /// Since identifiers are immutable, we can use a precomputed hash for
-    /// fast hashing. This is especially useful when identifiers are used as
-    /// keys in hash maps or hash sets, where hashing is a frequent operation,
-    /// as the performance gains are significant with constant time.
+    /// Since identifiers are immutable, we can use a precomputed hash for fast
+    /// hashing. This is especially useful when identifiers are used as keys in
+    /// hash maps or hash sets, where hashing is a frequent operation, as the
+    /// performance gains are significant with constant time.
     #[inline]
     fn hash<H>(&self, state: &mut H)
     where
@@ -429,14 +430,14 @@ impl Ord for Id {
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Display for Id {
+impl Display for Id {
     /// Formats the identifier for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.format.fmt(f)
+        Display::fmt(&self.format, f)
     }
 }
 
-impl fmt::Debug for Id {
+impl Debug for Id {
     /// Formats the identifier for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Id")

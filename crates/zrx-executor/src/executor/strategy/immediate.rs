@@ -25,7 +25,7 @@
 
 //! Immediate execution strategy.
 
-use std::fmt;
+use std::fmt::{self, Debug};
 
 use crate::executor::strategy::Strategy;
 use crate::executor::task::Task;
@@ -218,13 +218,13 @@ impl Default for Immediate {
     /// ```
     #[inline]
     fn default() -> Self {
-        Self::new()
+        Self
     }
 }
 
 // ----------------------------------------------------------------------------
 
-impl fmt::Debug for Immediate {
+impl Debug for Immediate {
     /// Formats the execution strategy for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Immediate")
