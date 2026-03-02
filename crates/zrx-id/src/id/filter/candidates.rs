@@ -108,7 +108,7 @@ impl Filter {
             conditions: &self.conditions,
             negations: &self.negations,
             mapping: &self.mapping,
-            workset: Matches::default(),
+            workset: Matches::new(),
         })
     }
 }

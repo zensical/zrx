@@ -387,7 +387,7 @@ mod tests {
                 let matcher: Matcher = selector.parse()?;
                 assert_eq!(
                     matcher.matches(&"zri:file:::docs:index.md:")?,
-                    Matches::default()
+                    Matches::new()
                 );
             }
             Ok(())

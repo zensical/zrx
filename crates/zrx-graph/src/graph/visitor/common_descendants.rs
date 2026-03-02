@@ -94,7 +94,7 @@ impl<T> Graph<T> {
 
         // Compute common descendants by ensuring that each node in the given
         // set of nodes is reachable from the current node being considered
-        let mut descendants = BTreeSet::default();
+        let mut descendants = BTreeSet::new();
         for descendant in self {
             if nodes.iter().all(|&node| {
                 node != descendant && distance[node][descendant] != u8::MAX

@@ -101,7 +101,7 @@ impl<T> Graph<T> {
 
         // Compute common ancestors by ensuring that each node in the given set
         // of nodes is reachable from the current node being considered
-        let mut ancestors = BTreeSet::default();
+        let mut ancestors = BTreeSet::new();
         for ancestor in self {
             if nodes.iter().all(|&node| {
                 node != ancestor && distance[ancestor][node] != u8::MAX

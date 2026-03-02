@@ -65,7 +65,7 @@ impl Matches {
     /// ```
     #[must_use]
     pub fn new() -> Self {
-        Self::default()
+        Self::with_capacity(1)
     }
 
     /// Creates a match set with the given capacity.
@@ -308,6 +308,6 @@ impl Default for Matches {
     /// let matches = Matches::default();
     /// ```
     fn default() -> Self {
-        Self::with_capacity(1)
+        Self::new()
     }
 }
