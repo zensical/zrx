@@ -64,10 +64,7 @@ impl<const N: usize> Format<N> {
     #[inline]
     #[must_use]
     pub fn builder<'a>() -> Builder<'a, N> {
-        Builder {
-            source: None,
-            values: [const { None }; N],
-        }
+        Builder::default()
     }
 
     /// Creates a formatted string builder from the formatted string.
@@ -289,6 +286,9 @@ impl<const N: usize> Default for Builder<'_, N> {
     /// ```
     #[inline]
     fn default() -> Self {
-        Format::builder()
+        Self {
+            source: None,
+            values: [const { None }; N],
+        }
     }
 }
