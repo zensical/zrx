@@ -29,12 +29,12 @@ use std::ops::{Index, IndexMut, Range};
 
 mod builder;
 mod error;
+pub mod iter;
 mod macros;
 pub mod operator;
 mod property;
 pub mod topology;
 pub mod traversal;
-pub mod visitor;
 
 pub use builder::Builder;
 pub use error::{Error, Result};

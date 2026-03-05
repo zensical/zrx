@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Graph visitors.
+//! Graph iterators.
 
 mod ancestors;
 mod common_ancestors;
