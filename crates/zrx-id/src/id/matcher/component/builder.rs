@@ -81,8 +81,10 @@ impl Builder {
     ///
     /// # Errors
     ///
-    /// This method returns an error if the [`GlobSet`][] that is associated
-    /// with the component cannot be successfully built.
+    /// This method returns [`Error::Glob`][] if the [`GlobSet`][] associated
+    /// with a component cannot be successfully built.
+    ///
+    /// [`Error::Glob`]: crate::id::matcher::error::Error::Glob
     ///
     /// [`GlobSet`]: globset::GlobSet
     pub fn build(self) -> Result<Component> {
