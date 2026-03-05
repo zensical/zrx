@@ -26,3 +26,4 @@
 //! Graph operators.
 
 mod map;
+mod with;
