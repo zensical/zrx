@@ -106,8 +106,8 @@ impl Default for Builder {
     fn default() -> Self {
         Builder {
             globset: GlobSetBuilder::new(),
-            mapping: Vec::new(),
-            matches: Matches::new(),
+            mapping: Vec::default(),
+            matches: Matches::default(),
             total: 0,
         }
     }
