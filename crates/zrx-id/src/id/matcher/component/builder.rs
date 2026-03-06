@@ -81,8 +81,7 @@ impl Builder {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Glob`][] if the [`GlobSet`][] associated
-    /// with a component cannot be successfully built.
+    /// Returns [`Error::Glob`][] if the [`GlobSet`][] can't be built.
     ///
     /// [`Error::Glob`]: crate::id::matcher::error::Error::Glob
     ///

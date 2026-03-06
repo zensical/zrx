@@ -164,8 +164,7 @@ impl Builder {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Matcher`][] if the underlying matcher
-    /// cannot be successfully built.
+    /// Returns [`Error::Matcher`][] if the underlying matcher can't be built.
     ///
     /// [`Error::Matcher`]: crate::id::filter::Error::Matcher
     ///

@@ -348,7 +348,7 @@ impl<'a> Builder<'a> {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Format`][] if the format is invalid.
+    /// Returns [`Error::Format`][] if the format is invalid.
     ///
     /// [`Error::Format`]: crate::id::Error::Format
     ///

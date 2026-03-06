@@ -201,8 +201,8 @@ impl FromStr for Selector {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Prefix`] if the prefix isn't `zrs`. Also,
-    /// low-level format errors are returned as part of [`Error::Format`].
+    /// Returns [`Error::Prefix`] if the prefix isn't `zrs`. Low-level format
+    /// errors are returned as part of [`Error::Format`].
     ///
     /// # Examples
     ///

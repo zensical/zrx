@@ -347,9 +347,9 @@ impl<'a> Builder<'a> {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Component`] if the `provider`, `context`
-    /// or `location` components are not set. Additionally, low-level format
-    /// errors are returned as part of [`Error::Format`].
+    /// Returns [`Error::Component`] if any of the `provider`, `context` or
+    /// `location` components are not set. In case of low-level format errors,
+    /// [`Error::Format`] is returned.
     ///
     /// # Examples
     ///

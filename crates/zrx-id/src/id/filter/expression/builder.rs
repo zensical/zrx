@@ -51,7 +51,7 @@ impl Expression {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Id`][] if any of the operands is invalid.
+    /// Returns [`Error::Id`][] if any of the operands are invalid.
     ///
     /// [`Error::Id`]: crate::id::filter::expression::Error::Id
     ///
@@ -86,7 +86,7 @@ impl Expression {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Id`][] if any of the operands is invalid.
+    /// Returns [`Error::Id`][] if any of the operands are invalid.
     ///
     /// [`Error::Id`]: crate::id::filter::expression::Error::Id
     ///
@@ -121,7 +121,7 @@ impl Expression {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Id`][] if any of the operands is invalid.
+    /// Returns [`Error::Id`][] if any of the operands are invalid.
     ///
     /// [`Error::Id`]: crate::id::filter::expression::Error::Id
     ///
@@ -163,7 +163,7 @@ impl Builder {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Id`][] if the operand is invalid.
+    /// Returns [`Error::Id`][] if any of the operands are invalid.
     ///
     /// [`Error::Id`]: crate::id::filter::expression::Error::Id
     ///
