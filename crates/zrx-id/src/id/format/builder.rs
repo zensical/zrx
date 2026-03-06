@@ -105,7 +105,7 @@ impl<const N: usize> Format<N> {
 // ----------------------------------------------------------------------------
 
 impl<'a, const N: usize> Builder<'a, N> {
-    /// Updates the value at the index.
+    /// Sets the value at the index.
     ///
     /// # Panics
     ///
@@ -130,7 +130,7 @@ impl<'a, const N: usize> Builder<'a, N> {
         self
     }
 
-    /// Updates the value at the index.
+    /// Sets the value at the index.
     ///
     /// This method accepts all types that can be converted into a reference to
     /// a string slice, most prominently [`str`] and [`String`].

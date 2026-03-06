@@ -83,8 +83,7 @@ pub use convert::TryToSelector;
 /// use zrx_id::Selector;
 ///
 /// // Create selector builder
-/// let mut builder = Selector::builder();
-/// builder.set_location("**/*.md");
+/// let builder = Selector::builder().location("**/*.md");
 ///
 /// // Create selector from builder
 /// let selector = builder.build()?;

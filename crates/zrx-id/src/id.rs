@@ -93,10 +93,10 @@ use uri::Uri;
 /// use zrx_id::Id;
 ///
 /// // Create identifier builder
-/// let mut builder = Id::builder();
-/// builder.set_provider("file");
-/// builder.set_context("docs");
-/// builder.set_location("index.md");
+/// let builder = Id::builder()
+///     .provider("file")
+///     .context("docs")
+///     .location("index.md");
 ///
 /// // Create identifier from builder
 /// let id = builder.build()?;
