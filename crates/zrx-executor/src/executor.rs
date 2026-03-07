@@ -372,7 +372,7 @@ where
         self.strategy.num_tasks_pending()
     }
 
-    /// Returns the capacity, if bounded.
+    /// Returns the capacity.
     ///
     /// This method returns the maximum number of tasks that can be submitted
     /// at once, which can be used by the strategy for applying backpressure.
