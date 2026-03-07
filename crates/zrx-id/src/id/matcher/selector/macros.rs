@@ -41,7 +41,7 @@
 ///
 /// # Examples
 ///
-/// Create selector
+/// Create selector:
 ///
 /// ```
 /// # use std::error::Error;
@@ -55,7 +55,7 @@
 /// # }
 /// ```
 ///
-/// Create selector from existing selector
+/// Create selector from existing selector:
 ///
 /// ```
 /// # use std::error::Error;

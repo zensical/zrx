@@ -41,7 +41,7 @@
 ///
 /// # Examples
 ///
-/// Create identifier
+/// Create identifier:
 ///
 /// ```
 /// # use std::error::Error;
@@ -55,7 +55,7 @@
 /// # }
 /// ```
 ///
-/// Create identifier from existing identifier
+/// Create identifier from existing identifier:
 ///
 /// ```
 /// # use std::error::Error;
