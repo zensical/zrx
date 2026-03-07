@@ -72,6 +72,6 @@ pub trait Strategy: Debug {
     /// Returns the number of pending tasks.
     fn num_tasks_pending(&self) -> usize;
 
-    /// Returns the capacity, if bounded.
-    fn capacity(&self) -> Option<usize>;
+    /// Returns the capacity.
+    fn capacity(&self) -> usize;
 }

@@ -66,22 +66,20 @@ use task::Task;
 ///
 /// # Examples
 ///
-/// Create an executor spawning 1,000 tasks using all CPUs - 1:
+/// Create an executor spawning 8 tasks using all CPUs - 1:
 ///
 /// ```
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
 /// use std::thread;
 /// use std::time::Duration;
-/// use zrx_executor::strategy::WorkStealing;
 /// use zrx_executor::Executor;
 ///
-/// // Create executor with strategy
-/// let strategy = WorkStealing::default();
-/// let executor = Executor::new(strategy);
+/// // Create executor
+/// let executor = Executor::default();
 ///
-/// // Create 1,000 tasks taking 20ms each
-/// for _ in 0..1000 {
+/// // Create tasks up to the executor's capacity
+/// for _ in 0..executor.capacity() {
 ///     executor.submit(|| {
 ///         thread::sleep(Duration::from_millis(20));
 ///     })?;
@@ -229,15 +227,13 @@ where
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use std::thread;
     /// use std::time::Duration;
-    /// use zrx_executor::strategy::WorkStealing;
     /// use zrx_executor::Executor;
     ///
-    /// // Create executor with strategy
-    /// let strategy = WorkStealing::default();
-    /// let executor = Executor::new(strategy);
+    /// // Create executor
+    /// let executor = Executor::default();
     ///
-    /// // Create 1,000 tasks taking 20ms each
-    /// for _ in 0..1000 {
+    /// // Create tasks up to the executor's capacity
+    /// for _ in 0..executor.capacity() {
     ///     executor.submit(|| {
     ///         thread::sleep(Duration::from_millis(20));
     ///     })?;
@@ -318,8 +314,7 @@ where
     /// ```
     #[inline]
     pub fn is_saturated(&self) -> bool {
-        self.capacity()
-            .is_some_and(|capacity| self.num_tasks_pending() >= capacity)
+        self.num_tasks_pending() >= self.capacity()
     }
 
     /// Returns the number of workers.
@@ -389,10 +384,10 @@ where
     ///
     /// // Get maximum number of tasks
     /// let executor = Executor::default();
-    /// assert!(executor.capacity() >= Some(executor.num_workers()));
+    /// assert!(executor.capacity() >= executor.num_workers());
     /// ```
     #[inline]
-    pub fn capacity(&self) -> Option<usize> {
+    pub fn capacity(&self) -> usize {
         self.strategy.capacity()
     }
 }
