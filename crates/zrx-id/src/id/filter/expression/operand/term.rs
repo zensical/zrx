@@ -53,7 +53,7 @@ pub enum Term {
 // ----------------------------------------------------------------------------
 
 impl From<Id> for Term {
-    /// Creates a term from the given identifier.
+    /// Creates a term from an identifier.
     #[inline]
     fn from(id: Id) -> Self {
         Term::Id(id)
@@ -61,7 +61,7 @@ impl From<Id> for Term {
 }
 
 impl From<Selector> for Term {
-    /// Creates a term from the given selector.
+    /// Creates a term from a selector.
     #[inline]
     fn from(selector: Selector) -> Self {
         Term::Selector(selector)

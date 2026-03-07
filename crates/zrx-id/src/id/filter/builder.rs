@@ -31,7 +31,7 @@ use crate::id::matcher::Matcher;
 
 use super::condition::Condition;
 use super::error::Result;
-use super::expression::{IntoExpression, Operator, Term};
+use super::expression::{Expression, Operator, Term};
 use super::Filter;
 
 // ----------------------------------------------------------------------------
@@ -128,7 +128,7 @@ impl Builder {
     #[inline]
     pub fn insert<T>(&mut self, expr: T) -> usize
     where
-        T: IntoExpression,
+        T: Into<Expression>,
     {
         let builder = Condition::builder(expr);
         self.conditions.insert(builder.optimize().build())

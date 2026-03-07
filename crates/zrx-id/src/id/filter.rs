@@ -40,7 +40,7 @@ pub use builder::Builder;
 pub use candidates::Candidates;
 use condition::Condition;
 pub use error::{Error, Result};
-pub use expression::{Expression, IntoExpression, Term};
+pub use expression::{Expression, Term};
 pub use terms::Terms;
 
 // ----------------------------------------------------------------------------
