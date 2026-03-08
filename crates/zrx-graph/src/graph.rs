@@ -213,6 +213,16 @@ impl<T> Graph<T> {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
+impl<T> AsRef<[T]> for Graph<T> {
+    /// Returns the graph data as a slice.
+    #[inline]
+    fn as_ref(&self) -> &[T] {
+        &self.data
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 impl<T> Index<usize> for Graph<T> {
     type Output = T;
 
