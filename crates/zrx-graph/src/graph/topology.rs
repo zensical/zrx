@@ -81,8 +81,9 @@ impl Topology {
     /// This method constructs a topology from a graph builder, one of the key
     /// components of an executable [`Graph`][]. Thus, it's usually not needed
     /// to create a topology manually, as it's automatically created when the
-    /// graph is built using the [`Builder::build`] method.
+    /// graph is built using the [`Builder::build`][] method.
     ///
+    /// [`Builder::build`]: crate::graph::Builder::build
     /// [`Graph`]: crate::graph::Graph
     ///
     /// # Examples
