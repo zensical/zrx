@@ -78,8 +78,8 @@ struct Inner {
 impl Topology {
     /// Creates a topology of the given graph.
     ///
-    /// This method constructs a topology from a graph builder, one of the key
-    /// components of an executable [`Graph`][]. Thus, it's usually not needed
+    /// This method constructs a topology from a graph's nodes and edges, and is
+    /// the key component of an executable [`Graph`][]. It's usually not needed
     /// to create a topology manually, as it's automatically created when the
     /// graph is built using the [`Builder::build`][] method.
     ///
