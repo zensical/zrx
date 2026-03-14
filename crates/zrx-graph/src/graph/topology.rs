@@ -50,21 +50,19 @@ pub use distance::Distance;
 /// computed [`Distance`] matrix that allows to find the shortest path between
 /// two nodes in the graph, or determine whether they're reachable at all.
 ///
-/// The [`Topology`] data type is just a wrapper around [`TopologyInner`] with
-/// an [`Rc`], so it can be shared between the [`Graph`][] and [`Traversal`][]
-/// structures without the need for lifetime annotations, which would render
-/// incremental and asynchronous traversals of graphs more complex.
-///
 /// [`Graph`]: crate::graph::Graph
 /// [`Traversal`]: crate::graph::traversal::Traversal
 #[derive(Clone, Debug)]
-pub struct Topology(Rc<TopologyInner>);
+pub struct Topology {
+    /// Inner state.
+    inner: Rc<Inner>,
+}
 
 // ----------------------------------------------------------------------------
 
-/// Topology inner state.
+/// Inner state.
 #[derive(Debug)]
-struct TopologyInner {
+struct Inner {
     /// Outgoing edges.
     outgoing: Adjacency,
     /// Incoming edges.
@@ -111,11 +109,13 @@ impl Topology {
     /// ```
     #[must_use]
     pub fn new(nodes: usize, edges: &[Edge]) -> Self {
-        Self(Rc::new(TopologyInner {
-            outgoing: Adjacency::outgoing(nodes, edges),
-            incoming: Adjacency::incoming(nodes, edges),
-            distance: OnceCell::new(),
-        }))
+        Self {
+            inner: Rc::new(Inner {
+                outgoing: Adjacency::outgoing(nodes, edges),
+                incoming: Adjacency::incoming(nodes, edges),
+                distance: OnceCell::new(),
+            }),
+        }
     }
 }
 
@@ -124,22 +124,22 @@ impl Topology {
     /// Returns a reference to the outgoing edges.
     #[inline]
     pub fn outgoing(&self) -> &Adjacency {
-        &self.0.outgoing
+        &self.inner.outgoing
     }
 
     /// Returns a reference to the incoming edges.
     #[inline]
     pub fn incoming(&self) -> &Adjacency {
-        &self.0.incoming
+        &self.inner.incoming
     }
 
     /// Returns a reference to the distance matrix.
     #[inline]
     pub fn distance(&self) -> &Distance {
-        self.0.distance.get_or_init(|| {
+        self.inner.distance.get_or_init(|| {
             // Compute distance matrix on first access, since this incurs cost
             // of O(n³) because of the usage of the Floyd-Warshall algorithm.
-            Distance::new(&self.0.outgoing)
+            Distance::new(&self.inner.outgoing)
         })
     }
 }
