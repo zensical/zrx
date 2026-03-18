@@ -23,31 +23,29 @@
 
 // ----------------------------------------------------------------------------
 
-//! Graph error.
+//! Topological traversal error.
 
 use std::result;
 use thiserror::Error;
-
-use super::traversal;
 
 // ----------------------------------------------------------------------------
 // Enums
 // ----------------------------------------------------------------------------
 
-/// Graph error.
+/// Topological traversal error.
 #[derive(Debug, Error)]
 pub enum Error {
-    /// Traversal error.
-    #[error(transparent)]
-    Traversal(#[from] traversal::Error),
-    /// Node not found.
-    #[error("node not found: {0}")]
-    NotFound(usize),
+    /// Traversal completed redundantly.
+    #[error("traversal completed redundantly: {0}")]
+    Redundant(usize),
+    /// Traversal restarted.
+    #[error("traversal restarted")]
+    Restarted,
 }
 
 // ----------------------------------------------------------------------------
 // Type aliases
 // ----------------------------------------------------------------------------
 
-/// Graph result.
+/// Topological traversal result.
 pub type Result<T = ()> = result::Result<T, Error>;

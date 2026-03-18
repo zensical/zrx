@@ -27,11 +27,12 @@
 
 use std::collections::VecDeque;
 
-use super::error::{Error, Result};
 use super::topology::Topology;
 
+mod error;
 mod into_iter;
 
+pub use error::{Error, Result};
 pub use into_iter::IntoIter;
 
 // ----------------------------------------------------------------------------
@@ -230,7 +231,15 @@ impl Traversal {
     /// ```
     pub fn complete(&mut self, node: usize) -> Result {
         if self.dependencies[node] == u8::MAX {
-            return Err(Error::Found(node));
+            return Err(Error::Redundant(node));
+        }
+
+        // When the dependency count isn't zero, the traversal was merged with
+        // another traversal and restarted at a node occurring before the given
+        // node. In this case, we return an error, and indicate to the caller
+        // that parts of the traversal have to be completed again.
+        if self.dependencies[node] != 0 {
+            return Err(Error::Restarted);
         }
 
         // Mark node as visited - we can just use the maximum value of `u8` as
