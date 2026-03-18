@@ -78,9 +78,7 @@ impl Traversal {
     /// The given initial nodes are immediately marked as visitable, and thus
     /// returned by [`Traversal::take`], so the caller must make sure they can
     /// be processed. Note that the canonical way to create a [`Traversal`] is
-    /// to invoke the [`Graph::traverse`][] method.
-    ///
-    /// [`Graph::traverse`]: crate::graph::Graph::traverse
+    /// to invoke the [`Graph::traverse`] method.
     ///
     /// # Examples
     ///
@@ -200,10 +198,9 @@ impl Traversal {
     /// Panics if a node does not exist, as this indicates that there's a bug
     /// in the code that creates or uses the traversal. While the [`Builder`][]
     /// is designed to be fallible to ensure the structure is valid, methods
-    /// that operate on [`Graph`][] panic on violated invariants.
+    /// that operate on [`Graph`] panic on violated invariants.
     ///
     /// [`Builder`]: crate::graph::Builder
-    /// [`Graph`]: crate::graph::Graph
     ///
     /// # Examples
     ///
@@ -350,7 +347,9 @@ impl Traversal {
             let o = other.dependencies[node];
 
             // If the node has been visited in either traversal, and is not
-            // part of the common descendants, mark it as visited
+            // part of the common descendants, mark it as visited as well in
+            // the combined traversal, since we don't need to revisit nodes
+            // that are ancestors of the common descendants
             if (p == u8::MAX || o == u8::MAX) && !common.contains(&node) {
                 self.complete(node)?;
             } else {
