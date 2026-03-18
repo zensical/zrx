@@ -103,9 +103,8 @@ impl<T> Graph<T> {
         // of nodes is reachable from the current node being considered
         let mut ancestors = BTreeSet::new();
         for ancestor in self {
-            if nodes.iter().all(|&node| {
-                node != ancestor && distance[ancestor][node] != u8::MAX
-            }) {
+            let mut iter = nodes.iter();
+            if iter.all(|&node| distance[ancestor][node] != u8::MAX) {
                 ancestors.insert(ancestor);
             }
         }
@@ -131,14 +130,15 @@ impl Iterator for CommonAncestors<'_> {
             return None;
         }
 
-        // Compute the next layer of common ancestors - all nodes that are not
+        // Compute the next layer of common ancestors - all nodes that aren't
         // ancestors of any other remaining common ancestor. This process is
         // commonly referred to as peeling, where we iteratively remove layers
         // from the set of common ancestors.
         let mut layer = Vec::new();
         for &ancestor in &self.ancestors {
-            if !self.ancestors.iter().any(|&node| {
-                ancestor != node && self.distance[ancestor][node] != u8::MAX
+            let mut iter = self.ancestors.iter();
+            if !iter.any(|&node| {
+                node != ancestor && self.distance[ancestor][node] != u8::MAX
             }) {
                 layer.push(ancestor);
             }

@@ -96,9 +96,8 @@ impl<T> Graph<T> {
         // set of nodes is reachable from the current node being considered
         let mut descendants = BTreeSet::new();
         for descendant in self {
-            if nodes.iter().all(|&node| {
-                node != descendant && distance[node][descendant] != u8::MAX
-            }) {
+            let mut iter = nodes.iter();
+            if iter.all(|&node| distance[node][descendant] != u8::MAX) {
                 descendants.insert(descendant);
             }
         }
@@ -124,14 +123,15 @@ impl Iterator for CommonDescendants<'_> {
             return None;
         }
 
-        // Compute the next layer of common descendants - all nodes that are not
+        // Compute the next layer of common descendants - all nodes that aren't
         // descendants of any other remaining common descendant. This process is
         // commonly referred to as peeling, where we iteratively remove layers
         // from the set of common descendants.
         let mut layer = Vec::new();
         for &descendant in &self.descendants {
-            if !self.descendants.iter().any(|&node| {
-                descendant != node && self.distance[node][descendant] != u8::MAX
+            let mut iter = self.descendants.iter();
+            if !iter.any(|&node| {
+                node != descendant && self.distance[node][descendant] != u8::MAX
             }) {
                 layer.push(descendant);
             }
