@@ -29,12 +29,12 @@ use std::ops::{Index, IndexMut, Range};
 
 mod builder;
 mod error;
+pub mod iter;
 mod macros;
 pub mod operator;
 mod property;
 pub mod topology;
 pub mod traversal;
-pub mod visitor;
 
 pub use builder::Builder;
 pub use error::{Error, Result};
@@ -101,27 +101,6 @@ pub struct Graph<T> {
 // ----------------------------------------------------------------------------
 
 impl<T> Graph<T> {
-    /// Creates an empty graph.
-    ///
-    /// While an empty graph is not very useful, it's sometimes practical as a
-    /// placeholder in documentation or examples, where a graph is expected.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_graph::Graph;
-    ///
-    /// // Create empty graph
-    /// let graph = Graph::empty();
-    /// # let _: Graph<()> = graph;
-    /// assert!(graph.is_empty());
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn empty() -> Self {
-        Graph::builder().build()
-    }
-
     /// Creates a topogical traversal starting from the given initial nodes.
     ///
     /// This method creates a topological traversal of the graph, which allows
@@ -232,6 +211,16 @@ impl<T> Graph<T> {
 
 // ----------------------------------------------------------------------------
 // Trait implementations
+// ----------------------------------------------------------------------------
+
+impl<T> AsRef<[T]> for Graph<T> {
+    /// Returns the graph data as a slice.
+    #[inline]
+    fn as_ref(&self) -> &[T] {
+        &self.data
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 impl<T> Index<usize> for Graph<T> {
@@ -393,5 +382,29 @@ impl<T> IntoIterator for &Graph<T> {
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl<T> Default for Graph<T> {
+    /// Creates an empty graph.
+    ///
+    /// While an empty graph is not very useful, it's sometimes practical as a
+    /// placeholder in documentation, and in types implementing [`Default`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_graph::Graph;
+    ///
+    /// // Create empty graph
+    /// let graph = Graph::default();
+    /// # let _: Graph<()> = graph;
+    /// assert!(graph.is_empty());
+    /// ```
+    #[inline]
+    fn default() -> Self {
+        Graph::builder().build()
     }
 }

@@ -23,34 +23,28 @@
 
 // ----------------------------------------------------------------------------
 
-//! Consuming iterator implementation for [`Traversal`].
+//! With operator.
 
-use super::Traversal;
+use crate::graph::Graph;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Consuming iterator for [`Traversal`].
-#[derive(Debug)]
-pub struct IntoIter {
-    /// Traversal.
-    traversal: Traversal,
+/// Adjacent nodes.
+pub struct Adjacent<'a> {
+    /// Incoming edges.
+    pub incoming: &'a [usize],
+    /// Outgoing edges.
+    pub outgoing: &'a [usize],
 }
 
 // ----------------------------------------------------------------------------
-// Trait implementations
+// Implementations
 // ----------------------------------------------------------------------------
 
-impl IntoIterator for Traversal {
-    type Item = usize;
-    type IntoIter = IntoIter;
-
-    /// Creates a consuming iterator over the topological traversal.
-    ///
-    /// This consumes the traversal and produces an iterator that automatically
-    /// completes each node after emitting it, allowing for convenient use in
-    /// for loops and iterator chains.
+impl<T> Graph<T> {
+    /// Retrieve a reference to a node's data.
     ///
     /// # Examples
     ///
@@ -69,38 +63,74 @@ impl IntoIterator for Traversal {
     /// builder.add_edge(a, b)?;
     /// builder.add_edge(b, c)?;
     ///
-    /// // Create graph from builder
+    /// // Create graph from builder and retrieve nodes
     /// let graph = builder.build();
-    ///
-    /// // Create topological traversal
-    /// for node in graph.traverse([a]) {
-    ///     println!("{node:?}");
+    /// for node in &graph {
+    ///     graph.with(node, |name, _| {
+    ///         println!("{name:?}");
+    ///     });
     /// }
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        IntoIter { traversal: self }
-    }
-}
-
-// ----------------------------------------------------------------------------
-
-impl Iterator for IntoIter {
-    type Item = usize;
-
-    /// Returns the next node.
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        let node = self.traversal.take()?;
-        self.traversal.complete(node).expect("invariant");
-        Some(node)
+    pub fn with<F, R>(&self, node: usize, f: F) -> R
+    where
+        F: FnOnce(&T, Adjacent) -> R,
+    {
+        let incoming = self.topology.incoming();
+        let outgoing = self.topology.outgoing();
+        f(
+            &self.data[node],
+            Adjacent {
+                incoming: &incoming[node],
+                outgoing: &outgoing[node],
+            },
+        )
     }
 
-    /// Returns the bounds on the remaining length of the traversal.
+    /// Retrieve a mutable reference to a node's data.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_graph::Graph;
+    ///
+    /// // Create graph builder and add nodes
+    /// let mut builder = Graph::builder();
+    /// let a = builder.add_node("a");
+    /// let b = builder.add_node("b");
+    /// let c = builder.add_node("c");
+    ///
+    /// // Create edges between nodes
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
+    ///
+    /// // Create graph from builder and retrieve node
+    /// let mut graph = builder.build();
+    /// for node in &graph {
+    ///     graph.with_mut(node, |name, _| {
+    ///         println!("{name:?}");
+    ///     });
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.traversal.len(), None)
+    pub fn with_mut<F, R>(&mut self, node: usize, f: F) -> R
+    where
+        F: FnOnce(&mut T, Adjacent) -> R,
+    {
+        let incoming = self.topology.incoming();
+        let outgoing = self.topology.outgoing();
+        f(
+            &mut self.data[node],
+            Adjacent {
+                incoming: &incoming[node],
+                outgoing: &outgoing[node],
+            },
+        )
     }
 }

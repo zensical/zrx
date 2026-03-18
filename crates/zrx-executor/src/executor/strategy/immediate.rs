@@ -186,7 +186,7 @@ impl Strategy for Immediate {
         0
     }
 
-    /// Returns the capacity, if bounded.
+    /// Returns the capacity.
     ///
     /// # Examples
     ///
@@ -195,11 +195,11 @@ impl Strategy for Immediate {
     ///
     /// // Get capacity
     /// let strategy = Immediate::default();
-    /// assert_eq!(strategy.capacity(), None);
+    /// assert_eq!(strategy.capacity(), 0);
     /// ```
     #[inline]
-    fn capacity(&self) -> Option<usize> {
-        None
+    fn capacity(&self) -> usize {
+        0
     }
 }
 

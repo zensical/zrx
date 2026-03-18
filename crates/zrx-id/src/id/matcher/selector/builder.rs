@@ -59,7 +59,7 @@ impl Selector {
     /// use zrx_id::Selector;
     ///
     /// // Create selector builder
-    /// let mut builder = Selector::builder();
+    /// let builder = Selector::builder();
     /// ```
     #[inline]
     #[must_use]
@@ -83,8 +83,7 @@ impl Selector {
     /// let selector: Selector = "zrs:::::**/*.md:".parse()?;
     ///
     /// // Create selector builder
-    /// let mut builder = selector.to_builder();
-    /// builder.set_location("**/index.md");
+    /// let builder = selector.to_builder().location("**/index.md");
     ///
     /// // Create selector from builder
     /// let selector = builder.build()?;
@@ -104,7 +103,7 @@ impl Selector {
 // ----------------------------------------------------------------------------
 
 impl<'a> Builder<'a> {
-    /// Updates the `provider` component.
+    /// Sets the `provider` component.
     ///
     /// # Examples
     ///
@@ -112,131 +111,11 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Selector;
     ///
     /// // Create selector builder and set provider
-    /// let mut builder = Selector::builder().with_provider("git");
+    /// let builder = Selector::builder().provider("git");
     /// ```
     #[inline]
     #[must_use]
-    pub fn with_provider<S>(mut self, value: S) -> Self
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        self.set_provider(value);
-        self
-    }
-
-    /// Updates the `resource` component.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_id::Selector;
-    ///
-    /// // Create selector builder and set resource
-    /// let mut builder = Selector::builder().with_resource("master");
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn with_resource<S>(mut self, value: S) -> Self
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        self.set_resource(value);
-        self
-    }
-
-    /// Updates the `variant` component.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_id::Selector;
-    ///
-    /// // Create selector builder and set variant
-    /// let mut builder = Selector::builder().with_variant("en");
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn with_variant<S>(mut self, value: S) -> Self
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        self.set_variant(value);
-        self
-    }
-
-    /// Updates the `context` component.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_id::Selector;
-    ///
-    /// // Create selector builder and set context
-    /// let mut builder = Selector::builder().with_context("docs");
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn with_context<S>(mut self, value: S) -> Self
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        self.set_context(value);
-        self
-    }
-
-    /// Updates the `location` component.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_id::Selector;
-    ///
-    /// // Create selector builder and set location
-    /// let mut builder = Selector::builder().with_location("docs");
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn with_location<S>(mut self, value: S) -> Self
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        self.set_location(value);
-        self
-    }
-
-    /// Updates the `fragment` component.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_id::Selector;
-    ///
-    /// // Create selector builder and set fragment
-    /// let mut builder = Selector::builder().with_fragment("anchor");
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn with_fragment<S>(mut self, value: S) -> Self
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        self.set_fragment(value);
-        self
-    }
-
-    /// Updates the `provider` component.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_id::Selector;
-    ///
-    /// // Create selector builder and set provider
-    /// let mut builder = Selector::builder();
-    /// builder.set_provider("git");
-    /// ```
-    #[inline]
-    pub fn set_provider<S>(&mut self, value: S) -> &mut Self
+    pub fn provider<S>(mut self, value: S) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -244,7 +123,7 @@ impl<'a> Builder<'a> {
         self
     }
 
-    /// Updates the `resource` component.
+    /// Sets the `resource` component.
     ///
     /// # Examples
     ///
@@ -252,11 +131,11 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Selector;
     ///
     /// // Create selector builder and set resource
-    /// let mut builder = Selector::builder();
-    /// builder.set_resource("master");
+    /// let builder = Selector::builder().resource("master");
     /// ```
     #[inline]
-    pub fn set_resource<S>(&mut self, value: S) -> &mut Self
+    #[must_use]
+    pub fn resource<S>(mut self, value: S) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -264,7 +143,7 @@ impl<'a> Builder<'a> {
         self
     }
 
-    /// Updates the `variant` component.
+    /// Sets the `variant` component.
     ///
     /// # Examples
     ///
@@ -272,11 +151,11 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Selector;
     ///
     /// // Create selector builder and set variant
-    /// let mut builder = Selector::builder();
-    /// builder.set_variant("en");
+    /// let builder = Selector::builder().variant("en");
     /// ```
     #[inline]
-    pub fn set_variant<S>(&mut self, value: S) -> &mut Self
+    #[must_use]
+    pub fn variant<S>(mut self, value: S) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -284,7 +163,7 @@ impl<'a> Builder<'a> {
         self
     }
 
-    /// Updates the `context` component.
+    /// Sets the `context` component.
     ///
     /// # Examples
     ///
@@ -292,11 +171,11 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Selector;
     ///
     /// // Create selector builder and set context
-    /// let mut builder = Selector::builder();
-    /// builder.set_context("docs");
+    /// let builder = Selector::builder().context("docs");
     /// ```
     #[inline]
-    pub fn set_context<S>(&mut self, value: S) -> &mut Self
+    #[must_use]
+    pub fn context<S>(mut self, value: S) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -304,7 +183,7 @@ impl<'a> Builder<'a> {
         self
     }
 
-    /// Updates the `location` component.
+    /// Sets the `location` component.
     ///
     /// # Examples
     ///
@@ -312,11 +191,11 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Selector;
     ///
     /// // Create selector builder and set location
-    /// let mut builder = Selector::builder();
-    /// builder.set_location("docs");
+    /// let builder = Selector::builder().location("docs");
     /// ```
     #[inline]
-    pub fn set_location<S>(&mut self, value: S) -> &mut Self
+    #[must_use]
+    pub fn location<S>(mut self, value: S) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -324,7 +203,7 @@ impl<'a> Builder<'a> {
         self
     }
 
-    /// Updates the `fragment` component.
+    /// Sets the `fragment` component.
     ///
     /// # Examples
     ///
@@ -332,11 +211,11 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Selector;
     ///
     /// // Create selector builder and set fragment
-    /// let mut builder = Selector::builder();
-    /// builder.set_fragment("anchor");
+    /// let builder = Selector::builder().fragment("anchor");
     /// ```
     #[inline]
-    pub fn set_fragment<S>(&mut self, value: S) -> &mut Self
+    #[must_use]
+    pub fn fragment<S>(mut self, value: S) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -348,7 +227,7 @@ impl<'a> Builder<'a> {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Format`][] if the format is invalid.
+    /// Returns [`Error::Format`][] if the format is invalid.
     ///
     /// [`Error::Format`]: crate::id::Error::Format
     ///
@@ -360,10 +239,10 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Selector;
     ///
     /// // Create selector builder
-    /// let mut builder = Selector::builder();
-    /// builder.set_provider("file");
-    /// builder.set_context("docs");
-    /// builder.set_location("**/*.md");
+    /// let mut builder = Selector::builder()
+    ///     .provider("file")
+    ///     .context("docs")
+    ///     .location("**/*.md");
     ///
     /// // Create selector from builder
     /// let selector = builder.build()?;
@@ -399,7 +278,7 @@ impl Default for Builder<'_> {
     /// use zrx_id::Selector;
     ///
     /// // Create selector builder
-    /// let mut builder = Selector::builder();
+    /// let builder = Selector::builder();
     /// ```
     #[inline]
     fn default() -> Self {

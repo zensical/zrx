@@ -58,7 +58,7 @@ impl Id {
     /// use zrx_id::Id;
     ///
     /// // Create identifier builder
-    /// let mut builder = Id::builder();
+    /// let builder = Id::builder();
     /// ```
     #[inline]
     #[must_use]
@@ -82,8 +82,7 @@ impl Id {
     /// let id: Id = "zri:file:::docs:index.md:".parse()?;
     ///
     /// // Create identifier builder
-    /// let mut builder = id.to_builder();
-    /// builder.set_location("README.md");
+    /// let builder = id.to_builder().location("README.md");
     ///
     /// // Create identifier from builder
     /// let id = builder.build()?;
@@ -103,7 +102,7 @@ impl Id {
 // ----------------------------------------------------------------------------
 
 impl<'a> Builder<'a> {
-    /// Updates the `provider` component.
+    /// Sets the `provider` component.
     ///
     /// # Examples
     ///
@@ -111,131 +110,11 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Id;
     ///
     /// // Create identifier builder and set provider
-    /// let mut builder = Id::builder().with_provider("git");
+    /// let builder = Id::builder().provider("git");
     /// ```
     #[inline]
     #[must_use]
-    pub fn with_provider<S>(mut self, value: S) -> Self
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        self.set_provider(value);
-        self
-    }
-
-    /// Updates the `resource` component.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_id::Id;
-    ///
-    /// // Create identifier builder and set resource
-    /// let mut builder = Id::builder().with_resource("master");
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn with_resource<S>(mut self, value: S) -> Self
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        self.set_resource(value);
-        self
-    }
-
-    /// Updates the `variant` component.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_id::Id;
-    ///
-    /// // Create identifier builder and set variant
-    /// let mut builder = Id::builder().with_variant("en");
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn with_variant<S>(mut self, value: S) -> Self
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        self.set_variant(value);
-        self
-    }
-
-    /// Updates the `context` component.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_id::Id;
-    ///
-    /// // Create identifier builder and set context
-    /// let mut builder = Id::builder().with_context("docs");
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn with_context<S>(mut self, value: S) -> Self
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        self.set_context(value);
-        self
-    }
-
-    /// Updates the `location` component.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_id::Id;
-    ///
-    /// // Create identifier builder and set location
-    /// let mut builder = Id::builder().with_location("docs");
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn with_location<S>(mut self, value: S) -> Self
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        self.set_location(value);
-        self
-    }
-
-    /// Updates the `fragment` component.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_id::Id;
-    ///
-    /// // Create identifier builder and set fragment
-    /// let mut builder = Id::builder().with_fragment("anchor");
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn with_fragment<S>(mut self, value: S) -> Self
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        self.set_fragment(value);
-        self
-    }
-
-    /// Updates the `provider` component.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_id::Id;
-    ///
-    /// // Create identifier builder and set provider
-    /// let mut builder = Id::builder();
-    /// builder.set_provider("git");
-    /// ```
-    #[inline]
-    pub fn set_provider<S>(&mut self, value: S) -> &mut Self
+    pub fn provider<S>(mut self, value: S) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -243,7 +122,7 @@ impl<'a> Builder<'a> {
         self
     }
 
-    /// Updates the `resource` component.
+    /// Sets the `resource` component.
     ///
     /// # Examples
     ///
@@ -251,11 +130,11 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Id;
     ///
     /// // Create identifier builder and set resource
-    /// let mut builder = Id::builder();
-    /// builder.set_resource("master");
+    /// let builder = Id::builder().resource("master");
     /// ```
     #[inline]
-    pub fn set_resource<S>(&mut self, value: S) -> &mut Self
+    #[must_use]
+    pub fn resource<S>(mut self, value: S) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -263,7 +142,7 @@ impl<'a> Builder<'a> {
         self
     }
 
-    /// Updates the `variant` component.
+    /// Sets the `variant` component.
     ///
     /// # Examples
     ///
@@ -271,11 +150,11 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Id;
     ///
     /// // Create identifier builder and set variant
-    /// let mut builder = Id::builder();
-    /// builder.set_variant("en");
+    /// let builder = Id::builder().variant("en");
     /// ```
     #[inline]
-    pub fn set_variant<S>(&mut self, value: S) -> &mut Self
+    #[must_use]
+    pub fn variant<S>(mut self, value: S) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -283,7 +162,7 @@ impl<'a> Builder<'a> {
         self
     }
 
-    /// Updates the `context` component.
+    /// Sets the `context` component.
     ///
     /// # Examples
     ///
@@ -291,11 +170,11 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Id;
     ///
     /// // Create identifier builder and set context
-    /// let mut builder = Id::builder();
-    /// builder.set_context("docs");
+    /// let builder = Id::builder().context("docs");
     /// ```
     #[inline]
-    pub fn set_context<S>(&mut self, value: S) -> &mut Self
+    #[must_use]
+    pub fn context<S>(mut self, value: S) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -303,7 +182,7 @@ impl<'a> Builder<'a> {
         self
     }
 
-    /// Updates the `location` component.
+    /// Sets the `location` component.
     ///
     /// # Examples
     ///
@@ -311,11 +190,11 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Id;
     ///
     /// // Create identifier builder and set location
-    /// let mut builder = Id::builder();
-    /// builder.set_location("docs");
+    /// let builder = Id::builder().location("docs");
     /// ```
     #[inline]
-    pub fn set_location<S>(&mut self, value: S) -> &mut Self
+    #[must_use]
+    pub fn location<S>(mut self, value: S) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -323,7 +202,7 @@ impl<'a> Builder<'a> {
         self
     }
 
-    /// Updates the `fragment` component.
+    /// Sets the `fragment` component.
     ///
     /// # Examples
     ///
@@ -331,11 +210,11 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Id;
     ///
     /// // Create identifier builder and set fragment
-    /// let mut builder = Id::builder();
-    /// builder.set_fragment("anchor");
+    /// let builder = Id::builder().fragment("anchor");
     /// ```
     #[inline]
-    pub fn set_fragment<S>(&mut self, value: S) -> &mut Self
+    #[must_use]
+    pub fn fragment<S>(mut self, value: S) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -347,9 +226,9 @@ impl<'a> Builder<'a> {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Component`] if the `provider`, `context`
-    /// or `location` components are not set. Additionally, low-level format
-    /// errors are returned as part of [`Error::Format`].
+    /// Returns [`Error::Component`] if any of the `provider`, `context` or
+    /// `location` components are not set. In case of low-level format errors,
+    /// [`Error::Format`] is returned.
     ///
     /// # Examples
     ///
@@ -359,10 +238,10 @@ impl<'a> Builder<'a> {
     /// use zrx_id::Id;
     ///
     /// // Create identifier builder
-    /// let mut builder = Id::builder();
-    /// builder.set_provider("file");
-    /// builder.set_context("docs");
-    /// builder.set_location("index.md");
+    /// let builder = Id::builder()
+    ///     .provider("file")
+    ///     .context("docs")
+    ///     .location("index.md");
     ///
     /// // Create identifier from builder
     /// let id = builder.build()?;
@@ -413,7 +292,7 @@ impl Default for Builder<'_> {
     /// use zrx_id::Id;
     ///
     /// // Create identifier builder
-    /// let mut builder = Id::builder();
+    /// let builder = Id::builder();
     /// ```
     #[inline]
     fn default() -> Self {

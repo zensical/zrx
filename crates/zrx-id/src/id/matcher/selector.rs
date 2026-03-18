@@ -83,8 +83,7 @@ pub use convert::TryToSelector;
 /// use zrx_id::Selector;
 ///
 /// // Create selector builder
-/// let mut builder = Selector::builder();
-/// builder.set_location("**/*.md");
+/// let builder = Selector::builder().location("**/*.md");
 ///
 /// // Create selector from builder
 /// let selector = builder.build()?;
@@ -201,8 +200,8 @@ impl FromStr for Selector {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Prefix`] if the prefix isn't `zrs`. Also,
-    /// low-level format errors are returned as part of [`Error::Format`].
+    /// Returns [`Error::Prefix`] if the prefix isn't `zrs`. Low-level format
+    /// errors are returned as part of [`Error::Format`].
     ///
     /// # Examples
     ///

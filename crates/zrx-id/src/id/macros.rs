@@ -41,7 +41,7 @@
 ///
 /// # Examples
 ///
-/// Create identifier
+/// Create identifier:
 ///
 /// ```
 /// # use std::error::Error;
@@ -55,7 +55,7 @@
 /// # }
 /// ```
 ///
-/// Create identifier from existing identifier
+/// Create identifier from existing identifier:
 ///
 /// ```
 /// # use std::error::Error;
@@ -93,21 +93,21 @@ macro_rules! id {
 
     // Internal: match each key to the builder method
     (@set $builder:ident, provider, $value:expr) => {
-        $builder.with_provider($value)
+        $builder.provider($value)
     };
     (@set $builder:ident, resource, $value:expr) => {
-        $builder.with_resource($value)
+        $builder.resource($value)
     };
     (@set $builder:ident, variant, $value:expr) => {
-        $builder.with_variant($value)
+        $builder.variant($value)
     };
     (@set $builder:ident, context, $value:expr) => {
-        $builder.with_context($value)
+        $builder.context($value)
     };
     (@set $builder:ident, location, $value:expr) => {
-        $builder.with_location($value)
+        $builder.location($value)
     };
     (@set $builder:ident, fragment, $value:expr) => {
-        $builder.with_fragment($value)
+        $builder.fragment($value)
     };
 }

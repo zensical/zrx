@@ -82,8 +82,7 @@ where
     /// executor once the capacity is available again.
     #[must_use]
     pub fn new(executor: Executor<S>) -> Self {
-        let capacity =
-            executor.capacity().unwrap_or(8 * executor.num_workers());
+        let capacity = executor.capacity();
         Self::with_capacity(executor, capacity)
     }
 

@@ -35,7 +35,7 @@ use std::{cmp, panic};
 
 use crate::executor::strategy::{Signal, Strategy};
 use crate::executor::task::Task;
-use crate::executor::Result;
+use crate::executor::{Error, Result};
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -91,6 +91,8 @@ pub struct WorkStealing {
     running: Arc<AtomicUsize>,
     /// Counter for pending tasks.
     pending: Arc<AtomicUsize>,
+    /// Maximum number of pending tasks.
+    capacity: usize,
 }
 
 // ----------------------------------------------------------------------------
@@ -101,11 +103,11 @@ impl WorkStealing {
     /// Creates a work-stealing execution strategy.
     ///
     /// This method creates a strategy with the given number of worker threads,
-    /// which are spawned immediately before the method returns. Note that this
-    /// strategy uses an unbounded channel, so there're no capacity limits as
-    /// for the [`WorkSharing`][] execution strategy.
+    /// which are spawned immediately before the method returns. Internally, a
+    /// default limit of 8 tasks per worker is used, so for 4 workers, the
+    /// executor will have a capacity of 32 tasks.
     ///
-    /// [`WorkSharing`]: crate::executor::strategy::WorkSharing
+    /// Use [`WorkStealing::with_capacity`] to set a custom capacity.
     ///
     /// # Panics
     ///
@@ -121,6 +123,35 @@ impl WorkStealing {
     /// ```
     #[must_use]
     pub fn new(num_workers: usize) -> Self {
+        Self::with_capacity(num_workers, 8 * num_workers)
+    }
+
+    /// Creates a work-stealing execution strategy with the given capacity.
+    ///
+    /// This method creates a strategy with the given number of worker threads,
+    /// which are spawned immediately before the method returns.
+    ///
+    /// While this strategy uses unbounded channels due to how the [`Injector`]
+    /// and [`Worker`] concepts are implemented, it still provides a capacity
+    /// limit to ensure the executor doesn't end being overwhelmed. The given
+    /// capacity sets the number of tasks the executor accepts before starting
+    /// to reject them, which can be used to apply backpressure. Note that the
+    /// capacity is not a per-worker, but a global per-executor limit.
+    ///
+    /// # Panics
+    ///
+    /// Panics if thread creation fails.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_executor::strategy::WorkStealing;
+    ///
+    /// // Create strategy
+    /// let strategy = WorkStealing::with_capacity(4, 64);
+    /// ```
+    #[must_use]
+    pub fn with_capacity(num_workers: usize, capacity: usize) -> Self {
         let injector = Arc::new(Injector::new());
         let signal = Arc::new(Signal::new());
 
@@ -222,6 +253,7 @@ impl WorkStealing {
             threads,
             running,
             pending,
+            capacity,
         }
     }
 }
@@ -248,7 +280,8 @@ impl Strategy for WorkStealing {
     ///
     /// # Errors
     ///
-    /// This method is infallible, and will always return [`Ok`].
+    /// If the task cannot be submitted, [`Error::Submit`][] is returned, which
+    /// can only happen if the channel is disconnected or at capacity.
     ///
     /// # Examples
     ///
@@ -268,7 +301,15 @@ impl Strategy for WorkStealing {
         // the number of pending tasks. Note that we must increment the counter
         // before pushing the task to the injector, to ensure that the count is
         // accurate at all times, even if the task is stolen immediately.
-        self.pending.fetch_add(1, Ordering::Release);
+        let pending = self.pending.fetch_add(1, Ordering::Release);
+        if pending == self.capacity {
+            // We hit the capacity limit, so we need to back off and reject the
+            // task submission, decrement the counter again and return the task
+            // as part of the error. We deliberately use an optimistic strategy
+            // here, so we don't need to check the counter before incrementing.
+            self.pending.fetch_sub(1, Ordering::Release);
+            return Err(Error::Submit(task));
+        }
 
         // Submit the task to the injector and wake up waiting worker threads,
         // so they can steal the task and execute it as soon as possible
@@ -333,7 +374,7 @@ impl Strategy for WorkStealing {
         self.pending.load(Ordering::Relaxed)
     }
 
-    /// Returns the capacity, if bounded.
+    /// Returns the capacity.
     ///
     /// The work-stealing execution strategy does not impose a hard limit on
     /// the number of tasks. Thus, this strategy should only be used if tasks
@@ -347,11 +388,11 @@ impl Strategy for WorkStealing {
     ///
     /// // Get capacity
     /// let strategy = WorkStealing::default();
-    /// assert_eq!(strategy.capacity(), None);
+    /// assert!(strategy.capacity() >= strategy.num_workers());
     /// ```
     #[inline]
-    fn capacity(&self) -> Option<usize> {
-        None
+    fn capacity(&self) -> usize {
+        self.capacity
     }
 }
 

@@ -27,7 +27,7 @@
 
 mod graph;
 
+pub use graph::iter;
 pub use graph::topology::{self, Topology};
 pub use graph::traversal::{self, Traversal};
-pub use graph::visitor;
 pub use graph::{Builder, Error, Graph, Result};

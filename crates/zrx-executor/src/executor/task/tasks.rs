@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Task collection.
+//! Task set.
 
 use std::vec::IntoIter;
 
@@ -33,12 +33,12 @@ use super::Task;
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Task collection.
+/// Task set.
 ///
-/// This data type represents a collection of tasks that can either be consumed
-/// through iteration, or executed recursively via [`Tasks::execute`]. Anything
-/// returned by [`Task::execute`] must be convertible into [`Tasks`], including
-/// another task, multiple tasks, and the unit value.
+/// This data type represents a set of tasks that can either be consumed through
+/// iteration, or executed recursively via [`Tasks::execute`]. Anything returned
+/// by [`Task::execute`] must be convertible into [`Tasks`], including a single
+/// task, multiple tasks, and the unit value.
 ///
 /// # Examples
 ///
@@ -74,14 +74,14 @@ pub struct Tasks {
 // ----------------------------------------------------------------------------
 
 impl Tasks {
-    /// Creates a task collection.
+    /// Creates a task set.
     ///
     /// # Examples
     ///
     /// ```
     /// use zrx_executor::task::Tasks;
     ///
-    /// // Create task collection
+    /// // Create task set
     /// let tasks = Tasks::new();
     /// ```
     #[must_use]
@@ -89,18 +89,17 @@ impl Tasks {
         Self::default()
     }
 
-    /// Adds a task to the task collection.
+    /// Adds a task to the task set.
     ///
-    /// This method adds a [`Task`] to the collection, which can then either be
-    /// consumed via [`Tasks::into_iter`] or executed via [`Tasks::execute`],
-    /// depending on the specifics of the execution strategy.
+    /// This method adds a [`Task`] to the set, which can either be consumed
+    /// via [`Tasks::into_iter`] or executed via [`Tasks::execute`].
     ///
     /// # Examples
     ///
     /// ```
     /// use zrx_executor::task::Tasks;
     ///
-    /// // Create task collection and add tasks
+    /// // Create task set and add tasks
     /// let mut tasks = Tasks::new();
     /// tasks.add(|| println!("Task 1"));
     /// tasks.add(|| println!("Task 2"));
@@ -115,7 +114,7 @@ impl Tasks {
         self
     }
 
-    /// Executes all tasks in the task collection.
+    /// Executes all tasks in the task set.
     ///
     /// This method executes all tasks recursively in depth-first order, so if
     /// a task returns further subtasks, they are executed before all others.
@@ -125,13 +124,13 @@ impl Tasks {
     /// ```
     /// use zrx_executor::task::Tasks;
     ///
-    /// // Create task collection and add tasks
+    /// // Create task set and add tasks
     /// let mut tasks = Tasks::new();
     /// tasks.add(|| println!("Task 1"));
     /// tasks.add(|| println!("Task 2"));
     /// tasks.add(|| println!("Task 3"));
     ///
-    /// // Execute task collection
+    /// // Execute task set
     /// tasks.execute();
     /// ```
     pub fn execute(mut self) {
@@ -166,7 +165,7 @@ impl Tasks {
 // ----------------------------------------------------------------------------
 
 impl From<()> for Tasks {
-    /// Creates a task collection from the unit value.
+    /// Creates a task set from the unit value.
     ///
     /// This implementation makes the API more flexible, as it allows to just
     /// return nothing from a task, which is probably the common case.
@@ -176,7 +175,7 @@ impl From<()> for Tasks {
     /// ```
     /// use zrx_executor::task::Tasks;
     ///
-    /// // Create task collection from unit value
+    /// // Create task set from unit value
     /// let tasks = Tasks::from(());
     /// assert!(tasks.is_empty());
     /// ```
@@ -190,17 +189,17 @@ impl<T> From<T> for Tasks
 where
     T: Task,
 {
-    /// Creates a task collection from a task.
+    /// Creates a task set from a task.
     ///
-    /// This implementation creates a task collection from a single task, which
-    /// allows to conveniently return a single closure from a task.
+    /// This implementation creates a task set from a single task, which allows
+    /// to conveniently return a single closure from a task.
     ///
     /// # Examples
     ///
     /// ```
     /// use zrx_executor::task::Tasks;
     ///
-    /// // Create task collection from task
+    /// // Create task set from task
     /// let tasks = Tasks::from(|| println!("Task"));
     /// assert_eq!(tasks.len(), 1);
     /// ```
@@ -216,14 +215,14 @@ impl<I> FromIterator<I> for Tasks
 where
     I: Task,
 {
-    /// Creates a task collection from an iterator.
+    /// Creates a task set from an iterator.
     ///
     /// # Examples
     ///
     /// ```
     /// use zrx_executor::task::Tasks;
     ///
-    /// // Create task collection from iterator
+    /// // Create task set from iterator
     /// let tasks = Tasks::from_iter([
     ///     || println!("Task 1"),
     ///     || println!("Task 2"),
@@ -247,14 +246,14 @@ impl IntoIterator for Tasks {
     type Item = Box<dyn Task>;
     type IntoIter = IntoIter<Self::Item>;
 
-    /// Creates a consuming iterator over the task collection.
+    /// Creates a consuming iterator over the task set.
     ///
     /// # Examples
     ///
     /// ```
     /// use zrx_executor::task::Tasks;
     ///
-    /// // Create task collection and add tasks
+    /// // Create task set and add tasks
     /// let mut tasks = Tasks::new();
     /// tasks.add(|| println!("Task 1"));
     /// tasks.add(|| println!("Task 2"));

@@ -28,12 +28,10 @@
 use std::vec::IntoIter;
 
 mod builder;
-mod convert;
 mod error;
 mod operand;
 
 pub use builder::Builder;
-pub use convert::IntoExpression;
 pub use error::{Error, Result};
 pub use operand::{Operand, Operator, Term};
 
@@ -102,6 +100,23 @@ impl Expression {
 
 // ----------------------------------------------------------------------------
 // Trait implementations
+// ----------------------------------------------------------------------------
+
+impl<T> From<T> for Expression
+where
+    T: Into<Term>,
+{
+    /// Creates an expression from a term.
+    #[inline]
+    fn from(term: T) -> Self {
+        let term = Operand::from(term.into());
+        Expression {
+            operator: Operator::Any,
+            operands: Vec::from([term]),
+        }
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 impl IntoIterator for Expression {

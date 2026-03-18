@@ -23,54 +23,37 @@
 
 // ----------------------------------------------------------------------------
 
-//! Expression conversions.
+//! Topological traversal error.
 
-use super::operand::{Operand, Operator, Term};
-use super::Expression;
+use std::result;
+use thiserror::Error;
+
+use super::Traversal;
 
 // ----------------------------------------------------------------------------
-// Traits
+// Enums
 // ----------------------------------------------------------------------------
 
-/// Conversion into [`Expression`].
-///
-/// This trait is intended for methods that expect an [`Expression`], but want
-/// to allow directly passing instances of [`Id`][] and [`Selector`][] as well.
-///
-/// [`Id`]: crate::id::Id
-/// [`Selector`]: crate::id::matcher::selector::Selector
-pub trait IntoExpression {
-    /// Convert into an expression.
-    fn into_expression(self) -> Expression;
+/// Topological traversal error.
+#[derive(Debug, Error)]
+pub enum Error {
+    /// Traversal completed before.
+    #[error("traversal completed before: {0}")]
+    Completed(usize),
+    /// Traversal converged.
+    #[error("traversal converged")]
+    Converged,
+    /// Traversal topology mismatch.
+    #[error("traversal topology mismatch")]
+    Mismatch,
+    /// Traversal is disjoint.
+    #[error("traversal is disjoint")]
+    Disjoint(Traversal),
 }
 
 // ----------------------------------------------------------------------------
-// Trait implementations
+// Type aliases
 // ----------------------------------------------------------------------------
 
-impl IntoExpression for Expression {
-    /// Returns the expression as is.
-    #[inline]
-    fn into_expression(self) -> Expression {
-        self
-    }
-}
-
-// ----------------------------------------------------------------------------
-// Blanket implementations
-// ----------------------------------------------------------------------------
-
-impl<T> IntoExpression for T
-where
-    T: Into<Term>,
-{
-    /// Creates an expression from the given term.
-    #[inline]
-    fn into_expression(self) -> Expression {
-        let term = Operand::from(self.into());
-        Expression {
-            operator: Operator::Any,
-            operands: Vec::from([term]),
-        }
-    }
-}
+/// Topological traversal result.
+pub type Result<T = ()> = result::Result<T, Error>;

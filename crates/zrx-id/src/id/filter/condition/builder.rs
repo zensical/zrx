@@ -25,7 +25,7 @@
 
 //! Condition builder.
 
-use crate::id::filter::expression::{IntoExpression, Operand, Operator, Term};
+use crate::id::filter::expression::{Operand, Operator, Term};
 use crate::id::filter::Expression;
 use crate::id::matcher::Matches;
 
@@ -62,11 +62,11 @@ impl Condition {
     #[must_use]
     pub fn builder<T>(expr: T) -> Builder
     where
-        T: IntoExpression,
+        T: Into<Expression>,
     {
         let mut terms = Vec::new();
         Builder {
-            group: compile(expr.into_expression(), &mut terms),
+            group: compile(expr.into(), &mut terms),
             terms,
         }
     }

@@ -63,7 +63,7 @@ impl Signal {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Signal`] if the signal is poisoned.
+    /// Returns [`Error::Signal`] if the signal is poisoned.
     pub fn should_terminate(&self) -> Result<bool> {
         self.mutex
             .lock()
@@ -85,7 +85,7 @@ impl Signal {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Signal`] if the signal is poisoned.
+    /// Returns [`Error::Signal`] if the signal is poisoned.
     pub fn terminate(&self) -> Result {
         self.mutex
             .lock()

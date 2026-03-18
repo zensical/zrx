@@ -71,10 +71,9 @@ where
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Prefix`][] if the prefix isn't `zri`, and
-    /// [`Error::Component`][] if any of the `provider`, `context` or `location`
-    /// components are not set. Also, low-level format errors are returned as
-    /// part of [`Error::Format`][].
+    /// Returns [`Error::Component`] if any of the `provider`, `context` or
+    /// `location` components are not set, and [`Error::Prefix`] if the prefix
+    /// isn't `zri`. On low-level format errors, [`Error::Format`] is returned.
     ///
     /// [`Error::Component`]: crate::id::Error::Component
     /// [`Error::Format`]: crate::id::Error::Format

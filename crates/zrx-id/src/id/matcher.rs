@@ -111,7 +111,7 @@ impl Matcher {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Id`] if the identifier is invalid.
+    /// Returns [`Error::Id`] if the identifier is invalid.
     ///
     /// # Examples
     ///
@@ -155,7 +155,7 @@ impl Matcher {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Id`] if the identifier is invalid.
+    /// Returns [`Error::Id`] if the identifier is invalid.
     ///
     /// # Examples
     ///
@@ -235,8 +235,8 @@ impl FromStr for Matcher {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Id`] if the given string can't be parsed
-    /// into a valid selector, from which the matcher is then constructed.
+    /// Returns [`Error::Id`] if the given string can't be parsed into a valid
+    /// selector, from which the matcher is then constructed.
     ///
     /// # Examples
     ///
@@ -387,7 +387,7 @@ mod tests {
                 let matcher: Matcher = selector.parse()?;
                 assert_eq!(
                     matcher.matches(&"zri:file:::docs:index.md:")?,
-                    Matches::default()
+                    Matches::new()
                 );
             }
             Ok(())

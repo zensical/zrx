@@ -31,7 +31,7 @@ use crate::id::matcher::Matcher;
 
 use super::condition::Condition;
 use super::error::Result;
-use super::expression::{IntoExpression, Operator, Term};
+use super::expression::{Expression, Operator, Term};
 use super::Filter;
 
 // ----------------------------------------------------------------------------
@@ -97,7 +97,7 @@ impl Filter {
 // ----------------------------------------------------------------------------
 
 impl Builder {
-    /// Inserts an expression into the filter, returning its index.
+    /// Inserts an expression into the filter.
     ///
     /// This method adds an [`Expression`][] to the filter builder, and returns
     /// the index of the inserted condition, which can be used to remove it.
@@ -128,7 +128,7 @@ impl Builder {
     #[inline]
     pub fn insert<T>(&mut self, expr: T) -> usize
     where
-        T: IntoExpression,
+        T: Into<Expression>,
     {
         let builder = Condition::builder(expr);
         self.conditions.insert(builder.optimize().build())
@@ -156,16 +156,15 @@ impl Builder {
     /// # }
     /// ```
     #[inline]
-    pub fn remove(&mut self, index: usize) {
-        self.conditions.remove(index);
+    pub fn remove(&mut self, expr: usize) {
+        self.conditions.remove(expr);
     }
 
     /// Builds the filter.
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Matcher`][] if the underlying matcher
-    /// cannot be successfully built.
+    /// Returns [`Error::Matcher`][] if the underlying matcher can't be built.
     ///
     /// [`Error::Matcher`]: crate::id::filter::Error::Matcher
     ///

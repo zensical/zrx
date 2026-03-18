@@ -72,7 +72,7 @@ impl Group {
                 // 1st visit: push operator onto stack and mark it as visited,
                 // then push its operands in reverse onto the stack
                 Group::Operator(operator, operands) if !visited => {
-                    let group = Group::Operator(operator, Vec::default());
+                    let group = Group::Operator(operator, Vec::new());
                     input.push((group, true, operands.len()));
 
                     // Push operands in reverse onto stack

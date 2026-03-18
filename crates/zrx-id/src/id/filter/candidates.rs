@@ -68,7 +68,7 @@ impl Filter {
     ///
     /// # Errors
     ///
-    /// This method returns [`Error::Matcher`][] if the identifier is invalid.
+    /// Returns [`Error::Matcher`][] if the identifier is invalid.
     ///
     /// [`Error::Matcher`]: crate::id::filter::Error::Matcher
     ///
@@ -108,7 +108,7 @@ impl Filter {
             conditions: &self.conditions,
             negations: &self.negations,
             mapping: &self.mapping,
-            workset: Matches::default(),
+            workset: Matches::new(),
         })
     }
 }

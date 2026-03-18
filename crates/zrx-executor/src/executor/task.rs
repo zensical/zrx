@@ -28,9 +28,9 @@
 use std::fmt::{self, Debug};
 use std::panic::UnwindSafe;
 
-mod collection;
+mod tasks;
 
-pub use collection::Tasks;
+pub use tasks::Tasks;
 
 // ----------------------------------------------------------------------------
 // Traits
@@ -71,7 +71,7 @@ where
     /// Creates a boxed task from a task.
     ///
     /// This implementation ensures we can comfortably pass bare closures, as
-    /// well as boxed tasks to [`Executor::submit`][], which allos to resubmit
+    /// well as boxed tasks to [`Executor::submit`][], which allows to resubmit
     /// tasks that were returned as part of [`Error::Submit`][] due to capacity
     /// limits of the execution strategy.
     ///

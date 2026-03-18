@@ -81,8 +81,9 @@ impl Builder {
     ///
     /// # Errors
     ///
-    /// This method returns an error if the [`GlobSet`][] that is associated
-    /// with the component cannot be successfully built.
+    /// Returns [`Error::Glob`][] if the [`GlobSet`][] can't be built.
+    ///
+    /// [`Error::Glob`]: crate::id::matcher::error::Error::Glob
     ///
     /// [`GlobSet`]: globset::GlobSet
     pub fn build(self) -> Result<Component> {
@@ -104,8 +105,8 @@ impl Default for Builder {
     fn default() -> Self {
         Builder {
             globset: GlobSetBuilder::new(),
-            mapping: Vec::new(),
-            matches: Matches::new(),
+            mapping: Vec::default(),
+            matches: Matches::default(),
             total: 0,
         }
     }

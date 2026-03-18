@@ -55,7 +55,7 @@ pub enum Operand {
 // ----------------------------------------------------------------------------
 
 impl From<Expression> for Operand {
-    /// Creates an operand from the given expression.
+    /// Creates an operand from an expression.
     #[inline]
     fn from(expr: Expression) -> Self {
         Operand::Expression(expr)
@@ -66,7 +66,7 @@ impl<T> From<T> for Operand
 where
     T: Into<Term>,
 {
-    /// Creates an operand from the given term.
+    /// Creates an operand from a term.
     #[inline]
     fn from(term: T) -> Self {
         Operand::Term(term.into())

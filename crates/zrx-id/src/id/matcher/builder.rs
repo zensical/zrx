@@ -88,8 +88,11 @@ impl Builder {
     ///
     /// # Errors
     ///
-    /// This method returns an error if the given selector is invalid, or if a
-    /// component cannot successfully be parsed into a valid [`Glob`].
+    /// Returns [`Error::Id`] if the selector is invalid, and [`Error::Glob`]
+    /// if a component can't be successfully parsed.
+    ///
+    /// [`Error::Id`]: crate::id::matcher::error::Error::Id
+    /// [`Error::Glob`]: crate::id::matcher::error::Error::Glob
     ///
     /// # Examples
     ///
@@ -121,8 +124,11 @@ impl Builder {
     ///
     /// # Errors
     ///
-    /// This method returns an error if the given selector is invalid, or if a
-    /// component cannot successfully be parsed into a valid [`Glob`].
+    /// Returns [`Error::Id`] if the selector is invalid, and [`Error::Glob`]
+    /// if a component can't be successfully parsed.
+    ///
+    /// [`Error::Id`]: crate::id::matcher::error::Error::Id
+    /// [`Error::Glob`]: crate::id::matcher::error::Error::Glob
     ///
     /// # Examples
     ///
@@ -159,8 +165,9 @@ impl Builder {
     ///
     /// # Errors
     ///
-    /// This method returns an error if the [`GlobSet`][] that is associated
-    /// with a component cannot be successfully built.
+    /// Returns [`Error::Glob`][] if a component's [`GlobSet`][] can't be built.
+    ///
+    /// [`Error::Glob`]: crate::id::matcher::error::Error::Glob
     ///
     /// [`GlobSet`]: globset::GlobSet
     ///

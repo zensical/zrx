@@ -25,13 +25,17 @@
 
 //! Topological traversal.
 
+use ahash::HashSet;
 use std::collections::VecDeque;
+use std::mem;
 
-use super::error::{Error, Result};
 use super::topology::Topology;
+use super::Graph;
 
+mod error;
 mod into_iter;
 
+pub use error::{Error, Result};
 pub use into_iter::IntoIter;
 
 // ----------------------------------------------------------------------------
@@ -59,6 +63,8 @@ pub struct Traversal {
     topology: Topology,
     /// Dependency counts.
     dependencies: Vec<u8>,
+    /// Initial nodes.
+    initial: Vec<usize>,
     /// Visitable nodes.
     visitable: VecDeque<usize>,
 }
@@ -73,9 +79,7 @@ impl Traversal {
     /// The given initial nodes are immediately marked as visitable, and thus
     /// returned by [`Traversal::take`], so the caller must make sure they can
     /// be processed. Note that the canonical way to create a [`Traversal`] is
-    /// to invoke the [`Graph::traverse`][] method.
-    ///
-    /// [`Graph::traverse`]: crate::graph::Graph::traverse
+    /// to invoke the [`Graph::traverse`] method.
     ///
     /// # Examples
     ///
@@ -108,7 +112,7 @@ impl Traversal {
         I: AsRef<[usize]>,
     {
         let mut visitable: VecDeque<_> =
-            initial.as_ref().iter().copied().collect();
+            unique(initial.as_ref().iter()).collect();
 
         // Obtain incoming edges and distance matrix
         let incoming = topology.incoming();
@@ -123,7 +127,7 @@ impl Traversal {
             // We must adjust the dependency count for each node for all of its
             // dependencies that are not reachable from the initial nodes
             for &dependency in &incoming[node] {
-                let mut iter = visitable.iter();
+                let mut iter = initial.as_ref().iter();
                 if !iter.any(|&n| distance[n][dependency] != u8::MAX) {
                     dependencies[node] -= 1;
                 }
@@ -132,10 +136,11 @@ impl Traversal {
 
         // Retain only the visitable nodes whose dependencies are satisfied,
         // as we will discover the other initial nodes during traversal
-        visitable.retain(|&node| dependencies[node] == 0);
+        visitable.retain(|&n| dependencies[n] == 0);
         Self {
             topology: topology.clone(),
             dependencies,
+            initial: visitable.iter().copied().collect(),
             visitable,
         }
     }
@@ -186,18 +191,17 @@ impl Traversal {
     ///
     /// # Errors
     ///
-    /// In case the node has already been marked as visited, [`Error::Found`]
-    /// is returned. This is likely an error in the traversal business logic.
+    /// If the node has already been marked as visited, [`Error::Completed`] is
+    /// returned. This is likely an error in the caller's business logic.
     ///
     /// # Panics
     ///
     /// Panics if a node does not exist, as this indicates that there's a bug
     /// in the code that creates or uses the traversal. While the [`Builder`][]
     /// is designed to be fallible to ensure the structure is valid, methods
-    /// that operate on [`Graph`][] panic on violated invariants.
+    /// that operate on [`Graph`] panic on violated invariants.
     ///
     /// [`Builder`]: crate::graph::Builder
-    /// [`Graph`]: crate::graph::Graph
     ///
     /// # Examples
     ///
@@ -230,7 +234,15 @@ impl Traversal {
     /// ```
     pub fn complete(&mut self, node: usize) -> Result {
         if self.dependencies[node] == u8::MAX {
-            return Err(Error::Found(node));
+            return Err(Error::Completed(node));
+        }
+
+        // When the dependency count isn't zero, the traversal converged with
+        // another traversal and restarted at a node occurring before the given
+        // node. In this case, we return an error, and indicate to the caller
+        // that parts of the traversal have to be completed again.
+        if self.dependencies[node] != 0 {
+            return Err(Error::Converged);
         }
 
         // Mark node as visited - we can just use the maximum value of `u8` as
@@ -251,7 +263,105 @@ impl Traversal {
             }
         }
 
-        // No errors occurred.
+        // No errors occurred
+        Ok(())
+    }
+
+    /// Attempts to converge this traversal with another traversal.
+    ///
+    /// This method attempts to combine both traversals into a single traversal,
+    /// which is possible when they have common descendants. This is useful for
+    /// deduplication of computations that need to be carried out for traversals
+    /// that originate from different sources, but converge at some point.
+    ///
+    /// # Errors
+    ///
+    /// If the given traversal is from a different graph, [`Error::Mismatch`]
+    /// is returned. Otherwise, if the traversals are disjoint, the traversal
+    /// is returned back to the caller wrapped in [`Error::Disjoint`], so the
+    /// caller can decide how to proceed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_graph::Graph;
+    ///
+    /// // Create graph builder and add nodes
+    /// let mut builder = Graph::builder();
+    /// let a = builder.add_node("a");
+    /// let b = builder.add_node("b");
+    /// let c = builder.add_node("c");
+    ///
+    /// // Create edges between nodes
+    /// builder.add_edge(a, c)?;
+    /// builder.add_edge(b, c)?;
+    ///
+    /// // Create graph from builder
+    /// let graph = builder.build();
+    ///
+    /// // Create topological traversal
+    /// let mut traversal = graph.traverse([a]);
+    ///
+    /// // Converge with another topological traversal
+    /// let mut other = graph.traverse([b]);
+    /// assert!(traversal.converge(other).is_ok());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn converge(&mut self, other: Self) -> Result {
+        if self.topology != other.topology {
+            return Err(Error::Mismatch);
+        }
+
+        // Compute the initial nodes for the combined traversal, which is the
+        // union of both traversals with all redundant nodes removed
+        let iter = self.initial.iter().chain(&other.initial);
+        let initial: Vec<_> = unique(iter).collect();
+
+        // Create a temporary graph, so we can compute the first layer of nodes
+        // that are common descendants contained in both traversals
+        let graph = Graph {
+            data: (0..self.topology.incoming().len()).collect(),
+            topology: self.topology.clone(),
+        };
+
+        // If there are no common descendants, the traversals are disjoint, and
+        // we can't converge them, so we return the traversal to the caller
+        let mut iter = graph.common_descendants(&initial);
+        let Some(common) = iter.next() else {
+            return Err(Error::Disjoint(other));
+        };
+
+        // Create the combined traversal, and mark all already visited nodes
+        // that are ancestors of the common descendants as visited as well
+        let prior = mem::replace(self, Self::new(&self.topology, initial));
+
+        // Compute the visitable nodes for the combined traversal, which is the
+        // union of both traversals with all redundant nodes removed. Note that
+        // we must collect them in a temporary vector first, or this loop would
+        // run indefinitely, as we'd be adding visitable nodes again and again.
+        let mut visitable = VecDeque::new();
+        while let Some(node) = self.take() {
+            let p = prior.dependencies[node];
+            let o = other.dependencies[node];
+
+            // If the node has been visited in either traversal, and is not
+            // part of the common descendants, mark it as visited as well in
+            // the combined traversal, since we don't need to revisit nodes
+            // that are ancestors of the common descendants
+            if (p == u8::MAX || o == u8::MAX) && !common.contains(&node) {
+                self.complete(node)?;
+            } else {
+                visitable.push_back(node);
+            }
+        }
+
+        // Update visitable nodes
+        self.visitable = visitable;
+
+        // No errors occurred
         Ok(())
     }
 }
@@ -274,5 +384,167 @@ impl Traversal {
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.visitable.is_empty()
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Functions
+// ----------------------------------------------------------------------------
+
+/// Deduplicates the given nodes while preserving their order.
+#[inline]
+fn unique<'a, I>(iter: I) -> impl Iterator<Item = usize>
+where
+    I: IntoIterator<Item = &'a usize>,
+{
+    let mut nodes = HashSet::default();
+    iter.into_iter() // fmt
+        .copied()
+        .filter(move |&node| nodes.insert(node))
+}
+
+// ----------------------------------------------------------------------------
+// Tests
+// ----------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+
+    mod complete {
+        use crate::graph;
+
+        #[test]
+        fn handles_graph() {
+            let graph = graph! {
+                "a" => "b", "a" => "c",
+                "b" => "d", "b" => "e",
+                "c" => "f",
+                "d" => "g",
+                "e" => "g", "e" => "h",
+                "f" => "h",
+                "g" => "i",
+                "h" => "i",
+            };
+            for (node, mut descendants) in [
+                (0, vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (1, vec![1, 3, 4, 6, 7, 8]),
+                (2, vec![2, 5, 7, 8]),
+                (3, vec![3, 6, 8]),
+                (4, vec![4, 6, 7, 8]),
+                (5, vec![5, 7, 8]),
+                (6, vec![6, 8]),
+                (7, vec![7, 8]),
+                (8, vec![8]),
+            ] {
+                let mut traversal = graph.traverse([node]);
+                while let Some(node) = traversal.take() {
+                    assert_eq!(node, descendants.remove(0));
+                    assert!(traversal.complete(node).is_ok());
+                }
+            }
+        }
+
+        #[test]
+        fn handles_multi_graph() {
+            let graph = graph! {
+                "a" => "b", "a" => "c", "a" => "c",
+                "b" => "d", "b" => "e",
+                "c" => "f",
+                "d" => "g",
+                "e" => "g", "e" => "h",
+                "f" => "h",
+                "g" => "i",
+                "h" => "i",
+            };
+            for (node, mut descendants) in [
+                (0, vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (1, vec![1, 3, 4, 6, 7, 8]),
+                (2, vec![2, 5, 7, 8]),
+                (3, vec![3, 6, 8]),
+                (4, vec![4, 6, 7, 8]),
+                (5, vec![5, 7, 8]),
+                (6, vec![6, 8]),
+                (7, vec![7, 8]),
+                (8, vec![8]),
+            ] {
+                let mut traversal = graph.traverse([node]);
+                while let Some(node) = traversal.take() {
+                    assert_eq!(node, descendants.remove(0));
+                    assert!(traversal.complete(node).is_ok());
+                }
+            }
+        }
+    }
+
+    mod converge {
+        use crate::graph;
+
+        #[test]
+        fn handles_graph() {
+            let graph = graph! {
+                "a" => "b", "a" => "c",
+                "b" => "d", "b" => "e",
+                "c" => "f",
+                "d" => "g",
+                "e" => "g", "e" => "h",
+                "f" => "h",
+                "g" => "i",
+                "h" => "i",
+            };
+            for (i, j, descendants) in [
+                (vec![0], vec![0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![1], vec![0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![8], vec![0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![1], vec![1], vec![1, 3, 4, 6, 7, 8]),
+                (vec![1], vec![2], vec![1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![2], vec![4], vec![2, 4, 5, 6, 7, 8]),
+                (vec![4], vec![2], vec![4, 2, 6, 5, 7, 8]),
+                (vec![3], vec![5], vec![3, 5, 6, 7, 8]),
+                (vec![6], vec![7], vec![6, 7, 8]),
+                (vec![8], vec![8], vec![8]),
+            ] {
+                let mut a = graph.traverse(i);
+                let b = graph.traverse(j);
+                assert!(a.converge(b).is_ok());
+                assert_eq!(
+                    a.into_iter().collect::<Vec<_>>(), // fmt
+                    descendants
+                );
+            }
+        }
+
+        #[test]
+        fn handles_multi_graph() {
+            let graph = graph! {
+                "a" => "b", "a" => "c", "a" => "c",
+                "b" => "d", "b" => "e",
+                "c" => "f",
+                "d" => "g",
+                "e" => "g", "e" => "h",
+                "f" => "h",
+                "g" => "i",
+                "h" => "i",
+            };
+            for (i, j, descendants) in [
+                (vec![0], vec![0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![1], vec![0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![8], vec![0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![1], vec![1], vec![1, 3, 4, 6, 7, 8]),
+                (vec![1], vec![2], vec![1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![2], vec![4], vec![2, 4, 5, 6, 7, 8]),
+                (vec![4], vec![2], vec![4, 2, 6, 5, 7, 8]),
+                (vec![3], vec![5], vec![3, 5, 6, 7, 8]),
+                (vec![6], vec![7], vec![6, 7, 8]),
+                (vec![8], vec![8], vec![8]),
+            ] {
+                let mut a = graph.traverse(i);
+                let b = graph.traverse(j);
+                assert!(a.converge(b).is_ok());
+                assert_eq!(
+                    a.into_iter().collect::<Vec<_>>(), // fmt
+                    descendants
+                );
+            }
+        }
     }
 }

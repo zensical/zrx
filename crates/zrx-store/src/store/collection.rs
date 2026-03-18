@@ -167,12 +167,6 @@ where
         Store::contains_key(self, id)
     }
 
-    /// Inserts the value identified by the key.
-    #[inline]
-    fn insert(&mut self, key: K, value: V) -> Option<V> {
-        StoreMut::insert(self, key, value)
-    }
-
     /// Returns the number of items in the collection.
     #[inline]
     fn len(&self) -> usize {
@@ -183,6 +177,12 @@ where
     #[inline]
     fn is_empty(&self) -> bool {
         Store::is_empty(self)
+    }
+
+    /// Inserts the value identified by the key.
+    #[inline]
+    fn insert(&mut self, key: K, value: V) -> Option<V> {
+        StoreMut::insert(self, key, value)
     }
 
     /// Inserts the value identified by the key if it changed.

@@ -236,8 +236,8 @@ impl Strategy for WorkSharing {
     fn submit(&self, task: Box<dyn Task>) -> Result {
         // We track the total number of pending tasks, and when queried for the
         // number of running tasks, compute those dynamically. Otherwise, there
-        // is the possibiliy of a race condition, where the task is acquired by
-        // a worker, before the running count can be incremented.
+        // is the possibility of a race condition, where the task is acquired
+        // by a worker before the running count can be incremented.
         self.pending.fetch_add(1, Ordering::Release);
 
         // Submit the task to the sender
@@ -301,7 +301,7 @@ impl Strategy for WorkSharing {
         self.pending.load(Ordering::Relaxed)
     }
 
-    /// Returns the capacity, if bounded.
+    /// Returns the capacity.
     ///
     /// This method returns the maximum number of tasks that can be submitted
     /// at once, which can be used by the strategy for applying backpressure.
@@ -313,11 +313,14 @@ impl Strategy for WorkSharing {
     ///
     /// // Get capacity
     /// let strategy = WorkSharing::default();
-    /// assert!(strategy.capacity() >= Some(strategy.num_workers()));
+    /// assert!(strategy.capacity() >= strategy.num_workers());
     /// ```
     #[inline]
-    fn capacity(&self) -> Option<usize> {
-        self.sender.as_ref().and_then(Sender::capacity)
+    fn capacity(&self) -> usize {
+        self.sender
+            .as_ref()
+            .and_then(Sender::capacity)
+            .unwrap_or_default()
     }
 }
 

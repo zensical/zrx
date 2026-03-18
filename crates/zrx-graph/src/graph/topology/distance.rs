@@ -91,7 +91,7 @@ impl Distance {
 impl Index<usize> for Distance {
     type Output = [u8];
 
-    /// Returns the column values for the given row.
+    /// Returns the column values for the row at the index.
     ///
     /// This method returns a slice representing the distances from the node as
     /// identified by the given index to all other nodes in the graph. Distances

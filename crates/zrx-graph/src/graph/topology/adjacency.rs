@@ -256,7 +256,7 @@ impl Adjacency {
 impl Index<usize> for Adjacency {
     type Output = [usize];
 
-    /// Returns the column indices for the given row index.
+    /// Returns the column indices for the row at the index.
     ///
     /// # Panics
     ///

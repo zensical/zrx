@@ -28,6 +28,8 @@
 use std::result;
 use thiserror::Error;
 
+use super::traversal;
+
 // ----------------------------------------------------------------------------
 // Enums
 // ----------------------------------------------------------------------------
@@ -35,12 +37,12 @@ use thiserror::Error;
 /// Graph error.
 #[derive(Debug, Error)]
 pub enum Error {
+    /// Traversal error.
+    #[error(transparent)]
+    Traversal(#[from] traversal::Error),
     /// Node not found.
     #[error("node not found: {0}")]
     NotFound(usize),
-    /// Node found.
-    #[error("node found: {0}")]
-    Found(usize),
 }
 
 // ----------------------------------------------------------------------------

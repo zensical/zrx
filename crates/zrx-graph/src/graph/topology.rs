@@ -50,21 +50,19 @@ pub use distance::Distance;
 /// computed [`Distance`] matrix that allows to find the shortest path between
 /// two nodes in the graph, or determine whether they're reachable at all.
 ///
-/// The [`Topology`] data type is just a wrapper around [`TopologyInner`] with
-/// an [`Rc`], so it can be shared between the [`Graph`][] and [`Traversal`][]
-/// structures without the need for lifetime annotations, which would render
-/// incremental and asynchronous traversals of graphs more complex.
-///
 /// [`Graph`]: crate::graph::Graph
 /// [`Traversal`]: crate::graph::traversal::Traversal
 #[derive(Clone, Debug)]
-pub struct Topology(Rc<TopologyInner>);
+pub struct Topology {
+    /// Inner state.
+    inner: Rc<Inner>,
+}
 
 // ----------------------------------------------------------------------------
 
-/// Topology inner state.
+/// Inner state.
 #[derive(Debug)]
-struct TopologyInner {
+struct Inner {
     /// Outgoing edges.
     outgoing: Adjacency,
     /// Incoming edges.
@@ -80,11 +78,12 @@ struct TopologyInner {
 impl Topology {
     /// Creates a topology of the given graph.
     ///
-    /// This method constructs a topology from a graph builder, one of the key
-    /// components of an executable [`Graph`][]. Thus, it's usually not needed
+    /// This method constructs a topology from a graph's nodes and edges, and is
+    /// the key component of an executable [`Graph`][]. It's usually not needed
     /// to create a topology manually, as it's automatically created when the
-    /// graph is built using the [`Builder::build`] method.
+    /// graph is built using the [`Builder::build`][] method.
     ///
+    /// [`Builder::build`]: crate::graph::Builder::build
     /// [`Graph`]: crate::graph::Graph
     ///
     /// # Examples
@@ -111,11 +110,13 @@ impl Topology {
     /// ```
     #[must_use]
     pub fn new(nodes: usize, edges: &[Edge]) -> Self {
-        Self(Rc::new(TopologyInner {
-            outgoing: Adjacency::outgoing(nodes, edges),
-            incoming: Adjacency::incoming(nodes, edges),
-            distance: OnceCell::new(),
-        }))
+        Self {
+            inner: Rc::new(Inner {
+                outgoing: Adjacency::outgoing(nodes, edges),
+                incoming: Adjacency::incoming(nodes, edges),
+                distance: OnceCell::new(),
+            }),
+        }
     }
 }
 
@@ -124,22 +125,60 @@ impl Topology {
     /// Returns a reference to the outgoing edges.
     #[inline]
     pub fn outgoing(&self) -> &Adjacency {
-        &self.0.outgoing
+        &self.inner.outgoing
     }
 
     /// Returns a reference to the incoming edges.
     #[inline]
     pub fn incoming(&self) -> &Adjacency {
-        &self.0.incoming
+        &self.inner.incoming
     }
 
     /// Returns a reference to the distance matrix.
     #[inline]
     pub fn distance(&self) -> &Distance {
-        self.0.distance.get_or_init(|| {
+        self.inner.distance.get_or_init(|| {
             // Compute distance matrix on first access, since this incurs cost
             // of O(n³) because of the usage of the Floyd-Warshall algorithm.
-            Distance::new(&self.0.outgoing)
+            Distance::new(&self.inner.outgoing)
         })
     }
 }
+
+// ----------------------------------------------------------------------------
+// Trait implementations
+// ----------------------------------------------------------------------------
+
+impl PartialEq for Topology {
+    /// Compares two topologies for equality.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_graph::{Graph, Topology};
+    ///
+    /// // Create graph builder and add nodes
+    /// let mut builder = Graph::builder();
+    /// let a = builder.add_node("a");
+    /// let b = builder.add_node("b");
+    /// let c = builder.add_node("c");
+    ///
+    /// // Create edges between nodes
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
+    ///
+    /// // Create topology
+    /// let topology = Topology::new(builder.len(), builder.edges());
+    /// assert_eq!(topology, topology.clone());
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.inner, &other.inner)
+    }
+}
+
+impl Eq for Topology {}
