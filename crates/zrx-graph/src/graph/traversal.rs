@@ -25,7 +25,8 @@
 
 //! Topological traversal.
 
-use std::collections::VecDeque;
+use std::collections::{BTreeSet, VecDeque};
+use std::mem;
 
 use super::topology::Topology;
 
@@ -60,6 +61,8 @@ pub struct Traversal {
     topology: Topology,
     /// Dependency counts.
     dependencies: Vec<u8>,
+    /// Initial nodes.
+    initial: Vec<usize>,
     /// Visitable nodes.
     visitable: VecDeque<usize>,
 }
@@ -124,7 +127,7 @@ impl Traversal {
             // We must adjust the dependency count for each node for all of its
             // dependencies that are not reachable from the initial nodes
             for &dependency in &incoming[node] {
-                let mut iter = visitable.iter();
+                let mut iter = initial.as_ref().iter();
                 if !iter.any(|&n| distance[n][dependency] != u8::MAX) {
                     dependencies[node] -= 1;
                 }
@@ -133,10 +136,11 @@ impl Traversal {
 
         // Retain only the visitable nodes whose dependencies are satisfied,
         // as we will discover the other initial nodes during traversal
-        visitable.retain(|&node| dependencies[node] == 0);
+        visitable.retain(|&n| dependencies[n] == 0);
         Self {
             topology: topology.clone(),
             dependencies,
+            initial: visitable.iter().copied().collect(),
             visitable,
         }
     }
@@ -187,8 +191,8 @@ impl Traversal {
     ///
     /// # Errors
     ///
-    /// In case the node has already been marked as visited, [`Error::Found`]
-    /// is returned. This is likely an error in the traversal business logic.
+    /// If the node has already been marked as visited, [`Error::Completed`] is
+    /// returned. This is likely an error in the caller's business logic.
     ///
     /// # Panics
     ///
@@ -231,15 +235,15 @@ impl Traversal {
     /// ```
     pub fn complete(&mut self, node: usize) -> Result {
         if self.dependencies[node] == u8::MAX {
-            return Err(Error::Redundant(node));
+            return Err(Error::Completed(node));
         }
 
-        // When the dependency count isn't zero, the traversal was merged with
+        // When the dependency count isn't zero, the traversal converged with
         // another traversal and restarted at a node occurring before the given
         // node. In this case, we return an error, and indicate to the caller
         // that parts of the traversal have to be completed again.
         if self.dependencies[node] != 0 {
-            return Err(Error::Restarted);
+            return Err(Error::Converged);
         }
 
         // Mark node as visited - we can just use the maximum value of `u8` as
@@ -260,7 +264,123 @@ impl Traversal {
             }
         }
 
-        // No errors occurred.
+        // No errors occurred
+        Ok(())
+    }
+
+    /// Attempts to converge this traversal with another traversal.
+    ///
+    /// This method attempts to combine both traversals into a single traversal,
+    /// which is possible when they have common descendants. This is useful for
+    /// deduplication of computations that need to be carried out for traversals
+    /// that originate from different sources, but converge at some point.
+    ///
+    /// # Errors
+    ///
+    /// If the given traversal is from a different graph, [`Error::Mismatch`]
+    /// is returned. Otherwise, if the traversals are disjoint, the traversal
+    /// is returned back to the caller wrapped in [`Error::Disjoint`], so the
+    /// caller can decide how to proceed.
+    ///
+    /// # Examples
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_graph::Graph;
+    ///
+    /// // Create graph builder and add nodes
+    /// let mut builder = Graph::builder();
+    /// let a = builder.add_node("a");
+    /// let b = builder.add_node("b");
+    /// let c = builder.add_node("c");
+    ///
+    /// // Create edges between nodes
+    /// builder.add_edge(a, c)?;
+    /// builder.add_edge(b, c)?;
+    ///
+    /// // Create graph from builder
+    /// let graph = builder.build();
+    ///
+    /// // Create topological traversal
+    /// let mut traversal = graph.traverse([a]);
+    ///
+    /// // Converge with another topological traversal
+    /// let mut other = graph.traverse([b]);
+    /// assert!(traversal.converge(other).is_ok());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn converge(&mut self, other: Self) -> Result {
+        if self.topology != other.topology {
+            return Err(Error::Mismatch);
+        }
+
+        // Obtain outgoing edges and distance matrix
+        let outgoing = self.topology.outgoing();
+        let distance = self.topology.distance();
+
+        // Compute the initial nodes for the combined traversal, which are the
+        // union of both traversals with redundant nodes removed
+        let iter = self.initial.iter().chain(&other.initial);
+        let initial = iter.copied().collect::<Vec<_>>();
+
+        // Compute the first layer of common descendants - all nodes that aren't
+        // descendants of any other remaining common descendant
+        let mut common = BTreeSet::new();
+        for descendant in outgoing {
+            let mut iter = initial.iter();
+            if !iter.all(|&node| distance[node][descendant] != u8::MAX) {
+                continue;
+            }
+
+            // Skip descendant, if it is reachable from any other descendant,
+            // as it can't be part of the first layer of common descendants
+            let mut iter = common.iter();
+            if iter.any(|&node| distance[node][descendant] != u8::MAX) {
+                continue;
+            }
+
+            // Check if the new descendant can reach any of the existing ones,
+            // and remove those that can be reached from the first layer
+            common.retain(|&node| distance[descendant][node] == u8::MAX);
+            common.insert(descendant);
+        }
+
+        // If there are no common descendants, the traversals are disjoint, and
+        // we can't converge them, so we return the traversal back to the caller
+        if common.is_empty() {
+            return Err(Error::Disjoint(other));
+        }
+
+        // Create the combined traversal, and mark all already visited nodes
+        // that are ancestors of the common descendants as visited as well
+        let prior = mem::replace(self, Self::new(&self.topology, initial));
+
+        // Compute the visitable nodes for the combined traversal, which are the
+        // union of both traversals with redundant nodes removed. Note that we
+        // must collect them in a temporary vector first, or this loop would run
+        // indefinitely, as we'd be adding visitable nodes again and again
+        let mut visitable = VecDeque::new();
+        while let Some(node) = self.take() {
+            let p = prior.dependencies[node];
+            let o = other.dependencies[node];
+
+            // If the node has been visited in either traversal, and is not
+            // part of the common descendants, mark it as visited
+            if (p == u8::MAX || o == u8::MAX) && !common.contains(&node) {
+                self.complete(node)?;
+            } else {
+                visitable.push_back(node);
+            }
+        }
+
+        // Update visitable nodes
+        self.visitable = visitable;
+
+        // No errors occurred
         Ok(())
     }
 }

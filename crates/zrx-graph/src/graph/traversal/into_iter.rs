@@ -72,7 +72,7 @@ impl IntoIterator for Traversal {
     /// // Create graph from builder
     /// let graph = builder.build();
     ///
-    /// // Create iterator over topological traversal
+    /// // Create topological traversal
     /// for node in graph.traverse([a]) {
     ///     println!("{node:?}");
     /// }

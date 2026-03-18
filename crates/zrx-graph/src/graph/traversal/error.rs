@@ -28,6 +28,8 @@
 use std::result;
 use thiserror::Error;
 
+use super::Traversal;
+
 // ----------------------------------------------------------------------------
 // Enums
 // ----------------------------------------------------------------------------
@@ -35,12 +37,18 @@ use thiserror::Error;
 /// Topological traversal error.
 #[derive(Debug, Error)]
 pub enum Error {
-    /// Traversal completed redundantly.
-    #[error("traversal completed redundantly: {0}")]
-    Redundant(usize),
-    /// Traversal restarted.
-    #[error("traversal restarted")]
-    Restarted,
+    /// Traversal completed before.
+    #[error("traversal completed before: {0}")]
+    Completed(usize),
+    /// Traversal converged.
+    #[error("traversal converged")]
+    Converged,
+    /// Traversal topology mismatch.
+    #[error("traversal topology mismatch")]
+    Mismatch,
+    /// Traversal is disjoint.
+    #[error("traversal is disjoint")]
+    Disjoint(Traversal),
 }
 
 // ----------------------------------------------------------------------------
