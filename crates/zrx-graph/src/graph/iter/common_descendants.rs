@@ -79,7 +79,7 @@ impl<T> Graph<T> {
     /// let graph = builder.build();
     ///
     /// // Create iterator over common descendants
-    /// for nodes in graph.common_descendants([b, c]) {
+    /// for nodes in graph.common_descendants([a]) {
     ///     println!("{nodes:?}");
     /// }
     /// # Ok(())
