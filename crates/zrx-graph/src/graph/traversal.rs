@@ -285,8 +285,6 @@ impl Traversal {
     ///
     /// # Examples
     ///
-    /// # Examples
-    ///
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
