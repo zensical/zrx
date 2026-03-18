@@ -25,7 +25,8 @@
 
 //! Topological traversal.
 
-use std::collections::{BTreeSet, VecDeque};
+use ahash::HashSet;
+use std::collections::VecDeque;
 use std::mem;
 
 use super::topology::Topology;
@@ -329,7 +330,7 @@ impl Traversal {
 
         // Compute the first layer of common descendants - all nodes that aren't
         // descendants of any other remaining common descendant
-        let mut common = BTreeSet::new();
+        let mut common = HashSet::default();
         for descendant in outgoing {
             let mut iter = initial.iter();
             if !iter.all(|&node| distance[node][descendant] != u8::MAX) {
