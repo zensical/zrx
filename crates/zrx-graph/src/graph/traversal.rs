@@ -25,11 +25,11 @@
 
 //! Topological traversal.
 
-use ahash::HashSet;
 use std::collections::VecDeque;
 use std::mem;
 
 use super::topology::Topology;
+use super::Graph;
 
 mod error;
 mod into_iter;
@@ -317,51 +317,33 @@ impl Traversal {
             return Err(Error::Mismatch);
         }
 
-        // Obtain outgoing edges and distance matrix
-        let outgoing = self.topology.outgoing();
-        let distance = self.topology.distance();
-
-        // Compute the initial nodes for the combined traversal, which are the
-        // union of both traversals with redundant nodes removed
+        // Compute the initial nodes for the combined traversal, which is the
+        // union of both traversals with all redundant nodes removed
         let iter = self.initial.iter().chain(&other.initial);
         let initial = iter.copied().collect::<Vec<_>>();
 
-        // Compute the first layer of common descendants - all nodes that aren't
-        // descendants of any other remaining common descendant
-        let mut common = HashSet::default();
-        for descendant in outgoing {
-            let mut iter = initial.iter();
-            if !iter.all(|&node| distance[node][descendant] != u8::MAX) {
-                continue;
-            }
-
-            // Skip descendant, if it is reachable from any other descendant,
-            // as it can't be part of the first layer of common descendants
-            let mut iter = common.iter();
-            if iter.any(|&node| distance[node][descendant] != u8::MAX) {
-                continue;
-            }
-
-            // Check if the new descendant can reach any of the existing ones,
-            // and remove those that can be reached from the first layer
-            common.retain(|&node| distance[descendant][node] == u8::MAX);
-            common.insert(descendant);
-        }
+        // Create a temporary graph, so we can compute the first layer of nodes
+        // that are common descendants contained in both traversals
+        let graph = Graph {
+            data: (0..self.len()).collect(),
+            topology: self.topology.clone(),
+        };
 
         // If there are no common descendants, the traversals are disjoint, and
-        // we can't converge them, so we return the traversal back to the caller
-        if common.is_empty() {
+        // we can't converge them, so we return the traversal to the caller
+        let mut iter = graph.common_descendants(&initial);
+        let Some(common) = iter.next() else {
             return Err(Error::Disjoint(other));
-        }
+        };
 
         // Create the combined traversal, and mark all already visited nodes
         // that are ancestors of the common descendants as visited as well
         let prior = mem::replace(self, Self::new(&self.topology, initial));
 
-        // Compute the visitable nodes for the combined traversal, which are the
-        // union of both traversals with redundant nodes removed. Note that we
-        // must collect them in a temporary vector first, or this loop would run
-        // indefinitely, as we'd be adding visitable nodes again and again
+        // Compute the visitable nodes for the combined traversal, which is the
+        // union of both traversals with all redundant nodes removed. Note that
+        // we must collect them in a temporary vector first, or this loop would
+        // run indefinitely, as we'd be adding visitable nodes again and again.
         let mut visitable = VecDeque::new();
         while let Some(node) = self.take() {
             let p = prior.dependencies[node];
