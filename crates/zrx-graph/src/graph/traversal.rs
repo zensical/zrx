@@ -25,6 +25,7 @@
 
 //! Topological traversal.
 
+use ahash::HashSet;
 use std::collections::VecDeque;
 use std::mem;
 
@@ -111,7 +112,7 @@ impl Traversal {
         I: AsRef<[usize]>,
     {
         let mut visitable: VecDeque<_> =
-            initial.as_ref().iter().copied().collect();
+            unique(initial.as_ref().iter()).collect();
 
         // Obtain incoming edges and distance matrix
         let incoming = topology.incoming();
@@ -317,12 +318,12 @@ impl Traversal {
         // Compute the initial nodes for the combined traversal, which is the
         // union of both traversals with all redundant nodes removed
         let iter = self.initial.iter().chain(&other.initial);
-        let initial = iter.copied().collect::<Vec<_>>();
+        let initial: Vec<_> = unique(iter).collect();
 
         // Create a temporary graph, so we can compute the first layer of nodes
         // that are common descendants contained in both traversals
         let graph = Graph {
-            data: (0..self.len()).collect(),
+            data: (0..self.topology.incoming().len()).collect(),
             topology: self.topology.clone(),
         };
 
@@ -383,5 +384,167 @@ impl Traversal {
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.visitable.is_empty()
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Functions
+// ----------------------------------------------------------------------------
+
+/// Deduplicates the given nodes while preserving their order.
+#[inline]
+fn unique<'a, I>(iter: I) -> impl Iterator<Item = usize>
+where
+    I: IntoIterator<Item = &'a usize>,
+{
+    let mut nodes = HashSet::default();
+    iter.into_iter() // fmt
+        .copied()
+        .filter(move |&node| nodes.insert(node))
+}
+
+// ----------------------------------------------------------------------------
+// Tests
+// ----------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+
+    mod complete {
+        use crate::graph;
+
+        #[test]
+        fn handles_graph() {
+            let graph = graph! {
+                "a" => "b", "a" => "c",
+                "b" => "d", "b" => "e",
+                "c" => "f",
+                "d" => "g",
+                "e" => "g", "e" => "h",
+                "f" => "h",
+                "g" => "i",
+                "h" => "i",
+            };
+            for (node, mut descendants) in [
+                (0, vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (1, vec![1, 3, 4, 6, 7, 8]),
+                (2, vec![2, 5, 7, 8]),
+                (3, vec![3, 6, 8]),
+                (4, vec![4, 6, 7, 8]),
+                (5, vec![5, 7, 8]),
+                (6, vec![6, 8]),
+                (7, vec![7, 8]),
+                (8, vec![8]),
+            ] {
+                let mut traversal = graph.traverse([node]);
+                while let Some(node) = traversal.take() {
+                    assert_eq!(node, descendants.remove(0));
+                    assert!(traversal.complete(node).is_ok());
+                }
+            }
+        }
+
+        #[test]
+        fn handles_multi_graph() {
+            let graph = graph! {
+                "a" => "b", "a" => "c", "a" => "c",
+                "b" => "d", "b" => "e",
+                "c" => "f",
+                "d" => "g",
+                "e" => "g", "e" => "h",
+                "f" => "h",
+                "g" => "i",
+                "h" => "i",
+            };
+            for (node, mut descendants) in [
+                (0, vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (1, vec![1, 3, 4, 6, 7, 8]),
+                (2, vec![2, 5, 7, 8]),
+                (3, vec![3, 6, 8]),
+                (4, vec![4, 6, 7, 8]),
+                (5, vec![5, 7, 8]),
+                (6, vec![6, 8]),
+                (7, vec![7, 8]),
+                (8, vec![8]),
+            ] {
+                let mut traversal = graph.traverse([node]);
+                while let Some(node) = traversal.take() {
+                    assert_eq!(node, descendants.remove(0));
+                    assert!(traversal.complete(node).is_ok());
+                }
+            }
+        }
+    }
+
+    mod converge {
+        use crate::graph;
+
+        #[test]
+        fn handles_graph() {
+            let graph = graph! {
+                "a" => "b", "a" => "c",
+                "b" => "d", "b" => "e",
+                "c" => "f",
+                "d" => "g",
+                "e" => "g", "e" => "h",
+                "f" => "h",
+                "g" => "i",
+                "h" => "i",
+            };
+            for (i, j, descendants) in [
+                (vec![0], vec![0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![1], vec![0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![8], vec![0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![1], vec![1], vec![1, 3, 4, 6, 7, 8]),
+                (vec![1], vec![2], vec![1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![2], vec![4], vec![2, 4, 5, 6, 7, 8]),
+                (vec![4], vec![2], vec![4, 2, 6, 5, 7, 8]),
+                (vec![3], vec![5], vec![3, 5, 6, 7, 8]),
+                (vec![6], vec![7], vec![6, 7, 8]),
+                (vec![8], vec![8], vec![8]),
+            ] {
+                let mut a = graph.traverse(i);
+                let b = graph.traverse(j);
+                assert!(a.converge(b).is_ok());
+                assert_eq!(
+                    a.into_iter().collect::<Vec<_>>(), // fmt
+                    descendants
+                );
+            }
+        }
+
+        #[test]
+        fn handles_multi_graph() {
+            let graph = graph! {
+                "a" => "b", "a" => "c", "a" => "c",
+                "b" => "d", "b" => "e",
+                "c" => "f",
+                "d" => "g",
+                "e" => "g", "e" => "h",
+                "f" => "h",
+                "g" => "i",
+                "h" => "i",
+            };
+            for (i, j, descendants) in [
+                (vec![0], vec![0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![1], vec![0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![8], vec![0], vec![0, 1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![1], vec![1], vec![1, 3, 4, 6, 7, 8]),
+                (vec![1], vec![2], vec![1, 2, 3, 4, 5, 6, 7, 8]),
+                (vec![2], vec![4], vec![2, 4, 5, 6, 7, 8]),
+                (vec![4], vec![2], vec![4, 2, 6, 5, 7, 8]),
+                (vec![3], vec![5], vec![3, 5, 6, 7, 8]),
+                (vec![6], vec![7], vec![6, 7, 8]),
+                (vec![8], vec![8], vec![8]),
+            ] {
+                let mut a = graph.traverse(i);
+                let b = graph.traverse(j);
+                assert!(a.converge(b).is_ok());
+                assert_eq!(
+                    a.into_iter().collect::<Vec<_>>(), // fmt
+                    descendants
+                );
+            }
+        }
     }
 }
