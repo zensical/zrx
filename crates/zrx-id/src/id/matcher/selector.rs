@@ -343,7 +343,9 @@ impl PartialEq for Selector {
     /// ```
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.hash == other.hash
+        // We first compare the precomputed hashes, which is extremely fast, as
+        // it saves us the comparison when the identifiers are different
+        self.hash == other.hash && self.format == other.format
     }
 }
 
