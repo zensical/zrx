@@ -419,13 +419,7 @@ impl Ord for Id {
     /// ```
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
-        // Fast path - first, we compare for equality by using the precomputed
-        // hashes, as it's a simple and extremely fast integer comparison
-        if self.eq(other) {
-            Ordering::Equal
-        } else {
-            self.format.cmp(&other.format)
-        }
+        self.format.cmp(&other.format)
     }
 }
 
