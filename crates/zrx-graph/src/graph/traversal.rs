@@ -278,8 +278,8 @@ impl Traversal {
     ///   converged, so we just restart the traversal at these source nodes.
     ///
     /// - If traversals start from different source nodes, yet both have common
-    ///   descendants, we merge those at the first layer of common descendants,
-    ///   as those are the initial nodes that must be visited in both of them.
+    ///   descendants, we converge at the first layer of common descendants, as
+    ///   all descendants of them must be revisited in the combined traversal.
     ///   Ancestors of the common descendants that have already been visited in
     ///   either traversal don't need to be revisited, and thus are carried over
     ///   from both traversals in their current state.
