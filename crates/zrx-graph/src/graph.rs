@@ -190,7 +190,7 @@ impl<T> Graph<T> {
 
 #[allow(clippy::must_use_candidate)]
 impl<T> Graph<T> {
-    /// Returns the graph topology.
+    /// Returns a reference to the graph topology.
     #[inline]
     pub fn topology(&self) -> &Topology {
         &self.topology

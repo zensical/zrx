@@ -381,10 +381,16 @@ impl Traversal {
 
 #[allow(clippy::must_use_candidate)]
 impl Traversal {
-    /// Returns the graph topology.
+    /// Returns a reference to the graph topology.
     #[inline]
     pub fn topology(&self) -> &Topology {
         &self.topology
+    }
+
+    /// Returns a reference to the initial nodes.
+    #[inline]
+    pub fn initial(&self) -> &[usize] {
+        &self.initial
     }
 
     /// Returns the number of visitable nodes.
