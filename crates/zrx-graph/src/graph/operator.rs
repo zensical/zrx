@@ -25,5 +25,5 @@
 
 //! Graph operators.
 
+mod adjacent;
 mod map;
-mod with;
