@@ -522,11 +522,10 @@ mod tests {
                 (vec![6], vec![7], vec![6, 7, 8]),
                 (vec![8], vec![8], vec![8]),
             ] {
-                let mut a = graph.traverse(i);
-                let b = graph.traverse(j);
-                assert!(a.converge(b).is_ok());
+                let mut traversal = graph.traverse(i);
+                assert!(traversal.converge(graph.traverse(j)).is_ok());
                 assert_eq!(
-                    a.into_iter().collect::<Vec<_>>(), // fmt
+                    traversal.into_iter().collect::<Vec<_>>(), // fmt
                     descendants
                 );
             }
@@ -556,11 +555,10 @@ mod tests {
                 (vec![6], vec![7], vec![6, 7, 8]),
                 (vec![8], vec![8], vec![8]),
             ] {
-                let mut a = graph.traverse(i);
-                let b = graph.traverse(j);
-                assert!(a.converge(b).is_ok());
+                let mut traversal = graph.traverse(i);
+                assert!(traversal.converge(graph.traverse(j)).is_ok());
                 assert_eq!(
-                    a.into_iter().collect::<Vec<_>>(), // fmt
+                    traversal.into_iter().collect::<Vec<_>>(), // fmt
                     descendants
                 );
             }
