@@ -41,7 +41,7 @@ use super::Specificity;
 // Traits
 // ----------------------------------------------------------------------------
 
-/// Computes the [`Specificity`].
+/// Compute the [`Specificity`] of a value.
 pub trait ToSpecificity {
     /// Computes the specificity of the value.
     fn to_specificity(&self) -> Specificity;
