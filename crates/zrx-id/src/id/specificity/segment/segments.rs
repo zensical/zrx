@@ -26,7 +26,7 @@
 //! Segment set.
 
 use std::fmt::{self, Display, Write};
-use std::vec::IntoIter;
+use std::slice::Iter;
 
 use super::Segment;
 
@@ -47,6 +47,18 @@ pub struct Segments<'a> {
 }
 
 // ----------------------------------------------------------------------------
+// Implementations
+// ----------------------------------------------------------------------------
+
+impl Segments<'_> {
+    /// Creates an iterator over the segment set.
+    #[inline]
+    pub fn iter(&self) -> Iter<'_, Segment<'_>> {
+        self.inner.iter()
+    }
+}
+
+// ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
@@ -63,14 +75,14 @@ impl<'a> FromIterator<Segment<'a>> for Segments<'a> {
     }
 }
 
-impl<'a> IntoIterator for Segments<'a> {
-    type Item = Segment<'a>;
-    type IntoIter = IntoIter<Self::Item>;
+impl<'a> IntoIterator for &'a Segments<'a> {
+    type Item = &'a Segment<'a>;
+    type IntoIter = Iter<'a, Segment<'a>>;
 
-    /// Creates a consuming iterator over the segment set.
+    /// Creates an iterator over the segment set.
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        self.inner.into_iter()
+        self.iter()
     }
 }
 

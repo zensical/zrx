@@ -51,6 +51,7 @@ impl<T> ToSegments for T
 where
     T: AsTokens,
 {
+    /// Converts tokens to a segments set.
     #[inline]
     fn to_segments(&self) -> Segments<'_> {
         parse(&mut self.as_tokens().peekable(), false)
@@ -140,7 +141,7 @@ fn parse_character<'a>(iter: &mut Iter<'a>) -> Character<'a> {
 fn parse_group<'a>(iter: &mut Iter<'a>) -> Vec<Segments<'a>> {
     let mut group = Vec::new();
     loop {
-        group.push(Segments::from_iter(parse(iter, true)));
+        group.push(parse(iter, true));
         match iter.peek() {
             Some(Token::Comma) => iter.next(),
             Some(Token::GroupEnd) => {

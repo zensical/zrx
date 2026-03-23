@@ -26,7 +26,7 @@
 //! Segment.
 
 use std::fmt::{self, Display};
-use std::vec::IntoIter;
+use std::slice::Iter;
 
 pub mod atom;
 pub mod convert;
@@ -47,6 +47,18 @@ pub struct Segment<'a> {
 }
 
 // ----------------------------------------------------------------------------
+// Implementations
+// ----------------------------------------------------------------------------
+
+impl Segment<'_> {
+    /// Creates an iterator over the atoms of the segment.
+    #[inline]
+    pub fn iter(&self) -> Iter<'_, Atom<'_>> {
+        self.atoms.iter()
+    }
+}
+
+// ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
@@ -63,14 +75,14 @@ impl<'a> FromIterator<Atom<'a>> for Segment<'a> {
     }
 }
 
-impl<'a> IntoIterator for Segment<'a> {
-    type Item = Atom<'a>;
-    type IntoIter = IntoIter<Self::Item>;
+impl<'a> IntoIterator for &'a Segment<'a> {
+    type Item = &'a Atom<'a>;
+    type IntoIter = Iter<'a, Atom<'a>>;
 
-    /// Creates a consuming iterator over the segment.
+    /// Creates an iterator over the atoms of the segment.
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        self.atoms.into_iter()
+        self.iter()
     }
 }
 

@@ -27,6 +27,8 @@
 
 use std::cmp;
 
+use crate::id::format::Format;
+
 use super::segment::atom::{Character, Wildcard};
 use super::segment::convert::ToSegments;
 use super::segment::{Atom, Segment, Segments};
@@ -37,32 +39,45 @@ use super::Specificity;
 // ----------------------------------------------------------------------------
 
 /// Computes the [`Specificity`].
-pub trait IntoSpecificity {
+pub trait ToSpecificity {
     /// Computes the specificity of the value.
-    fn into_specificity(self) -> Specificity;
+    fn to_specificity(&self) -> Specificity;
 }
 
 // ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl IntoSpecificity for Segments<'_> {
-    /// Computes the specificity of the segments set.
+impl<const N: usize> ToSpecificity for Format<N> {
+    /// Computes the specificity of the formatted string.
     #[inline]
-    fn into_specificity(self) -> Specificity {
-        self.into_iter()
-            .map(IntoSpecificity::into_specificity)
+    fn to_specificity(&self) -> Specificity {
+        let iter = 0..N;
+        iter.map(|index| self.get(index).to_specificity())
             .reduce(Specificity::sum)
             .unwrap_or_default()
     }
 }
 
-impl IntoSpecificity for Segment<'_> {
+// ----------------------------------------------------------------------------
+
+impl ToSpecificity for Segments<'_> {
+    /// Computes the specificity of the segments set.
+    #[inline]
+    fn to_specificity(&self) -> Specificity {
+        self.iter()
+            .map(ToSpecificity::to_specificity)
+            .reduce(Specificity::sum)
+            .unwrap_or_default()
+    }
+}
+
+impl ToSpecificity for Segment<'_> {
     /// Computes the specificity of the segment.
     #[inline]
-    fn into_specificity(self) -> Specificity {
-        self.into_iter()
-            .map(IntoSpecificity::into_specificity)
+    fn to_specificity(&self) -> Specificity {
+        self.iter()
+            .map(ToSpecificity::to_specificity)
             .reduce(Specificity::min)
             .unwrap_or_default()
     }
@@ -70,30 +85,30 @@ impl IntoSpecificity for Segment<'_> {
 
 // ----------------------------------------------------------------------------
 
-impl IntoSpecificity for Atom<'_> {
+impl ToSpecificity for Atom<'_> {
     /// Computes the specificity of the atom.
     #[inline]
-    fn into_specificity(self) -> Specificity {
+    fn to_specificity(&self) -> Specificity {
         match self {
             Atom::Literal(literal) => {
                 let len = u16::try_from(literal.len()).unwrap_or(u16::MAX);
                 Specificity(1, 0, 0, len)
             }
-            Atom::Wildcard(wildcard) => wildcard.into_specificity(),
-            Atom::Character(character) => character.into_specificity(),
+            Atom::Wildcard(wildcard) => wildcard.to_specificity(),
+            Atom::Character(character) => character.to_specificity(),
             Atom::Group(data) => data
-                .into_iter()
-                .map(IntoSpecificity::into_specificity)
+                .iter()
+                .map(ToSpecificity::to_specificity)
                 .reduce(cmp::min)
                 .unwrap_or_default(),
         }
     }
 }
 
-impl IntoSpecificity for Wildcard {
+impl ToSpecificity for Wildcard {
     /// Computes the specificity of the wildcard.
     #[inline]
-    fn into_specificity(self) -> Specificity {
+    fn to_specificity(&self) -> Specificity {
         match self {
             Wildcard::Character => Specificity(0, 1, 0, 0),
             Wildcard::Sequence => Specificity(0, 1, 0, 0),
@@ -102,10 +117,10 @@ impl IntoSpecificity for Wildcard {
     }
 }
 
-impl IntoSpecificity for Character<'_> {
+impl ToSpecificity for Character<'_> {
     /// Computes the specificity of the character.
     #[inline]
-    fn into_specificity(self) -> Specificity {
+    fn to_specificity(&self) -> Specificity {
         Specificity(0, 1, 0, 1)
     }
 }
@@ -114,12 +129,12 @@ impl IntoSpecificity for Character<'_> {
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<T> IntoSpecificity for T
+impl<T> ToSpecificity for T
 where
     T: ToSegments,
 {
     #[inline]
-    fn into_specificity(self) -> Specificity {
-        self.to_segments().into_specificity()
+    fn to_specificity(&self) -> Specificity {
+        self.to_segments().to_specificity()
     }
 }

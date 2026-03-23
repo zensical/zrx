@@ -31,8 +31,7 @@ pub mod convert;
 pub mod segment;
 mod tokens;
 
-use convert::IntoSpecificity;
-use tokens::AsTokens;
+use convert::ToSpecificity;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -60,13 +59,10 @@ impl Specificity {
 
     /// Creates a specificity by taking the minimum of both.
     #[inline]
-    fn min(mut self, other: Self) -> Self {
-        let spec = cmp::min(self, other);
-        self.0 = spec.0;
-        self.1 = spec.1;
-        self.2 = spec.2;
-        self.3 = self.3.saturating_add(other.3);
-        self
+    fn min(self, other: Self) -> Self {
+        let mut spec = cmp::min(self, other);
+        spec.3 = self.3.saturating_add(other.3);
+        spec
     }
 }
 
@@ -76,10 +72,12 @@ impl Specificity {
 
 impl<T> From<T> for Specificity
 where
-    T: AsTokens,
+    T: ToSpecificity,
 {
+    /// Creates a specificity from a value.
+    #[inline]
     fn from(value: T) -> Self {
-        value.into_specificity()
+        value.to_specificity()
     }
 }
 
