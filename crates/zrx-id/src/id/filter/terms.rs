@@ -49,6 +49,31 @@ pub struct Terms<'a> {
 
 impl Filter {
     /// Creates an iterator over the terms.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::{selector, Expression, Filter};
+    ///
+    /// // Create filter builder and insert expression
+    /// let mut builder = Filter::builder();
+    /// builder.insert(Expression::any(|expr| {
+    ///     expr.with(selector!(location = "**/*.jpg")?)?
+    ///         .with(selector!(location = "**/*.png")?)
+    /// })?);
+    ///
+    /// // Create filter from builder
+    /// let filter = builder.build()?;
+    ///
+    /// // Create iterator over terms
+    /// for term in filter.terms() {
+    ///     println!("{term:?}");
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     #[must_use]
     pub fn terms(&self) -> Terms<'_> {

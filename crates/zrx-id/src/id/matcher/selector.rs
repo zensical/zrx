@@ -52,7 +52,7 @@ pub use convert::TryToSelector;
 ///
 /// Selectors are used to match identifiers. Like identifiers, they consist of
 /// six components, which can be set to specific values or left empty to act as
-/// wildcards. Each components can be set to a glob as supported by [`globset`],
+/// wildcards. Each component can be set to a glob as supported by [`globset`],
 /// which allows for powerful matching capabilities.
 ///
 /// Selectors are no means to an end, but rather a building block to associate

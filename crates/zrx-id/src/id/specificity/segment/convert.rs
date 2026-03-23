@@ -39,7 +39,7 @@ use super::Segment;
 
 /// Conversion to [`Segments`].
 pub trait ToSegments {
-    /// Converts to a segments set.
+    /// Converts to a segment set.
     fn to_segments(&self) -> Segments<'_>;
 }
 
@@ -51,7 +51,7 @@ impl<T> ToSegments for T
 where
     T: AsTokens,
 {
-    /// Converts tokens to a segments set.
+    /// Converts tokens to a segment set.
     ///
     /// # Examples
     ///

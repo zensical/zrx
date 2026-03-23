@@ -208,7 +208,7 @@ impl ToSpecificity for Selector {
 // ----------------------------------------------------------------------------
 
 impl ToSpecificity for Segments<'_> {
-    /// Computes the specificity of the segments set.
+    /// Computes the specificity of the segment set.
     #[inline]
     fn to_specificity(&self) -> Specificity {
         self.iter()

@@ -205,8 +205,8 @@ mod tests {
             })?);
             let filter = builder.build()?;
             for (id, check) in [
-                ("zri:file:::docs:image.png:", vec![0]),
                 ("zri:file:::docs:image.jpg:", vec![0]),
+                ("zri:file:::docs:image.png:", vec![0]),
                 ("zri:file:::docs:image.gif:", vec![]),
             ] {
                 assert_eq!(
@@ -272,11 +272,11 @@ mod tests {
             let filter = builder.build()?;
             for (id, check) in [
                 ("zri:file:::docs:index.md:", vec![]),
-                ("zri:file:::docs:image.png:", vec![0]),
                 ("zri:file:::docs:image.jpg:", vec![0]),
+                ("zri:file:::docs:image.png:", vec![0]),
                 ("zri:file:::docs:image.gif:", vec![]),
-                ("zri:git:::docs:image.png:", vec![]),
                 ("zri:git:::docs:image.jpg:", vec![]),
+                ("zri:git:::docs:image.png:", vec![]),
             ] {
                 assert_eq!(
                     filter.candidates(&id)?.collect::<Vec<_>>(), // fmt
