@@ -33,8 +33,7 @@ use crate::id::matcher::selector::Selector;
 use crate::id::Id;
 
 use super::segment::atom::{Character, Wildcard};
-use super::segment::convert::ToSegments;
-use super::segment::{Atom, Segment, Segments};
+use super::segment::{Atom, Segment, Segments, ToSegments};
 use super::Specificity;
 
 // ----------------------------------------------------------------------------
@@ -60,8 +59,8 @@ impl ToSpecificity for Expression {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use zrx_id::filter::Expression;
-    /// use zrx_id::specificity::convert::ToSpecificity;
     /// use zrx_id::selector;
+    /// use zrx_id::specificity::ToSpecificity;
     ///
     /// // Create expression and compute specificity
     /// let expr = Expression::any(|expr| {
@@ -95,8 +94,8 @@ impl ToSpecificity for Term {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use zrx_id::filter::expression::Term;
-    /// use zrx_id::specificity::convert::ToSpecificity;
     /// use zrx_id::selector;
+    /// use zrx_id::specificity::ToSpecificity;
     ///
     /// // Create term and compute specificity
     /// let term = Term::from(selector!(location = "**/*.{jpg,png}")?);
@@ -125,8 +124,8 @@ impl ToSpecificity for Operand {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use zrx_id::filter::expression::Operand;
-    /// use zrx_id::specificity::convert::ToSpecificity;
     /// use zrx_id::selector;
+    /// use zrx_id::specificity::ToSpecificity;
     ///
     /// // Create operand and compute specificity
     /// let operand = Operand::from(selector!(location = "**/*.{jpg,png}")?);
@@ -156,8 +155,8 @@ impl ToSpecificity for Id {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::specificity::convert::ToSpecificity;
     /// use zrx_id::id;
+    /// use zrx_id::specificity::ToSpecificity;
     ///
     /// // Create identifier and compute specificity
     /// let id = id!(provider = "file", context = ".", location = "index.md")?;
@@ -185,8 +184,8 @@ impl ToSpecificity for Selector {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::specificity::convert::ToSpecificity;
     /// use zrx_id::selector;
+    /// use zrx_id::specificity::ToSpecificity;
     ///
     /// // Create selector and compute specificity
     /// let selector = selector!(location = "**/*.{jpg,png}")?;

@@ -27,11 +27,11 @@
 
 use std::cmp::{self, Ordering};
 
-pub mod convert;
+mod convert;
 pub mod segment;
 mod tokens;
 
-use convert::ToSpecificity;
+pub use convert::ToSpecificity;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -102,7 +102,7 @@ impl PartialOrd for Specificity {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::specificity::convert::ToSpecificity;
+    /// use zrx_id::specificity::ToSpecificity;
     /// use zrx_id::selector;
     ///
     /// // Create selector and compute specificity
@@ -126,7 +126,7 @@ impl Ord for Specificity {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::specificity::convert::ToSpecificity;
+    /// use zrx_id::specificity::ToSpecificity;
     /// use zrx_id::selector;
     ///
     /// // Create selector and compute specificity

@@ -56,7 +56,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::specificity::segment::convert::ToSegments;
+    /// use zrx_id::specificity::segment::ToSegments;
     ///
     /// // Create segment set from string
     /// let segments = "**/*.md".to_segments();

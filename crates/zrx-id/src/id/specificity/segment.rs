@@ -29,10 +29,11 @@ use std::fmt::{self, Display};
 use std::slice::Iter;
 
 pub mod atom;
-pub mod convert;
+mod convert;
 mod segments;
 
 pub use atom::Atom;
+pub use convert::ToSegments;
 pub use segments::Segments;
 
 // ----------------------------------------------------------------------------
