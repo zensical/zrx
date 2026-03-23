@@ -39,7 +39,6 @@ pedantic = { level = "warn", priority = -1 }
 
 [workspace.dependencies]
 zrx-diagnostic = { version = "0.0.1", path = "crates/zrx-diagnostic" }
-zrx-event = { version = "0.0.1", path = "crates/zrx-event" }
 zrx-executor = { version = "0.0.3", path = "crates/zrx-executor" }
 zrx-graph = { version = "0.0.10", path = "crates/zrx-graph" }
 zrx-id = { version = "0.0.11", path = "crates/zrx-id" }
@@ -54,7 +53,7 @@ file-id = "0.2.3"
 globset = "0.4.18"
 notify = "8.2.0"
 percent-encoding = "2.3.2"
-slab = "0.4.11"
-thiserror = "2.0.17"
+slab = "0.4.12"
+thiserror = "2.0.18"
 tracing = "0.1.41"
 walkdir = "2.5.0"
