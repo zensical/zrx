@@ -38,6 +38,94 @@ pub use convert::ToSpecificity;
 // ----------------------------------------------------------------------------
 
 /// Specificity.
+///
+/// Specificity is an ordering and tie-breaking concept borrowed from CSS, where
+/// more specific selectors take precedence over less specific ones. Specificity
+/// is computable for the likes of [`Expression`][], [`Term`][], [`Operand`][],
+/// [`Id`][], [`Selector`][], and [`Glob`][].
+///
+/// # Representation
+///
+/// Specificity is represented as a 4-tuple `(a, b, c, l)`, which is compared
+/// in lexicographic order, meaning that components are compared in sequence:
+///
+/// - `a` – number of segments with literals only, e.g. `src`, `main.rs`.
+/// - `b` – number of segments with single-wildcards, e.g. `*`, `?`, `[abc]`.
+/// - `c` – number of segments with double-wildcards, compared in reverse.
+/// - `l` – number of literals across all segments.
+///
+/// # Atoms
+///
+/// In a [`Segment`][], atoms are combined with [`Specificity::min_sum_len`] -
+/// the structural component `a`, `b`, or `c` is assigned by taking the minimum
+/// across all atoms in the segment, whereas the length component `l` receives
+/// the sum across all atoms in the segment.
+///
+/// # Ids and selectors
+///
+/// The specificity of an [`Id`][] or [`Selector`][] is computed by summing the
+/// specificities of its components, where the specificity of each component is
+/// computed individually and then combined with [`Specificity::sum`][]. Empty
+/// components receive the [`Specificity::default`], which is `(0, 0, 0, 0)`.
+///
+/// ``` sh
+/// zrs:{git,file}:::{docs}:index.md: # (3, 0, 0, 15)
+/// zrs::::docs:{index,about}.md:     # (2, 0, 0, 12)
+/// zrs:::::index.{md,rst}:           # (1, 0, 0, 8)
+/// zrs:::::{*}:                      # (0, 1, 0, 0)
+/// ```
+///
+/// # Expressions
+///
+/// An [`Expression`][] is a combination of multiple [`Id`][] and [`Selector`][]
+/// terms, with its specificity computed according to its [`Operator`][]:
+///
+/// - [`Expression::any`][]: takes the minimum. The expression is as specific
+///   as its least specific operand, since any operand can match.
+///
+/// - [`Expression::all`][]: sums specificities. The expression is as specific
+///   as the combination of all its operands, since all operands must match.
+///
+/// - [`Expression::not`][]: contributes nothing, i.e., `(0, 0, 0, 0)`, since
+///   a negation is a guard that filters matches but does not select them.
+///
+/// Alternate groups, e.g. `{jpg,png}`, are equivalent to [`Expression::any`][]
+/// at the [`Atom`][] level and follow the same rules.
+///
+/// [`Atom`]: crate::id::specificity::segment::Atom
+/// [`Expression`]: crate::id::filter::Expression
+/// [`Expression::all`]: crate::id::filter::Expression::all
+/// [`Expression::any`]: crate::id::filter::Expression::any
+/// [`Expression::not`]: crate::id::filter::Expression::not
+/// [`Glob`]: globset::Glob
+/// [`Id`]: crate::id::Id
+/// [`Operand`]: crate::id::filter::expression::Operand
+/// [`Operator`]: crate::id::filter::expression::Operator
+/// [`Segment`]: crate::id::specificity::segment::Segment
+/// [`Selector`]: crate::id::matcher::selector::Selector
+/// [`Term`]: crate::id::filter::Term
+///
+/// # Examples
+///
+/// ```
+/// # use std::error::Error;
+/// # fn main() -> Result<(), Box<dyn Error>> {
+/// use zrx_id::filter::Expression;
+/// use zrx_id::selector;
+/// use zrx_id::specificity::ToSpecificity;
+///
+/// // Create expression and compute specificity
+/// let expr = Expression::any(|expr| {
+///     expr.with(selector!(location = "**/*.jpg")?)?
+///         .with(selector!(location = "**/*.png")?)
+/// })?;
+/// assert_eq!(
+///     expr.to_specificity(),
+///     (0, 1, 1, 4).into()
+/// );
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Specificity(u16, u16, u16, u16);
 

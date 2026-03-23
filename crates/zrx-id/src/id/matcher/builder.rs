@@ -168,7 +168,6 @@ impl Builder {
     /// Returns [`Error::Glob`][] if a component's [`GlobSet`][] can't be built.
     ///
     /// [`Error::Glob`]: crate::id::matcher::error::Error::Glob
-    ///
     /// [`GlobSet`]: globset::GlobSet
     ///
     /// # Examples
