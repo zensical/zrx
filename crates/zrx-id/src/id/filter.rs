@@ -71,7 +71,7 @@ pub use terms::Terms;
 ///
 /// // Create filter builder and insert expression
 /// let mut builder = Filter::builder();
-/// builder.insert(Expression::any(|expr| {
+/// builder.insert(Expression::all(|expr| {
 ///     expr.with(selector!(location = "**/*.md")?)?
 ///         .with(selector!(provider = "file")?)
 /// })?);
