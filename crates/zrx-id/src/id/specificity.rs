@@ -60,7 +60,7 @@ impl Specificity {
         cmp::min(self, other)
     }
 
-    /// Computes the minimum of both specificities while summing their lengths.
+    /// Computes the minimum of both specificities, summing their lengths.
     #[inline]
     fn min_sum_len(self, other: Self) -> Self {
         let mut spec = cmp::min(self, other);

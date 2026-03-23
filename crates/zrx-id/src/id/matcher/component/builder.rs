@@ -84,7 +84,6 @@ impl Builder {
     /// Returns [`Error::Glob`][] if the [`GlobSet`][] can't be built.
     ///
     /// [`Error::Glob`]: crate::id::matcher::error::Error::Glob
-    ///
     /// [`GlobSet`]: globset::GlobSet
     pub fn build(self) -> Result<Component> {
         Ok(Component {
