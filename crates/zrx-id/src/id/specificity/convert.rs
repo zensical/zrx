@@ -29,7 +29,6 @@ use std::cmp;
 
 use crate::id::filter::expression::{Operand, Operator};
 use crate::id::filter::{Expression, Term};
-use crate::id::format::Format;
 use crate::id::matcher::selector::Selector;
 use crate::id::Id;
 
@@ -58,8 +57,8 @@ impl ToSpecificity for Expression {
     fn to_specificity(&self) -> Specificity {
         let iter = self.operands().iter().map(ToSpecificity::to_specificity);
         match self.operator() {
-            Operator::Any => iter.reduce(Specificity::any).unwrap_or_default(),
-            Operator::All => iter.reduce(Specificity::all).unwrap_or_default(),
+            Operator::Any => iter.reduce(Specificity::min).unwrap_or_default(),
+            Operator::All => iter.reduce(Specificity::sum).unwrap_or_default(),
             Operator::Not => Specificity::default(),
         }
     }
@@ -93,7 +92,10 @@ impl ToSpecificity for Id {
     /// Computes the specificity of the identifier.
     #[inline]
     fn to_specificity(&self) -> Specificity {
-        self.as_ref().to_specificity()
+        let iter = 1..7;
+        iter.map(|index| self.as_ref().get(index).to_specificity())
+            .reduce(Specificity::sum)
+            .unwrap_or_default()
     }
 }
 
@@ -101,19 +103,9 @@ impl ToSpecificity for Selector {
     /// Computes the specificity of the selector.
     #[inline]
     fn to_specificity(&self) -> Specificity {
-        self.as_ref().to_specificity()
-    }
-}
-
-// ----------------------------------------------------------------------------
-
-impl<const N: usize> ToSpecificity for Format<N> {
-    /// Computes the specificity of the formatted string.
-    #[inline]
-    fn to_specificity(&self) -> Specificity {
-        let iter = 0..N;
-        iter.map(|index| self.get(index).to_specificity())
-            .reduce(Specificity::all)
+        let iter = 1..7;
+        iter.map(|index| self.as_ref().get(index).to_specificity())
+            .reduce(Specificity::sum)
             .unwrap_or_default()
     }
 }
@@ -126,7 +118,7 @@ impl ToSpecificity for Segments<'_> {
     fn to_specificity(&self) -> Specificity {
         self.iter()
             .map(ToSpecificity::to_specificity)
-            .reduce(Specificity::all)
+            .reduce(Specificity::sum)
             .unwrap_or_default()
     }
 }
@@ -137,7 +129,7 @@ impl ToSpecificity for Segment<'_> {
     fn to_specificity(&self) -> Specificity {
         self.iter()
             .map(ToSpecificity::to_specificity)
-            .reduce(Specificity::any)
+            .reduce(Specificity::min_sum_len)
             .unwrap_or_default()
     }
 }
