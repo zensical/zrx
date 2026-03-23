@@ -28,6 +28,8 @@
 use std::cmp;
 
 use crate::id::format::Format;
+use crate::id::matcher::selector::Selector;
+use crate::id::Id;
 
 use super::segment::atom::{Character, Wildcard};
 use super::segment::convert::ToSegments;
@@ -46,6 +48,24 @@ pub trait ToSpecificity {
 
 // ----------------------------------------------------------------------------
 // Trait implementations
+// ----------------------------------------------------------------------------
+
+impl ToSpecificity for Id {
+    /// Computes the specificity of the identifier.
+    #[inline]
+    fn to_specificity(&self) -> Specificity {
+        self.as_ref().to_specificity()
+    }
+}
+
+impl ToSpecificity for Selector {
+    /// Computes the specificity of the selector.
+    #[inline]
+    fn to_specificity(&self) -> Specificity {
+        self.as_ref().to_specificity()
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 impl<const N: usize> ToSpecificity for Format<N> {
