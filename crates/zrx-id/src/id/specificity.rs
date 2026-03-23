@@ -46,23 +46,23 @@ pub struct Specificity(u16, u16, u16, u16);
 // ----------------------------------------------------------------------------
 
 impl Specificity {
-    /// Creates the sum of both specificities.
+    /// Returns the minimum of both specificities.
     #[inline]
-    fn sum(self, other: Self) -> Self {
+    fn any(self, other: Self) -> Self {
+        let mut spec = cmp::min(self, other);
+        spec.3 = self.3.saturating_add(other.3);
+        spec
+    }
+
+    /// Returns the sum of both specificities.
+    #[inline]
+    fn all(self, other: Self) -> Self {
         Self(
             self.0 + other.0,
             self.1 + other.1,
             self.2 + other.2,
             self.3 + other.3,
         )
-    }
-
-    /// Creates a specificity by taking the minimum of both.
-    #[inline]
-    fn min(self, other: Self) -> Self {
-        let mut spec = cmp::min(self, other);
-        spec.3 = self.3.saturating_add(other.3);
-        spec
     }
 }
 
