@@ -27,6 +27,7 @@
 
 use ahash::AHasher;
 use std::borrow::Cow;
+use std::cmp::Ordering;
 use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
@@ -104,7 +105,7 @@ pub use convert::TryToSelector;
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Clone, PartialOrd, Ord)]
+#[derive(Clone)]
 pub struct Selector {
     /// Formatted string.
     format: Arc<Format<7>>,
@@ -182,6 +183,23 @@ impl Selector {
 
 // ----------------------------------------------------------------------------
 // Trait implementations
+// ----------------------------------------------------------------------------
+
+impl AsRef<Format<7>> for Selector {
+    /// Returns the formatted string.
+    ///
+    /// Note that it's normally not necessary to access the formatted string
+    /// directly, as all components can be accessed via the respective methods.
+    /// We need to access the underlying formatted string in our internal APIs,
+    /// e.g., to compute the [`Specificity`][] for the given [`Selector`].
+    ///
+    /// [`Specificity`]: crate::id::specificity::Specificity
+    #[inline]
+    fn as_ref(&self) -> &Format<7> {
+        self.format.as_ref()
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 impl FromStr for Selector {
@@ -343,11 +361,61 @@ impl PartialEq for Selector {
     /// ```
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.hash == other.hash
+        // We first compare the precomputed hashes, which is extremely fast, as
+        // it saves us the comparison when the identifiers are different
+        self.hash == other.hash && self.format == other.format
     }
 }
 
 impl Eq for Selector {}
+
+// ----------------------------------------------------------------------------
+
+impl PartialOrd for Selector {
+    /// Orders two selectors.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::Selector;
+    ///
+    /// // Create and compare selectors
+    /// let a: Selector = "zrs:::::**/*.md:".parse()?;
+    /// let b: Selector = "zrs:::::**/*.rs:".parse()?;
+    /// assert!(a < b);
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Selector {
+    /// Orders two selectors.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::Selector;
+    ///
+    /// // Create and compare selectors
+    /// let a: Selector = "zrs:::::**/*.md:".parse()?;
+    /// let b: Selector = "zrs:::::**/*.rs:".parse()?;
+    /// assert!(a < b);
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.format.cmp(&other.format)
+    }
+}
 
 // ----------------------------------------------------------------------------
 

@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! With operator.
+//! Adjacent operator.
 
 use crate::graph::Graph;
 
@@ -44,7 +44,7 @@ pub struct Adjacent<'a> {
 // ----------------------------------------------------------------------------
 
 impl<T> Graph<T> {
-    /// Retrieve a reference to a node's data.
+    /// Retrieve a reference to a node and its adjacent nodes.
     ///
     /// # Examples
     ///
@@ -63,24 +63,20 @@ impl<T> Graph<T> {
     /// builder.add_edge(a, b)?;
     /// builder.add_edge(b, c)?;
     ///
-    /// // Create graph from builder and retrieve nodes
+    /// // Create graph from builder and retrieve node
     /// let graph = builder.build();
-    /// for node in &graph {
-    ///     graph.with(node, |name, _| {
-    ///         println!("{name:?}");
-    ///     });
-    /// }
+    ///
+    /// // Obtain reference to node and adjacent nodes
+    /// let (data, adj) = graph.adjacent(a);
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
-    pub fn with<F, R>(&self, node: usize, f: F) -> R
-    where
-        F: FnOnce(&T, Adjacent) -> R,
-    {
+    #[must_use]
+    pub fn adjacent(&self, node: usize) -> (&'_ T, Adjacent<'_>) {
         let incoming = self.topology.incoming();
         let outgoing = self.topology.outgoing();
-        f(
+        (
             &self.data[node],
             Adjacent {
                 incoming: &incoming[node],
@@ -89,7 +85,7 @@ impl<T> Graph<T> {
         )
     }
 
-    /// Retrieve a mutable reference to a node's data.
+    /// Retrieve a mutable reference to a node and its adjacent nodes.
     ///
     /// # Examples
     ///
@@ -110,22 +106,18 @@ impl<T> Graph<T> {
     ///
     /// // Create graph from builder and retrieve node
     /// let mut graph = builder.build();
-    /// for node in &graph {
-    ///     graph.with_mut(node, |name, _| {
-    ///         println!("{name:?}");
-    ///     });
-    /// }
+    ///
+    /// // Obtain mutable reference to node and adjacent nodes
+    /// let (data, adj) = graph.adjacent_mut(a);
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
-    pub fn with_mut<F, R>(&mut self, node: usize, f: F) -> R
-    where
-        F: FnOnce(&mut T, Adjacent) -> R,
-    {
+    #[must_use]
+    pub fn adjacent_mut(&mut self, node: usize) -> (&'_ mut T, Adjacent<'_>) {
         let incoming = self.topology.incoming();
         let outgoing = self.topology.outgoing();
-        f(
+        (
             &mut self.data[node],
             Adjacent {
                 incoming: &incoming[node],

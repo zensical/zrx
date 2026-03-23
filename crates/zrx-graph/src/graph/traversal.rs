@@ -267,12 +267,25 @@ impl Traversal {
         Ok(())
     }
 
-    /// Attempts to converge this traversal with another traversal.
+    /// Attempts to converge with the given traversal.
     ///
-    /// This method attempts to combine both traversals into a single traversal,
-    /// which is possible when they have common descendants. This is useful for
-    /// deduplication of computations that need to be carried out for traversals
-    /// that originate from different sources, but converge at some point.
+    /// This method attempts to merge both traversals into a single traversal,
+    /// which is possible when they have common descendants, a condition that
+    /// is always true for directed acyclic graphs with a single component.
+    /// There are several cases to consider when converging two traversals:
+    ///
+    /// - If traversals start from the same set of source nodes, they already
+    ///   converged, so we just restart the traversal at these source nodes.
+    ///
+    /// - If traversals start from different source nodes, yet both have common
+    ///   descendants, we converge at the first layer of common descendants, as
+    ///   all descendants of them must be revisited in the combined traversal.
+    ///   Ancestors of the common descendants that have already been visited in
+    ///   either traversal don't need to be revisited, and thus are carried over
+    ///   from both traversals in their current state.
+    ///
+    /// - If traversals are disjoint, they can't be converged, so we return the
+    ///   given traversal back to the caller wrapped in [`Error::Disjoint`].
     ///
     /// # Errors
     ///
@@ -327,15 +340,15 @@ impl Traversal {
             topology: self.topology.clone(),
         };
 
-        // If there are no common descendants, the traversals are disjoint, and
-        // we can't converge them, so we return the traversal to the caller
+        // If there are no common descendants, the traversals are disjoint and
+        // can't converge, so we return the given traversal back to the caller
         let mut iter = graph.common_descendants(&initial);
         let Some(common) = iter.next() else {
             return Err(Error::Disjoint(other));
         };
 
         // Create the combined traversal, and mark all already visited nodes
-        // that are ancestors of the common descendants as visited as well
+        // that are ancestors of the common descendants as visited
         let prior = mem::replace(self, Self::new(&self.topology, initial));
 
         // Compute the visitable nodes for the combined traversal, which is the
@@ -347,10 +360,10 @@ impl Traversal {
             let p = prior.dependencies[node];
             let o = other.dependencies[node];
 
-            // If the node has been visited in either traversal, and is not
-            // part of the common descendants, mark it as visited as well in
-            // the combined traversal, since we don't need to revisit nodes
-            // that are ancestors of the common descendants
+            // If the node has been visited in either traversal, and is not part
+            // of the first layer of common descendants, mark it as visited in
+            // the combined traversal, since we don't need to revisit ancestors
+            // that have already been visited in either traversal
             if (p == u8::MAX || o == u8::MAX) && !common.contains(&node) {
                 self.complete(node)?;
             } else {
@@ -368,10 +381,16 @@ impl Traversal {
 
 #[allow(clippy::must_use_candidate)]
 impl Traversal {
-    /// Returns the graph topology.
+    /// Returns a reference to the graph topology.
     #[inline]
     pub fn topology(&self) -> &Topology {
         &self.topology
+    }
+
+    /// Returns a reference to the initial nodes.
+    #[inline]
+    pub fn initial(&self) -> &[usize] {
+        &self.initial
     }
 
     /// Returns the number of visitable nodes.
@@ -503,11 +522,10 @@ mod tests {
                 (vec![6], vec![7], vec![6, 7, 8]),
                 (vec![8], vec![8], vec![8]),
             ] {
-                let mut a = graph.traverse(i);
-                let b = graph.traverse(j);
-                assert!(a.converge(b).is_ok());
+                let mut traversal = graph.traverse(i);
+                assert!(traversal.converge(graph.traverse(j)).is_ok());
                 assert_eq!(
-                    a.into_iter().collect::<Vec<_>>(), // fmt
+                    traversal.into_iter().collect::<Vec<_>>(), // fmt
                     descendants
                 );
             }
@@ -537,11 +555,10 @@ mod tests {
                 (vec![6], vec![7], vec![6, 7, 8]),
                 (vec![8], vec![8], vec![8]),
             ] {
-                let mut a = graph.traverse(i);
-                let b = graph.traverse(j);
-                assert!(a.converge(b).is_ok());
+                let mut traversal = graph.traverse(i);
+                assert!(traversal.converge(graph.traverse(j)).is_ok());
                 assert_eq!(
-                    a.into_iter().collect::<Vec<_>>(), // fmt
+                    traversal.into_iter().collect::<Vec<_>>(), // fmt
                     descendants
                 );
             }

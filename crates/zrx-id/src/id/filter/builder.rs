@@ -97,7 +97,7 @@ impl Filter {
 // ----------------------------------------------------------------------------
 
 impl Builder {
-    /// Inserts an expression into the filter.
+    /// Inserts an expression into the filter and returns its index.
     ///
     /// This method adds an [`Expression`][] to the filter builder, and returns
     /// the index of the inserted condition, which can be used to remove it.
@@ -156,8 +156,8 @@ impl Builder {
     /// # }
     /// ```
     #[inline]
-    pub fn remove(&mut self, expr: usize) {
-        self.conditions.remove(expr);
+    pub fn remove(&mut self, index: usize) {
+        self.conditions.remove(index);
     }
 
     /// Builds the filter.

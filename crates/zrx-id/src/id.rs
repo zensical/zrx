@@ -43,6 +43,7 @@ pub mod filter;
 pub mod format;
 mod macros;
 pub mod matcher;
+pub mod specificity;
 pub mod uri;
 
 pub use builder::Builder;
@@ -261,6 +262,23 @@ impl Id {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
+impl AsRef<Format<7>> for Id {
+    /// Returns the formatted string.
+    ///
+    /// Note that it's normally not necessary to access the formatted string
+    /// directly, as all components can be accessed via the respective methods.
+    /// We need to access the underlying formatted string in our internal APIs,
+    /// e.g., to compute the [`Specificity`][] for the given [`Id`].
+    ///
+    /// [`Specificity`]: crate::id::specificity::Specificity
+    #[inline]
+    fn as_ref(&self) -> &Format<7> {
+        self.format.as_ref()
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 impl FromStr for Id {
     type Err = Error;
 
@@ -367,7 +385,9 @@ impl PartialEq for Id {
     /// ```
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.hash == other.hash
+        // We first compare the precomputed hashes, which is extremly fast, as
+        // it saves us the comparison when the identifiers are different
+        self.hash == other.hash && self.format == other.format
     }
 }
 
@@ -417,13 +437,7 @@ impl Ord for Id {
     /// ```
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
-        // Fast path - first, we compare for equality by using the precomputed
-        // hashes, as it's a simple and extremely fast integer comparison
-        if self.eq(other) {
-            Ordering::Equal
-        } else {
-            self.format.cmp(&other.format)
-        }
+        self.format.cmp(&other.format)
     }
 }
 

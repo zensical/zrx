@@ -23,17 +23,46 @@
 
 // ----------------------------------------------------------------------------
 
-//! Identifier abstractions and utilities.
+//! Iterator over tokens conversions.
 
-#![allow(clippy::match_same_arms)]
+use std::borrow::Cow;
 
-mod id;
+use super::Tokens;
 
-pub use id::filter::expression::Expression;
-pub use id::filter::{self, Filter};
-pub use id::format;
-pub use id::matcher::selector::{Selector, TryToSelector};
-pub use id::matcher::{self, Matcher, Matches};
-pub use id::specificity::{self, Specificity};
-pub use id::uri;
-pub use id::{Builder, Error, Id, Result, TryToId};
+// ----------------------------------------------------------------------------
+// Traits
+// ----------------------------------------------------------------------------
+
+/// Borrow as [`Tokens`].
+pub trait AsTokens {
+    /// Borrows as an iterator over tokens.
+    fn as_tokens(&self) -> Tokens<'_>;
+}
+
+// ----------------------------------------------------------------------------
+// Trait implementations
+// ----------------------------------------------------------------------------
+
+impl AsTokens for &str {
+    /// Borrows as an iterator over tokens.
+    #[inline]
+    fn as_tokens(&self) -> Tokens<'_> {
+        Tokens::from(*self)
+    }
+}
+
+impl AsTokens for String {
+    /// Borrows as an iterator over tokens.
+    #[inline]
+    fn as_tokens(&self) -> Tokens<'_> {
+        Tokens::from(self.as_str())
+    }
+}
+
+impl AsTokens for Cow<'_, str> {
+    /// Borrows as an iterator over tokens.
+    #[inline]
+    fn as_tokens(&self) -> Tokens<'_> {
+        Tokens::from(self.as_ref())
+    }
+}
