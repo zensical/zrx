@@ -43,6 +43,7 @@ pub mod filter;
 pub mod format;
 mod macros;
 pub mod matcher;
+pub mod specificity;
 pub mod uri;
 
 pub use builder::Builder;

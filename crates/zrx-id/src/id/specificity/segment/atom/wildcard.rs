@@ -4,7 +4,7 @@
 // All contributions are certified under the DCO
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to
+// of this software and associated documentation files (the `Software`), to
 // deal in the Software without restriction, including without limitation the
 // rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
 // sell copies of the Software, and to permit persons to whom the Software is
@@ -13,7 +13,7 @@
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// THE SOFTWARE IS PROVIDED `AS IS`, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
 // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -23,17 +23,36 @@
 
 // ----------------------------------------------------------------------------
 
-//! Identifier abstractions and utilities.
+//! Wildcard.
 
-#![allow(clippy::match_same_arms)]
+use std::fmt::{self, Display, Write};
 
-mod id;
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
 
-pub use id::filter::expression::Expression;
-pub use id::filter::{self, Filter};
-pub use id::format;
-pub use id::matcher::selector::{Selector, TryToSelector};
-pub use id::matcher::{self, Matcher, Matches};
-pub use id::specificity::{self, Specificity};
-pub use id::uri;
-pub use id::{Builder, Error, Id, Result, TryToId};
+/// Wildcard.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Wildcard {
+    /// Character, i.e. `?`.
+    Character,
+    /// Character sequence, i.e. `*`.
+    Sequence,
+    /// Traversal across path segments, i.e. `**`.
+    Traversal,
+}
+
+// ----------------------------------------------------------------------------
+// Trait implementations
+// ----------------------------------------------------------------------------
+
+impl Display for Wildcard {
+    /// Formats the wildcard for display.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Wildcard::Character => f.write_char('?'),
+            Wildcard::Sequence => f.write_char('*'),
+            Wildcard::Traversal => f.write_str("**"),
+        }
+    }
+}
