@@ -142,8 +142,8 @@ mod tests {
         #[test]
         fn handles_any() -> Result {
             let expr = Expression::any(|expr| {
-                expr.with(selector!(location = "**/*.png")?)?
-                    .with(selector!(location = "**/*.jpg")?)
+                expr.with(selector!(location = "**/*.jpg")?)?
+                    .with(selector!(location = "**/*.png")?)
             })?;
             let condition = Condition::builder(expr).build();
             for (matches, check) in [
@@ -162,8 +162,8 @@ mod tests {
         #[test]
         fn handles_any_optimized() -> Result {
             let expr = Expression::any(|expr| {
-                expr.with(selector!(location = "**/*.png")?)?
-                    .with(selector!(location = "**/*.jpg")?)
+                expr.with(selector!(location = "**/*.jpg")?)?
+                    .with(selector!(location = "**/*.png")?)
             })?;
             let condition = Condition::builder(expr).optimize().build();
             for (matches, check) in [
@@ -222,8 +222,8 @@ mod tests {
         #[test]
         fn handles_not() -> Result {
             let expr = Expression::not(|expr| {
-                expr.with(selector!(location = "**/*.png")?)?
-                    .with(selector!(location = "**/*.jpg")?)
+                expr.with(selector!(location = "**/*.jpg")?)?
+                    .with(selector!(location = "**/*.png")?)
             })?;
             let condition = Condition::builder(expr).build();
             for (matches, check) in [
@@ -242,8 +242,8 @@ mod tests {
         #[test]
         fn handles_not_optimized() -> Result {
             let expr = Expression::not(|expr| {
-                expr.with(selector!(location = "**/*.png")?)?
-                    .with(selector!(location = "**/*.jpg")?)
+                expr.with(selector!(location = "**/*.jpg")?)?
+                    .with(selector!(location = "**/*.png")?)
             })?;
             let condition = Condition::builder(expr).optimize().build();
             for (matches, check) in [
@@ -264,8 +264,8 @@ mod tests {
             let expr = Expression::all(|expr| {
                 expr.with(selector!(provider = "file")?)?
                     .with(Expression::any(|expr| {
-                        expr.with(selector!(location = "**/*.png")?)?
-                            .with(selector!(location = "**/*.jpg")?)
+                        expr.with(selector!(location = "**/*.jpg")?)?
+                            .with(selector!(location = "**/*.png")?)
                     }))
             })?;
             let condition = Condition::builder(expr).build();
@@ -289,8 +289,8 @@ mod tests {
             let expr = Expression::all(|expr| {
                 expr.with(selector!(provider = "file")?)?
                     .with(Expression::any(|expr| {
-                        expr.with(selector!(location = "**/*.png")?)?
-                            .with(selector!(location = "**/*.jpg")?)
+                        expr.with(selector!(location = "**/*.jpg")?)?
+                            .with(selector!(location = "**/*.png")?)
                     }))
             })?;
             let condition = Condition::builder(expr).optimize().build();
@@ -316,8 +316,8 @@ mod tests {
                     .with(Expression::any(|expr| {
                         expr.with(selector!(context = "docs")?)? // fmt
                             .with(Expression::not(|expr| {
-                                expr.with(selector!(location = "**/*.png")?)?
-                                    .with(selector!(location = "**/*.jpg")?)
+                                expr.with(selector!(location = "**/*.jpg")?)?
+                                    .with(selector!(location = "**/*.png")?)
                             }),
                         )
                     }))
@@ -347,8 +347,8 @@ mod tests {
                     .with(Expression::any(|expr| {
                         expr.with(selector!(context = "docs")?)? // fmt
                             .with(Expression::not(|expr| {
-                                expr.with(selector!(location = "**/*.png")?)?
-                                    .with(selector!(location = "**/*.jpg")?)
+                                expr.with(selector!(location = "**/*.jpg")?)?
+                                    .with(selector!(location = "**/*.png")?)
                             }),
                         )
                     }))

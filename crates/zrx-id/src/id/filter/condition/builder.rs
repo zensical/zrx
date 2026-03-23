@@ -247,15 +247,15 @@ mod tests {
         #[test]
         fn handles_expression() -> Result {
             let expr = Expression::any(|expr| {
-                expr.with(selector!(location = "**/*.png")?)?
-                    .with(selector!(location = "**/*.jpg")?)
+                expr.with(selector!(location = "**/*.jpg")?)?
+                    .with(selector!(location = "**/*.png")?)
             })?;
             let builder = Condition::builder(expr);
             assert_eq!(
                 builder.terms,
                 [
-                    Term::from(selector!(location = "**/*.png")?),
                     Term::from(selector!(location = "**/*.jpg")?),
+                    Term::from(selector!(location = "**/*.png")?),
                 ]
             );
             match builder.group {
@@ -312,8 +312,8 @@ mod tests {
         #[test]
         fn handles_any() -> Result {
             let expr = Expression::any(|expr| {
-                expr.with(selector!(location = "**/*.png")?)?
-                    .with(selector!(location = "**/*.jpg")?)
+                expr.with(selector!(location = "**/*.jpg")?)?
+                    .with(selector!(location = "**/*.png")?)
             })?;
             let builder = Condition::builder(expr).optimize();
             assert_eq!(
@@ -327,8 +327,8 @@ mod tests {
         fn handles_any_any() -> Result {
             let expr = Expression::any(|expr| {
                 expr.with(Expression::any(|expr| {
-                    expr.with(selector!(location = "**/*.png")?)?
-                        .with(selector!(location = "**/*.jpg")?)
+                    expr.with(selector!(location = "**/*.jpg")?)?
+                        .with(selector!(location = "**/*.png")?)
                 })?)
             })?;
             let builder = Condition::builder(expr).optimize();
@@ -342,9 +342,9 @@ mod tests {
         #[test]
         fn handles_any_any_mixed() -> Result {
             let expr = Expression::any(|expr| {
-                expr.with(selector!(location = "**/*.png")?)? // fmt
+                expr.with(selector!(location = "**/*.jpg")?)? // fmt
                     .with(Expression::any(|expr| {
-                        expr.with(selector!(location = "**/*.jpg")?)
+                        expr.with(selector!(location = "**/*.png")?)
                     })?)
             })?;
             let builder = Condition::builder(expr).optimize();
@@ -359,8 +359,8 @@ mod tests {
         fn handles_all_all() -> Result {
             let expr = Expression::all(|expr| {
                 expr.with(Expression::all(|expr| {
-                    expr.with(selector!(location = "**/*.png")?)?
-                        .with(selector!(location = "**/*.jpg")?)
+                    expr.with(selector!(location = "**/*.jpg")?)?
+                        .with(selector!(location = "**/*.png")?)
                 })?)
             })?;
             let builder = Condition::builder(expr).optimize();
@@ -377,9 +377,9 @@ mod tests {
         #[test]
         fn handles_all_all_mixed() -> Result {
             let expr = Expression::all(|expr| {
-                expr.with(selector!(location = "**/*.png")?)? // fmt
+                expr.with(selector!(location = "**/*.jpg")?)? // fmt
                     .with(Expression::all(|expr| {
-                        expr.with(selector!(location = "**/*.jpg")?)
+                        expr.with(selector!(location = "**/*.png")?)
                     })?)
             })?;
             let builder = Condition::builder(expr).optimize();
@@ -397,8 +397,8 @@ mod tests {
         fn handles_not_not() -> Result {
             let expr = Expression::not(|expr| {
                 expr.with(Expression::not(|expr| {
-                    expr.with(selector!(location = "**/*.png")?)?
-                        .with(selector!(location = "**/*.jpg")?)
+                    expr.with(selector!(location = "**/*.jpg")?)?
+                        .with(selector!(location = "**/*.png")?)
                 })?)
             })?;
             let builder = Condition::builder(expr).optimize();
@@ -418,9 +418,9 @@ mod tests {
         #[test]
         fn handles_not_not_mixed() -> Result {
             let expr = Expression::not(|expr| {
-                expr.with(selector!(location = "**/*.png")?)? // fmt
+                expr.with(selector!(location = "**/*.jpg")?)? // fmt
                     .with(Expression::not(|expr| {
-                        expr.with(selector!(location = "**/*.jpg")?)
+                        expr.with(selector!(location = "**/*.png")?)
                     })?)
             })?;
             let builder = Condition::builder(expr).optimize();
@@ -444,8 +444,8 @@ mod tests {
         fn handles_all_any() -> Result {
             let expr = Expression::all(|expr| {
                 expr.with(Expression::any(|expr| {
-                    expr.with(selector!(location = "**/*.png")?)?
-                        .with(selector!(location = "**/*.jpg")?)
+                    expr.with(selector!(location = "**/*.jpg")?)?
+                        .with(selector!(location = "**/*.png")?)
                 }))
             })?;
             let builder = Condition::builder(expr).optimize();
@@ -467,8 +467,8 @@ mod tests {
             let expr = Expression::all(|expr| {
                 expr.with(selector!(provider = "file")?)?
                     .with(Expression::any(|expr| {
-                        expr.with(selector!(location = "**/*.png")?)?
-                            .with(selector!(location = "**/*.jpg")?)
+                        expr.with(selector!(location = "**/*.jpg")?)?
+                            .with(selector!(location = "**/*.png")?)
                     }))
             })?;
             let builder = Condition::builder(expr).optimize();

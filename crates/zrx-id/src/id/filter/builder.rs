@@ -119,8 +119,8 @@ impl Builder {
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
     /// builder.insert(Expression::any(|expr| {
-    ///     expr.with(selector!(location = "**/*.png")?)?
-    ///         .with(selector!(location = "**/*.jpg")?)
+    ///     expr.with(selector!(location = "**/*.jpg")?)?
+    ///         .with(selector!(location = "**/*.png")?)
     /// })?);
     /// # Ok(())
     /// # }
@@ -146,8 +146,8 @@ impl Builder {
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
     /// builder.insert(Expression::any(|expr| {
-    ///     expr.with(selector!(location = "**/*.png")?)?
-    ///         .with(selector!(location = "**/*.jpg")?)
+    ///     expr.with(selector!(location = "**/*.jpg")?)?
+    ///         .with(selector!(location = "**/*.png")?)
     /// })?);
     ///
     /// // Remove expression
@@ -178,8 +178,8 @@ impl Builder {
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
     /// builder.insert(Expression::any(|expr| {
-    ///     expr.with(selector!(location = "**/*.png")?)?
-    ///         .with(selector!(location = "**/*.jpg")?)
+    ///     expr.with(selector!(location = "**/*.jpg")?)?
+    ///         .with(selector!(location = "**/*.png")?)
     /// })?);
     ///
     /// // Create filter from builder

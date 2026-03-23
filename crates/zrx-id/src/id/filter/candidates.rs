@@ -200,8 +200,8 @@ mod tests {
         fn handles_any() -> Result {
             let mut builder = Filter::builder();
             let _ = builder.insert(Expression::any(|expr| {
-                expr.with(selector!(location = "**/*.png")?)?
-                    .with(selector!(location = "**/*.jpg")?)
+                expr.with(selector!(location = "**/*.jpg")?)?
+                    .with(selector!(location = "**/*.png")?)
             })?);
             let filter = builder.build()?;
             for (id, check) in [
@@ -242,14 +242,14 @@ mod tests {
         fn handles_not() -> Result {
             let mut builder = Filter::builder();
             let _ = builder.insert(Expression::not(|expr| {
-                expr.with(selector!(location = "**/*.png")?)?
-                    .with(selector!(location = "**/*.jpg")?)
+                expr.with(selector!(location = "**/*.jpg")?)?
+                    .with(selector!(location = "**/*.png")?)
             })?);
             let filter = builder.build()?;
             for (id, check) in [
                 ("zri:file:::docs:index.md:", vec![0]),
-                ("zri:file:::docs:image.png:", vec![]),
                 ("zri:file:::docs:image.jpg:", vec![]),
+                ("zri:file:::docs:image.png:", vec![]),
             ] {
                 assert_eq!(
                     filter.candidates(&id)?.collect::<Vec<_>>(), // fmt
@@ -265,8 +265,8 @@ mod tests {
             let _ = builder.insert(Expression::all(|expr| {
                 expr.with(selector!(provider = "file")?)?
                     .with(Expression::any(|expr| {
-                        expr.with(selector!(location = "**/*.png")?)?
-                            .with(selector!(location = "**/*.jpg")?)
+                        expr.with(selector!(location = "**/*.jpg")?)?
+                            .with(selector!(location = "**/*.png")?)
                     }))
             })?);
             let filter = builder.build()?;
@@ -294,8 +294,8 @@ mod tests {
                     .with(Expression::any(|expr| {
                         expr.with(selector!(context = "docs")?)? // fmt
                             .with(Expression::not(|expr| {
-                                expr.with(selector!(location = "**/*.png")?)?
-                                    .with(selector!(location = "**/*.jpg")?)
+                                expr.with(selector!(location = "**/*.jpg")?)?
+                                    .with(selector!(location = "**/*.png")?)
                             }),
                         )
                     }))
@@ -303,11 +303,11 @@ mod tests {
             let filter = builder.build()?;
             for (id, check) in [
                 ("zri:file:::docs:index.md:", vec![0]),
-                ("zri:file:::docs:image.png:", vec![0]),
                 ("zri:file:::docs:image.jpg:", vec![0]),
+                ("zri:file:::docs:image.png:", vec![0]),
                 ("zri:file:::docs:image.gif:", vec![0]),
-                ("zri:git:::docs:image.png:", vec![]),
                 ("zri:git:::docs:image.jpg:", vec![]),
+                ("zri:git:::docs:image.png:", vec![]),
             ] {
                 assert_eq!(
                     filter.candidates(&id)?.collect::<Vec<_>>(), // fmt
