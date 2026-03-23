@@ -185,6 +185,23 @@ impl Selector {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
+impl AsRef<Format<7>> for Selector {
+    /// Returns the formatted string.
+    ///
+    /// Note that it's normally not necessary to access the formatted string
+    /// directly, as all components can be accessed via the respective methods.
+    /// We need to access the underlying formatted string in our internal APIs,
+    /// e.g., to compute the [`Specificity`][] for the given [`Selector`].
+    ///
+    /// [`Specificity`]: crate::id::specificity::Specificity
+    #[inline]
+    fn as_ref(&self) -> &Format<7> {
+        self.format.as_ref()
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 impl FromStr for Selector {
     type Err = Error;
 
