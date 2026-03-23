@@ -84,10 +84,34 @@ where
     }
 }
 
+impl From<(u16, u16, u16, u16)> for Specificity {
+    /// Creates a specificity from a tuple.
+    #[inline]
+    fn from((a, b, c, l): (u16, u16, u16, u16)) -> Self {
+        Self(a, b, c, l)
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 impl PartialOrd for Specificity {
     /// Orders two specificities.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::specificity::convert::ToSpecificity;
+    /// use zrx_id::selector;
+    ///
+    /// // Create selector and compute specificity
+    /// let a = selector!(location = "**/*.md")?;
+    /// let b = selector!(location = "*.md")?;
+    /// assert!(a.to_specificity() < b.to_specificity());
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -96,13 +120,29 @@ impl PartialOrd for Specificity {
 
 impl Ord for Specificity {
     /// Orders two specificities.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::specificity::convert::ToSpecificity;
+    /// use zrx_id::selector;
+    ///
+    /// // Create selector and compute specificity
+    /// let a = selector!(location = "**/*.md")?;
+    /// let b = selector!(location = "*.md")?;
+    /// assert!(a.to_specificity() < b.to_specificity());
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         let Specificity(a1, b1, c1, l1) = self;
         let Specificity(a2, b2, c2, l2) = other;
         a1.cmp(a2)
             .then(b1.cmp(b2))
-            .then(c2.cmp(c1)) // reversed: fewer ** = more specific
+            .then(c2.cmp(c1)) // reversed, fewer ** = more specific
             .then(l1.cmp(l2))
     }
 }

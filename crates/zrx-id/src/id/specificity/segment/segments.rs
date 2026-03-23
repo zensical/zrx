@@ -58,6 +58,21 @@ impl Segments<'_> {
     }
 }
 
+#[allow(clippy::must_use_candidate)]
+impl Segments<'_> {
+    /// Returns the number of segments.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    /// Returns whether there are any segments.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+}
+
 // ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------

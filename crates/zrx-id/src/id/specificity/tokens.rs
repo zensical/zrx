@@ -152,7 +152,7 @@ impl<'a> Iterator for Tokens<'a> {
             b',' => Some(Token::Comma),
             b'/' => Some(Token::Separator),
 
-            // Consume a `*` or `**`
+            // Consume `*` or `**`
             b'*' => {
                 if self.index < value.len() && value[self.index] == b'*' {
                     self.index += 1;

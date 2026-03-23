@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Specificity conversion.
+//! Specificity computation.
 
 use std::cmp;
 
@@ -41,7 +41,7 @@ use super::Specificity;
 // Traits
 // ----------------------------------------------------------------------------
 
-/// Compute the [`Specificity`] of a value.
+/// Computation of [`Specificity`].
 pub trait ToSpecificity {
     /// Computes the specificity of the value.
     fn to_specificity(&self) -> Specificity;
@@ -53,6 +53,28 @@ pub trait ToSpecificity {
 
 impl ToSpecificity for Expression {
     /// Computes the specificity of the expression.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::filter::Expression;
+    /// use zrx_id::specificity::convert::ToSpecificity;
+    /// use zrx_id::selector;
+    ///
+    /// // Create expression and compute specificity
+    /// let expr = Expression::any(|expr| {
+    ///     expr.with(selector!(location = "**/*.jpg")?)?
+    ///         .with(selector!(location = "**/*.png")?)
+    /// })?;
+    /// assert_eq!(
+    ///     expr.to_specificity(),
+    ///     (0, 1, 1, 4).into()
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     fn to_specificity(&self) -> Specificity {
         let iter = self.operands().iter().map(ToSpecificity::to_specificity);
@@ -66,6 +88,25 @@ impl ToSpecificity for Expression {
 
 impl ToSpecificity for Term {
     /// Computes the specificity of the term.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::filter::expression::Term;
+    /// use zrx_id::specificity::convert::ToSpecificity;
+    /// use zrx_id::selector;
+    ///
+    /// // Create term and compute specificity
+    /// let term = Term::from(selector!(location = "**/*.{jpg,png}")?);
+    /// assert_eq!(
+    ///     term.to_specificity(),
+    ///     (0, 1, 1, 4).into()
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     fn to_specificity(&self) -> Specificity {
         match self {
@@ -77,6 +118,25 @@ impl ToSpecificity for Term {
 
 impl ToSpecificity for Operand {
     /// Computes the specificity of the operand.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::filter::expression::Operand;
+    /// use zrx_id::specificity::convert::ToSpecificity;
+    /// use zrx_id::selector;
+    ///
+    /// // Create operand and compute specificity
+    /// let operand = Operand::from(selector!(location = "**/*.{jpg,png}")?);
+    /// assert_eq!(
+    ///     operand.to_specificity(),
+    ///     (0, 1, 1, 4).into()
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     fn to_specificity(&self) -> Specificity {
         match self {
@@ -90,6 +150,24 @@ impl ToSpecificity for Operand {
 
 impl ToSpecificity for Id {
     /// Computes the specificity of the identifier.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::specificity::convert::ToSpecificity;
+    /// use zrx_id::id;
+    ///
+    /// // Create identifier and compute specificity
+    /// let id = id!(provider = "file", context = ".", location = "index.md")?;
+    /// assert_eq!(
+    ///     id.to_specificity(),
+    ///     (3, 0, 0, 13).into()
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     fn to_specificity(&self) -> Specificity {
         let iter = 1..7;
@@ -101,6 +179,24 @@ impl ToSpecificity for Id {
 
 impl ToSpecificity for Selector {
     /// Computes the specificity of the selector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::specificity::convert::ToSpecificity;
+    /// use zrx_id::selector;
+    ///
+    /// // Create selector and compute specificity
+    /// let selector = selector!(location = "**/*.{jpg,png}")?;
+    /// assert_eq!(
+    ///     selector.to_specificity(),
+    ///     (0, 1, 1, 4).into()
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     fn to_specificity(&self) -> Specificity {
         let iter = 1..7;
@@ -169,7 +265,7 @@ impl ToSpecificity for Wildcard {
 }
 
 impl ToSpecificity for Character<'_> {
-    /// Computes the specificity of the character.
+    /// Computes the specificity of the character class.
     #[inline]
     fn to_specificity(&self) -> Specificity {
         Specificity(0, 1, 0, 1)

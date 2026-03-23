@@ -52,6 +52,16 @@ where
     T: AsTokens,
 {
     /// Converts tokens to a segments set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_id::id::specificity::convert::ToSegments;
+    ///
+    /// // Create segment set from string
+    /// let segments = "**/*.md".to_segments();
+    /// assert_eq!(segments.len(), 2);
+    /// ```
     #[inline]
     fn to_segments(&self) -> Segments<'_> {
         parse(&mut self.as_tokens().peekable(), false)
