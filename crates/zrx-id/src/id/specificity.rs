@@ -29,9 +29,11 @@ use std::cmp::{self, Ordering};
 
 mod convert;
 pub mod segment;
+mod specified;
 mod tokens;
 
 pub use convert::ToSpecificity;
+pub use specified::Specified;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -119,10 +121,7 @@ pub use convert::ToSpecificity;
 ///     expr.with(selector!(location = "**/*.jpg")?)?
 ///         .with(selector!(location = "**/*.png")?)
 /// })?;
-/// assert_eq!(
-///     expr.to_specificity(),
-///     (0, 1, 1, 4).into()
-/// );
+/// assert_eq!(expr.to_specificity(), (0, 1, 1, 4).into());
 /// # Ok(())
 /// # }
 /// ```
@@ -193,7 +192,7 @@ impl PartialOrd for Specificity {
     /// use zrx_id::specificity::ToSpecificity;
     /// use zrx_id::selector;
     ///
-    /// // Create selector and compute specificity
+    /// // Create and compare selectors by specificity
     /// let a = selector!(location = "**/*.md")?;
     /// let b = selector!(location = "*.md")?;
     /// assert!(a.to_specificity() < b.to_specificity());
@@ -217,7 +216,7 @@ impl Ord for Specificity {
     /// use zrx_id::specificity::ToSpecificity;
     /// use zrx_id::selector;
     ///
-    /// // Create selector and compute specificity
+    /// // Create and compare selectors by specificity
     /// let a = selector!(location = "**/*.md")?;
     /// let b = selector!(location = "*.md")?;
     /// assert!(a.to_specificity() < b.to_specificity());

@@ -67,10 +67,7 @@ impl ToSpecificity for Expression {
     ///     expr.with(selector!(location = "**/*.jpg")?)?
     ///         .with(selector!(location = "**/*.png")?)
     /// })?;
-    /// assert_eq!(
-    ///     expr.to_specificity(),
-    ///     (0, 1, 1, 4).into()
-    /// );
+    /// assert_eq!(expr.to_specificity(), (0, 1, 1, 4).into());
     /// # Ok(())
     /// # }
     /// ```
@@ -98,11 +95,8 @@ impl ToSpecificity for Term {
     /// use zrx_id::specificity::ToSpecificity;
     ///
     /// // Create term and compute specificity
-    /// let term = Term::from(selector!(location = "**/*.{jpg,png}")?);
-    /// assert_eq!(
-    ///     term.to_specificity(),
-    ///     (0, 1, 1, 4).into()
-    /// );
+    /// let term = Term::from(selector!(location = "**/*.md")?);
+    /// assert_eq!(term.to_specificity(), (0, 1, 1, 3).into());
     /// # Ok(())
     /// # }
     /// ```
@@ -128,11 +122,8 @@ impl ToSpecificity for Operand {
     /// use zrx_id::specificity::ToSpecificity;
     ///
     /// // Create operand and compute specificity
-    /// let operand = Operand::from(selector!(location = "**/*.{jpg,png}")?);
-    /// assert_eq!(
-    ///     operand.to_specificity(),
-    ///     (0, 1, 1, 4).into()
-    /// );
+    /// let operand = Operand::from(selector!(location = "**/*.md")?);
+    /// assert_eq!(operand.to_specificity(), (0, 1, 1, 3).into());
     /// # Ok(())
     /// # }
     /// ```
@@ -160,10 +151,7 @@ impl ToSpecificity for Id {
     ///
     /// // Create identifier and compute specificity
     /// let id = id!(provider = "file", context = ".", location = "index.md")?;
-    /// assert_eq!(
-    ///     id.to_specificity(),
-    ///     (3, 0, 0, 13).into()
-    /// );
+    /// assert_eq!(id.to_specificity(), (3, 0, 0, 13).into());
     /// # Ok(())
     /// # }
     /// ```
@@ -188,11 +176,8 @@ impl ToSpecificity for Selector {
     /// use zrx_id::specificity::ToSpecificity;
     ///
     /// // Create selector and compute specificity
-    /// let selector = selector!(location = "**/*.{jpg,png}")?;
-    /// assert_eq!(
-    ///     selector.to_specificity(),
-    ///     (0, 1, 1, 4).into()
-    /// );
+    /// let selector = selector!(location = "**/*.md")?;
+    /// assert_eq!(selector.to_specificity(), (0, 1, 1, 3).into());
     /// # Ok(())
     /// # }
     /// ```
