@@ -39,6 +39,11 @@ use super::Specificity;
 ///
 /// This data type is a thin wrapper around a value of type `T`, augmenting the
 /// value with its computed [`Specificity`], so it can be efficiently ordered.
+///
+/// Note that specifities are ordered from lowest to highest, with the least
+/// specific value being the first in order. It would be natural to reverse
+/// this order, but this would lead to more complex implementations for when
+/// a specified value is wrapped in an [`Option`].
 #[derive(Clone, Debug)]
 pub struct Specified<T> {
     /// Inner value.
