@@ -25,8 +25,6 @@
 
 //! Specificity computation.
 
-use std::cmp;
-
 use crate::id::filter::expression::{Operand, Operator};
 use crate::id::filter::{Expression, Term};
 use crate::id::matcher::selector::Selector;
@@ -230,7 +228,7 @@ impl ToSpecificity for Atom<'_> {
             Atom::Group(data) => data
                 .iter()
                 .map(ToSpecificity::to_specificity)
-                .reduce(cmp::min)
+                .reduce(Specificity::min)
                 .unwrap_or_default(),
         }
     }
