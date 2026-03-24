@@ -42,7 +42,7 @@ pub use term::Term;
 // ----------------------------------------------------------------------------
 
 /// Operand.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Operand {
     /// Expression.
     Expression(Expression),

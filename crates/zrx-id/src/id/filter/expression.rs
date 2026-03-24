@@ -71,7 +71,7 @@ pub use operand::{Operand, Operator, Term};
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Expression {
     /// Expression operator.
     operator: Operator,
