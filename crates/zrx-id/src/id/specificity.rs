@@ -138,7 +138,12 @@ impl Specificity {
     fn sum(self, other: Self) -> Self {
         let Specificity(a1, b1, c1, l1) = self;
         let Specificity(a2, b2, c2, l2) = other;
-        Self(a1 + a2, b1 + b2, c1 + c2, l1 + l2)
+        Self(
+            a1.saturating_add(a2),
+            b1.saturating_add(b2),
+            c1.saturating_add(c2),
+            l1.saturating_add(l2),
+        )
     }
 
     /// Computes the minimum of both specificities.
@@ -189,8 +194,8 @@ impl PartialOrd for Specificity {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::specificity::ToSpecificity;
     /// use zrx_id::selector;
+    /// use zrx_id::specificity::ToSpecificity;
     ///
     /// // Create and compare selectors by specificity
     /// let a = selector!(location = "**/*.md")?;
@@ -213,8 +218,8 @@ impl Ord for Specificity {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::specificity::ToSpecificity;
     /// use zrx_id::selector;
+    /// use zrx_id::specificity::ToSpecificity;
     ///
     /// // Create and compare selectors by specificity
     /// let a = selector!(location = "**/*.md")?;
@@ -227,9 +232,21 @@ impl Ord for Specificity {
     fn cmp(&self, other: &Self) -> Ordering {
         let Specificity(a1, b1, c1, l1) = self;
         let Specificity(a2, b2, c2, l2) = other;
+
+        // An all-zero specificity is the least specific and must always be the
+        // first in order, so check if this applies to any of the specificities
+        if a1 | b1 | c1 | l1 == 0 {
+            return Ordering::Less;
+        }
+        if a2 | b2 | c2 | l2 == 0 {
+            return Ordering::Greater;
+        }
+
+        // Otherwise, compare each component, where `c` is reversed since fewer
+        // double-wildcards is more specific than more double-wildcards
         a1.cmp(a2)
-            .then(b1.cmp(b2))
-            .then(c2.cmp(c1)) // reversed, fewer ** = more specific
-            .then(l1.cmp(l2))
+            .then_with(|| b1.cmp(b2))
+            .then_with(|| c2.cmp(c1))
+            .then_with(|| l1.cmp(l2))
     }
 }
