@@ -81,7 +81,7 @@ impl<T> Specified<T> {
 impl<T> Specified<T> {
     /// Returns the specificity.
     #[inline]
-    pub fn specificity(self) -> Specificity {
+    pub fn specificity(&self) -> Specificity {
         self.specificity
     }
 }
