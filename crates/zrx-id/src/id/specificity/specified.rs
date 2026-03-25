@@ -44,7 +44,7 @@ use super::Specificity;
 /// specific value being the first in order. It would be natural to reverse
 /// this order, but this would lead to more complex implementations for when
 /// a specified value is wrapped in an [`Option`].
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Specified<T> {
     /// Inner value.
     inner: T,
