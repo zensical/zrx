@@ -46,7 +46,7 @@ use super::Filter;
 /// after all modifications were made.
 #[derive(Debug, Default)]
 pub struct Builder {
-    /// Conditions.
+    /// Condition set.
     conditions: Slab<Condition>,
 }
 
