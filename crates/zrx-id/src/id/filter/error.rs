@@ -25,7 +25,7 @@
 
 //! Filter error.
 
-use std::result;
+use std::{num, result};
 use thiserror::Error;
 
 use crate::id::matcher;
@@ -39,6 +39,9 @@ use super::expression;
 /// Filter error.
 #[derive(Debug, Error)]
 pub enum Error {
+    /// Numeric conversion error.
+    #[error(transparent)]
+    Numeric(#[from] num::TryFromIntError),
     /// Expression error.
     #[error(transparent)]
     Expression(#[from] expression::Error),
