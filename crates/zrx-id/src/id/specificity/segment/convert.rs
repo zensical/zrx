@@ -125,16 +125,6 @@ fn parse_segment<'a>(iter: &mut Iter<'a>, group: bool) -> Segment<'a> {
 fn parse_character<'a>(iter: &mut Iter<'a>) -> Character<'a> {
     let mut values = Vec::new();
 
-    // Consume negation marker if present
-    let negate = match iter.next() {
-        Some(Token::Exclamation) => true,
-        None => false,
-        Some(token) => {
-            values.push(token.as_str());
-            false
-        }
-    };
-
     // Consume tokens until character class end
     for token in iter.by_ref() {
         values.push(match token {
@@ -144,7 +134,7 @@ fn parse_character<'a>(iter: &mut Iter<'a>) -> Character<'a> {
     }
 
     // Return character class
-    Character { negate, values }
+    Character::from_iter(values)
 }
 
 /// Parses a sequence of tokens into a group of segments.
