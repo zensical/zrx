@@ -100,7 +100,7 @@ pub trait Collection<K, V>: Any + Debug {
 // ----------------------------------------------------------------------------
 
 impl<K, V> dyn Collection<K, V> {
-    /// Attempts to downcast the collection to a reference of `T`.
+    /// Attempts to downcast to a reference of `T`.
     #[inline]
     #[must_use]
     pub fn downcast_ref<T>(&self) -> Option<&T>
@@ -110,7 +110,7 @@ impl<K, V> dyn Collection<K, V> {
         (self as &dyn Any).downcast_ref()
     }
 
-    /// Attempts to downcast the collection to a mutable reference of `T`.
+    /// Attempts to downcast to a mutable reference of `T`.
     #[inline]
     #[must_use]
     pub fn downcast_mut<T>(&mut self) -> Option<&mut T>
