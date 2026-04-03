@@ -25,7 +25,7 @@
 
 //! Executor.
 
-use std::rc::Rc;
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
@@ -93,7 +93,7 @@ where
     S: Strategy,
 {
     // Execution strategy.
-    strategy: Rc<S>,
+    strategy: Arc<S>,
 }
 
 // ----------------------------------------------------------------------------
@@ -117,7 +117,7 @@ where
     /// ```
     #[must_use]
     pub fn new(strategy: S) -> Self {
-        Self { strategy: Rc::new(strategy) }
+        Self { strategy: Arc::new(strategy) }
     }
 
     /// Submits a task.
@@ -417,7 +417,7 @@ where
     #[inline]
     fn clone(&self) -> Self {
         Self {
-            strategy: Rc::clone(&self.strategy),
+            strategy: Arc::clone(&self.strategy),
         }
     }
 }
