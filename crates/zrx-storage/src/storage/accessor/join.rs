@@ -23,64 +23,74 @@
 
 // ----------------------------------------------------------------------------
 
-//! Operand.
+//! Join accessor.
 
-use std::fmt::{self, Debug};
+use zrx_store::{Key, Value};
 
-use super::Expression;
-
-mod convert;
-mod operator;
-mod term;
-
-pub use convert::TryIntoOperand;
-pub use operator::Operator;
-pub use term::Term;
+use crate::storage::Storage;
 
 // ----------------------------------------------------------------------------
-// Enums
+// Traits
 // ----------------------------------------------------------------------------
 
-/// Operand.
-#[derive(Clone, PartialEq, Eq)]
-pub enum Operand {
-    /// Expression.
-    Expression(Expression),
-    /// Term.
-    Term(Term),
+/// Join accessor.
+pub trait Join<'a, K> {
+    /// Output type of accessor.
+    type Output;
+
+    /// Returns a tuple of references as a result of an inner join.
+    ///
+    /// This method queries each storage for the given key and returns a tuple
+    /// of references if all storages contain the key, or [`None`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_storage::accessor::Join;
+    /// use zrx_storage::Storage;
+    ///
+    /// // Create storages from iterators
+    /// let a = Storage::from_iter([("key", 42)]);
+    /// let b = Storage::from_iter([("key", true)]);
+    ///
+    /// // Obtain references to values
+    /// let value = (&a, &b).join(&"key");
+    /// assert_eq!(value, Some((&42, &true)));
+    /// ```
+    #[must_use]
+    fn join(&self, key: &K) -> Option<Self::Output>;
 }
 
 // ----------------------------------------------------------------------------
-// Trait implementations
+// Macros
 // ----------------------------------------------------------------------------
 
-impl From<Expression> for Operand {
-    /// Creates an operand from an expression.
-    #[inline]
-    fn from(expr: Expression) -> Self {
-        Operand::Expression(expr)
-    }
-}
+/// Implements join accessor trait.
+macro_rules! impl_join {
+    ($($V:ident),+ $(,)?) => {
+        impl<'a, K, $($V),+> Join<'a, K> for ($(&'a Storage<K, $V>,)+)
+        where
+            K: Key,
+            $($V: Value,)+
+        {
+            type Output = ($(&'a $V,)+);
 
-impl<T> From<T> for Operand
-where
-    T: Into<Term>,
-{
-    /// Creates an operand from a term.
-    #[inline]
-    fn from(term: T) -> Self {
-        Operand::Term(term.into())
-    }
-}
-
-// ----------------------------------------------------------------------------
-
-impl Debug for Operand {
-    /// Formats the operand for debugging.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Operand::Expression(expr) => Debug::fmt(expr, f),
-            Operand::Term(term) => Debug::fmt(term, f),
+            #[inline]
+            fn join(&self, key: &K) -> Option<Self::Output> {
+                #[allow(non_snake_case)]
+                let ($($V,)+) = self;
+                Some(($($V.get(key)?,)+))
+            }
         }
-    }
+    };
 }
+
+// ----------------------------------------------------------------------------
+
+impl_join!(V1, V2);
+impl_join!(V1, V2, V3);
+impl_join!(V1, V2, V3, V4);
+impl_join!(V1, V2, V3, V4, V5);
+impl_join!(V1, V2, V3, V4, V5, V6);
+impl_join!(V1, V2, V3, V4, V5, V6, V7);
+impl_join!(V1, V2, V3, V4, V5, V6, V7, V8);

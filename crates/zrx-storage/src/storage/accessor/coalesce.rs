@@ -23,36 +23,53 @@
 
 // ----------------------------------------------------------------------------
 
-//! Filter error.
+//! Coalesce accessor.
 
-use std::{num, result};
-use thiserror::Error;
+use zrx_store::{Key, Value};
 
-use crate::id::matcher;
-
-use super::expression;
+use crate::storage::Storage;
 
 // ----------------------------------------------------------------------------
-// Enums
+// Traits
 // ----------------------------------------------------------------------------
 
-/// Filter error.
-#[derive(Debug, Error)]
-pub enum Error {
-    /// Numeric conversion error.
-    #[error(transparent)]
-    Numeric(#[from] num::TryFromIntError),
-    /// Expression error.
-    #[error(transparent)]
-    Expression(#[from] expression::Error),
-    /// Matcher error.
-    #[error(transparent)]
-    Matcher(#[from] matcher::Error),
+/// Coalesce accessor.
+pub trait Coalesce<'a, K, V> {
+    /// Returns a reference to the value as a result of a coalesce.
+    #[must_use]
+    fn coalesce(&self, key: &K) -> Option<&'a V>;
 }
 
 // ----------------------------------------------------------------------------
-// Type aliases
+// Blanket implementations
 // ----------------------------------------------------------------------------
 
-/// Filter result.
-pub type Result<T = ()> = result::Result<T, Error>;
+impl<'a, K, V> Coalesce<'a, K, V> for [&'a Storage<K, V>]
+where
+    K: Key,
+    V: Value,
+{
+    /// Returns a reference to the value as a result of a coalesce.
+    ///
+    /// This method returns the first reference for the given key across all
+    /// storages, if it exists. Otherwise, [`None`] is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_storage::accessor::Coalesce;
+    /// use zrx_storage::Storage;
+    ///
+    /// // Create storages from iterators
+    /// let a = Storage::from_iter([("key", 42)]);
+    /// let b = Storage::from_iter([("key", 84)]);
+    ///
+    /// // Obtain reference to value
+    /// let value = [&a, &b].coalesce(&"key");
+    /// assert_eq!(value, Some(&42));
+    /// ```
+    fn coalesce(&self, key: &K) -> Option<&'a V> {
+        let mut iter = self.iter();
+        iter.find_map(|store| store.get(key))
+    }
+}

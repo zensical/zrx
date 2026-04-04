@@ -52,9 +52,38 @@ pub struct Segments<'a> {
 
 impl Segments<'_> {
     /// Creates an iterator over the segment set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_id::specificity::segment::ToSegments;
+    ///
+    /// // Create segment set from string
+    /// let segments = "**/*.md".to_segments();
+    ///
+    /// // Create iterator over segment set
+    /// for segment in segments.iter() {
+    ///     println!("{segment:?}");
+    /// }
+    /// ```
     #[inline]
     pub fn iter(&self) -> Iter<'_, Segment<'_>> {
         self.inner.iter()
+    }
+}
+
+#[allow(clippy::must_use_candidate)]
+impl Segments<'_> {
+    /// Returns the number of segments.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    /// Returns whether there are any segments.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
     }
 }
 
@@ -80,6 +109,20 @@ impl<'a> IntoIterator for &'a Segments<'a> {
     type IntoIter = Iter<'a, Segment<'a>>;
 
     /// Creates an iterator over the segment set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_id::specificity::segment::ToSegments;
+    ///
+    /// // Create segment set from string
+    /// let segments = "**/*.md".to_segments();
+    ///
+    /// // Create iterator over segment set
+    /// for segment in &segments {
+    ///     println!("{segment:?}");
+    /// }
+    /// ```
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter()

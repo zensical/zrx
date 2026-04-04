@@ -4,7 +4,7 @@
 // All contributions are certified under the DCO
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the `Software`), to
+// of this software and associated documentation files (the "Software"), to
 // deal in the Software without restriction, including without limitation the
 // rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
 // sell copies of the Software, and to permit persons to whom the Software is
@@ -13,7 +13,7 @@
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
 
-// THE SOFTWARE IS PROVIDED `AS IS`, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
 // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -23,80 +23,50 @@
 
 // ----------------------------------------------------------------------------
 
-//! Segment.
+//! Storage indices conversions.
 
-use std::fmt::{self, Display};
-use std::slice::Iter;
-
-pub mod atom;
-mod convert;
-mod segments;
-
-pub use atom::Atom;
-pub use convert::ToSegments;
-pub use segments::Segments;
+use std::borrow::Cow;
 
 // ----------------------------------------------------------------------------
-// Structs
+// Traits
 // ----------------------------------------------------------------------------
 
-/// Segment.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Segment<'a> {
-    /// Atoms.
-    atoms: Vec<Atom<'a>>,
-}
-
-// ----------------------------------------------------------------------------
-// Implementations
-// ----------------------------------------------------------------------------
-
-impl Segment<'_> {
-    /// Creates an iterator over the atoms of the segment.
-    #[inline]
-    pub fn iter(&self) -> Iter<'_, Atom<'_>> {
-        self.atoms.iter()
-    }
+/// Conversion into a [`usize`] slice.
+pub trait IntoIndices<'a> {
+    /// Converts into a borrowed or owned slice.
+    fn into_indices(self) -> Cow<'a, [usize]>;
 }
 
 // ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<'a> FromIterator<Atom<'a>> for Segment<'a> {
-    /// Creates a segment from an iterator.
+impl<'a> IntoIndices<'a> for &'a [usize] {
+    /// Converts the slice into a borrowed slice.
     #[inline]
-    fn from_iter<T>(iter: T) -> Self
-    where
-        T: IntoIterator<Item = Atom<'a>>,
-    {
-        Self {
-            atoms: iter.into_iter().collect(),
-        }
+    fn into_indices(self) -> Cow<'a, [usize]> {
+        Cow::Borrowed(self)
     }
 }
 
-impl<'a> IntoIterator for &'a Segment<'a> {
-    type Item = &'a Atom<'a>;
-    type IntoIter = Iter<'a, Atom<'a>>;
-
-    /// Creates an iterator over the atoms of the segment.
+impl<'a, const N: usize> IntoIndices<'a> for [usize; N] {
+    /// Converts the array into an owned slice.
     #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
+    fn into_indices(self) -> Cow<'a, [usize]> {
+        Cow::Owned(self.into())
     }
 }
 
 // ----------------------------------------------------------------------------
+// Blanket implementations
+// ----------------------------------------------------------------------------
 
-impl Display for Segment<'_> {
-    /// Formats the segment for display.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for atom in &self.atoms {
-            Display::fmt(atom, f)?;
-        }
-
-        // No errors occurred
-        Ok(())
+impl<'a, T> IntoIndices<'a> for &'a T
+where
+    T: AsRef<[usize]>,
+{
+    #[inline]
+    fn into_indices(self) -> Cow<'a, [usize]> {
+        Cow::Borrowed(self.as_ref())
     }
 }

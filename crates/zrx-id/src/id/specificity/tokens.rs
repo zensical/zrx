@@ -50,8 +50,6 @@ pub enum Token<'a> {
     CharacterStart,
     /// Character class end - `]`
     CharacterEnd,
-    /// Exclamation mark - `!`
-    Exclamation,
     /// Alternate group start - `{`
     GroupStart,
     /// Alternate group end - `}`
@@ -98,7 +96,6 @@ impl<'a> Token<'a> {
             Token::StarStar => "**",
             Token::CharacterStart => "[",
             Token::CharacterEnd => "]",
-            Token::Exclamation => "!",
             Token::GroupStart => "{",
             Token::GroupEnd => "}",
             Token::Comma => ",",
@@ -110,7 +107,7 @@ impl<'a> Token<'a> {
 // ----------------------------------------------------------------------------
 
 impl<'a> From<&'a str> for Tokens<'a> {
-    /// Creates an iterator over the tokens of a pattern.
+    /// Creates an iterator over tokens from a string slice.
     #[inline]
     fn from(value: &'a str) -> Self {
         Self { value, index: 0 }
@@ -146,13 +143,12 @@ impl<'a> Iterator for Tokens<'a> {
             b'?' => Some(Token::Any),
             b'[' => Some(Token::CharacterStart),
             b']' => Some(Token::CharacterEnd),
-            b'!' => Some(Token::Exclamation),
             b'{' => Some(Token::GroupStart),
             b'}' => Some(Token::GroupEnd),
             b',' => Some(Token::Comma),
             b'/' => Some(Token::Separator),
 
-            // Consume a `*` or `**`
+            // Consume `*` or `**`
             b'*' => {
                 if self.index < value.len() && value[self.index] == b'*' {
                     self.index += 1;
@@ -185,6 +181,6 @@ impl<'a> Iterator for Tokens<'a> {
 fn is_special(char: u8) -> bool {
     matches!(
         char,
-        b'.' | b'?' | b'*' | b'[' | b']' | b'!' | b'{' | b'}' | b',' | b'/'
+        b'.' | b'?' | b'*' | b'[' | b']' | b'{' | b'}' | b',' | b'/'
     )
 }

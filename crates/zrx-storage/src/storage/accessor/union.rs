@@ -23,36 +23,60 @@
 
 // ----------------------------------------------------------------------------
 
-//! Filter error.
+//! Union accessor.
 
-use std::{num, result};
-use thiserror::Error;
+use zrx_store::{Key, Value};
 
-use crate::id::matcher;
-
-use super::expression;
+use crate::storage::Storage;
 
 // ----------------------------------------------------------------------------
-// Enums
+// Traits
 // ----------------------------------------------------------------------------
 
-/// Filter error.
-#[derive(Debug, Error)]
-pub enum Error {
-    /// Numeric conversion error.
-    #[error(transparent)]
-    Numeric(#[from] num::TryFromIntError),
-    /// Expression error.
-    #[error(transparent)]
-    Expression(#[from] expression::Error),
-    /// Matcher error.
-    #[error(transparent)]
-    Matcher(#[from] matcher::Error),
+/// Union accessor.
+pub trait Union<'a, K, V> {
+    /// Returns a reference to the value as a result of a set union.
+    #[must_use]
+    fn union(&self, key: &K) -> Option<&'a V>;
 }
 
 // ----------------------------------------------------------------------------
-// Type aliases
+// Blanket implementations
 // ----------------------------------------------------------------------------
 
-/// Filter result.
-pub type Result<T = ()> = result::Result<T, Error>;
+impl<'a, K, V> Union<'a, K, V> for [&'a Storage<K, V>]
+where
+    K: Key,
+    V: Value + PartialEq,
+{
+    /// Returns a reference to the value as a result of a set union.
+    ///
+    /// This method queries each storage for the given key and only returns a
+    /// reference if any storage contains a value, and this value is the same
+    /// across all storages. Otherwise, [`None`] is returned, indicating that
+    /// the union is empty or values differ.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_storage::accessor::Union;
+    /// use zrx_storage::Storage;
+    ///
+    /// // Create storages from iterators
+    /// let a = Storage::from_iter([("key", 42)]);
+    /// let b = Storage::from_iter([("key", 42)]);
+    ///
+    /// // Obtain reference to value
+    /// let value = [&a, &b].union(&"key");
+    /// assert_eq!(value, Some(&42));
+    /// ```
+    fn union(&self, key: &K) -> Option<&'a V> {
+        let iter = self.iter();
+        iter.filter_map(|store| store.get(key))
+            .try_fold(None, |check, value| match check {
+                Some(check) => (check == value).then_some(Some(check)),
+                None => Some(Some(value)),
+            })
+            .flatten()
+    }
+}

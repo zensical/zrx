@@ -46,7 +46,7 @@ use super::Filter;
 /// after all modifications were made.
 #[derive(Debug, Default)]
 pub struct Builder {
-    /// Conditions.
+    /// Condition set.
     conditions: Slab<Condition>,
 }
 
@@ -119,8 +119,8 @@ impl Builder {
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
     /// builder.insert(Expression::any(|expr| {
-    ///     expr.with(selector!(location = "**/*.png")?)?
-    ///         .with(selector!(location = "**/*.jpg")?)
+    ///     expr.with(selector!(location = "**/*.jpg")?)?
+    ///         .with(selector!(location = "**/*.png")?)
     /// })?);
     /// # Ok(())
     /// # }
@@ -146,8 +146,8 @@ impl Builder {
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
     /// builder.insert(Expression::any(|expr| {
-    ///     expr.with(selector!(location = "**/*.png")?)?
-    ///         .with(selector!(location = "**/*.jpg")?)
+    ///     expr.with(selector!(location = "**/*.jpg")?)?
+    ///         .with(selector!(location = "**/*.png")?)
     /// })?);
     ///
     /// // Remove expression
@@ -178,8 +178,8 @@ impl Builder {
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
     /// builder.insert(Expression::any(|expr| {
-    ///     expr.with(selector!(location = "**/*.png")?)?
-    ///         .with(selector!(location = "**/*.jpg")?)
+    ///     expr.with(selector!(location = "**/*.jpg")?)?
+    ///         .with(selector!(location = "**/*.png")?)
     /// })?);
     ///
     /// // Create filter from builder
@@ -187,7 +187,6 @@ impl Builder {
     /// # Ok(())
     /// # }
     /// ```
-    #[allow(clippy::cast_possible_truncation)]
     pub fn build(self) -> Result<Filter> {
         let mut builder = Matcher::builder();
 
@@ -198,7 +197,7 @@ impl Builder {
         // Add all terms of each condition to the mapping and matcher
         for (index, condition) in &self.conditions {
             for term in condition.terms() {
-                mapping.push(index as u32);
+                mapping.push(u32::try_from(index)?);
                 match term {
                     Term::Id(id) => builder.add(id)?,
                     Term::Selector(selector) => builder.add(selector)?,
@@ -209,7 +208,7 @@ impl Builder {
             // to the list of negations, so it's always checked when matching
             let mut iter = condition.instructions().iter();
             if iter.any(|instruction| instruction.operator() == Operator::Not) {
-                negations.push(index as u32);
+                negations.push(u32::try_from(index)?);
             }
         }
 

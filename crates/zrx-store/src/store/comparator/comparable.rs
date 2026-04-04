@@ -51,8 +51,8 @@ use super::{Ascending, Comparator};
 /// use zrx_store::comparator::Comparable;
 ///
 /// // Create and compare values
-/// let a: Comparable<_> = 42.into();
-/// let b: Comparable<_> = 84.into();
+/// let a = Comparable::from(42);
+/// let b = Comparable::from(84);
 /// assert!(a < b);
 /// ```
 #[derive(Clone)]
@@ -109,7 +109,7 @@ impl<T> From<T> for Comparable<T> {
     /// use zrx_store::comparator::Comparable;
     ///
     /// // Create comparable value
-    /// let value: Comparable<_> = 42.into();
+    /// let value = Comparable::from(42);
     /// assert_eq!(*value, 42);
     /// ```
     #[inline]
@@ -123,7 +123,7 @@ impl<T> From<T> for Comparable<T> {
 impl<T, C> Deref for Comparable<T, C> {
     type Target = T;
 
-    /// Dereferences to the wrapped value.
+    /// Dereferences to the inner value.
     #[inline]
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -136,7 +136,7 @@ impl<T, C> PartialEq for Comparable<T, C>
 where
     T: PartialEq,
 {
-    /// Compares two values for equality.
+    /// Compares two comparable values for equality.
     ///
     /// # Examples
     ///
@@ -144,8 +144,8 @@ where
     /// use zrx_store::comparator::Comparable;
     ///
     /// // Create and compare values
-    /// let a: Comparable<_> = 42.into();
-    /// let b: Comparable<_> = 42.into();
+    /// let a = Comparable::from(42);
+    /// let b = Comparable::from(42);
     /// assert_eq!(a, b);
     /// ```
     #[inline]
@@ -163,7 +163,7 @@ where
     T: Eq,
     C: Comparator<T>,
 {
-    /// Orders two values.
+    /// Orders two comparable values.
     ///
     /// # Examples
     ///
@@ -171,8 +171,8 @@ where
     /// use zrx_store::comparator::Comparable;
     ///
     /// // Create and compare values
-    /// let a: Comparable<_> = 42.into();
-    /// let b: Comparable<_> = 84.into();
+    /// let a = Comparable::from(42);
+    /// let b = Comparable::from(84);
     /// assert!(a < b);
     /// ```
     #[inline]
@@ -186,7 +186,7 @@ where
     T: Eq,
     C: Comparator<T>,
 {
-    /// Orders two values.
+    /// Orders two comparable values.
     ///
     /// # Examples
     ///
@@ -194,8 +194,8 @@ where
     /// use zrx_store::comparator::Comparable;
     ///
     /// // Create and compare values
-    /// let a: Comparable<_> = 42.into();
-    /// let b: Comparable<_> = 84.into();
+    /// let a = Comparable::from(42);
+    /// let b = Comparable::from(84);
     /// assert!(a < b);
     /// ```
     #[inline]

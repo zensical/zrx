@@ -83,11 +83,11 @@ impl Selector {
     /// let selector: Selector = "zrs:::::**/*.md:".parse()?;
     ///
     /// // Create selector builder
-    /// let builder = selector.to_builder().location("**/index.md");
+    /// let builder = selector.to_builder().location("index.md");
     ///
     /// // Create selector from builder
     /// let selector = builder.build()?;
-    /// assert_eq!(selector.as_str(), "zrs:::::**/index.md:");
+    /// assert_eq!(selector.as_str(), "zrs:::::index.md:");
     /// # Ok(())
     /// # }
     /// ```

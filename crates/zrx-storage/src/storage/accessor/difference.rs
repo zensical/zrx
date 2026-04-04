@@ -23,36 +23,60 @@
 
 // ----------------------------------------------------------------------------
 
-//! Filter error.
+//! Difference accessor.
 
-use std::{num, result};
-use thiserror::Error;
+use zrx_store::{Key, Value};
 
-use crate::id::matcher;
-
-use super::expression;
+use crate::storage::Storage;
 
 // ----------------------------------------------------------------------------
-// Enums
+// Traits
 // ----------------------------------------------------------------------------
 
-/// Filter error.
-#[derive(Debug, Error)]
-pub enum Error {
-    /// Numeric conversion error.
-    #[error(transparent)]
-    Numeric(#[from] num::TryFromIntError),
-    /// Expression error.
-    #[error(transparent)]
-    Expression(#[from] expression::Error),
-    /// Matcher error.
-    #[error(transparent)]
-    Matcher(#[from] matcher::Error),
+/// Difference accessor.
+pub trait Difference<'a, K, V> {
+    /// Returns a reference to the value as a result of a set difference.
+    #[must_use]
+    fn difference(&self, key: &K) -> Option<&'a V>;
 }
 
 // ----------------------------------------------------------------------------
-// Type aliases
+// Blanket implementations
 // ----------------------------------------------------------------------------
 
-/// Filter result.
-pub type Result<T = ()> = result::Result<T, Error>;
+impl<'a, K, V> Difference<'a, K, V> for [&'a Storage<K, V>]
+where
+    K: Key,
+    V: Value,
+{
+    /// Returns a reference to the value as a result of a set difference.
+    ///
+    /// This method queries each storage for the given key and only returns a
+    /// reference if no other storage doesn't return a value for it, regardless
+    /// of whether it matches. It's functionally equivalent to [`AntiJoin`][],
+    /// but implemented for sequences of storage references.
+    ///
+    /// [`AntiJoin`]: crate::storage::accessor::AntiJoin
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_storage::accessor::Difference;
+    /// use zrx_storage::Storage;
+    ///
+    /// // Create storages from iterators
+    /// let a = Storage::from_iter([("a", 42)]);
+    /// let b = Storage::from_iter([("b", 42)]);
+    ///
+    /// // Obtain reference to value
+    /// let value = [&a, &b].difference(&"a");
+    /// assert_eq!(value, Some(&42));
+    /// ```
+    fn difference(&self, key: &K) -> Option<&'a V> {
+        let mut iter = self.iter();
+        let value = iter.next()?.get(key)?;
+        iter.find_map(|store| store.get(key))
+            .is_none()
+            .then_some(value)
+    }
+}

@@ -169,7 +169,7 @@ impl PartialEq for Topology {
     /// builder.add_edge(a, b)?;
     /// builder.add_edge(b, c)?;
     ///
-    /// // Create topology
+    /// // Create and compare topologies
     /// let topology = Topology::new(builder.len(), builder.edges());
     /// assert_eq!(topology, topology.clone());
     /// # Ok(())

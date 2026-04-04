@@ -23,9 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Specificity conversion.
-
-use std::cmp;
+//! Specificity computation.
 
 use crate::id::filter::expression::{Operand, Operator};
 use crate::id::filter::{Expression, Term};
@@ -33,15 +31,14 @@ use crate::id::matcher::selector::Selector;
 use crate::id::Id;
 
 use super::segment::atom::{Character, Wildcard};
-use super::segment::convert::ToSegments;
-use super::segment::{Atom, Segment, Segments};
+use super::segment::{Atom, Segment, Segments, ToSegments};
 use super::Specificity;
 
 // ----------------------------------------------------------------------------
 // Traits
 // ----------------------------------------------------------------------------
 
-/// Computes the [`Specificity`].
+/// Computation of [`Specificity`].
 pub trait ToSpecificity {
     /// Computes the specificity of the value.
     fn to_specificity(&self) -> Specificity;
@@ -53,6 +50,25 @@ pub trait ToSpecificity {
 
 impl ToSpecificity for Expression {
     /// Computes the specificity of the expression.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::filter::Expression;
+    /// use zrx_id::selector;
+    /// use zrx_id::specificity::ToSpecificity;
+    ///
+    /// // Create expression and compute specificity
+    /// let expr = Expression::any(|expr| {
+    ///     expr.with(selector!(location = "**/*.jpg")?)?
+    ///         .with(selector!(location = "**/*.png")?)
+    /// })?;
+    /// assert_eq!(expr.to_specificity(), (0, 1, 1, 4).into());
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     fn to_specificity(&self) -> Specificity {
         let iter = self.operands().iter().map(ToSpecificity::to_specificity);
@@ -66,6 +82,22 @@ impl ToSpecificity for Expression {
 
 impl ToSpecificity for Term {
     /// Computes the specificity of the term.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::filter::expression::Term;
+    /// use zrx_id::selector;
+    /// use zrx_id::specificity::ToSpecificity;
+    ///
+    /// // Create term and compute specificity
+    /// let term = Term::from(selector!(location = "**/*.md")?);
+    /// assert_eq!(term.to_specificity(), (0, 1, 1, 3).into());
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     fn to_specificity(&self) -> Specificity {
         match self {
@@ -77,6 +109,22 @@ impl ToSpecificity for Term {
 
 impl ToSpecificity for Operand {
     /// Computes the specificity of the operand.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::filter::expression::Operand;
+    /// use zrx_id::selector;
+    /// use zrx_id::specificity::ToSpecificity;
+    ///
+    /// // Create operand and compute specificity
+    /// let operand = Operand::from(selector!(location = "**/*.md")?);
+    /// assert_eq!(operand.to_specificity(), (0, 1, 1, 3).into());
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     fn to_specificity(&self) -> Specificity {
         match self {
@@ -90,6 +138,21 @@ impl ToSpecificity for Operand {
 
 impl ToSpecificity for Id {
     /// Computes the specificity of the identifier.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::id;
+    /// use zrx_id::specificity::ToSpecificity;
+    ///
+    /// // Create identifier and compute specificity
+    /// let id = id!(provider = "file", context = ".", location = "index.md")?;
+    /// assert_eq!(id.to_specificity(), (3, 0, 0, 13).into());
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     fn to_specificity(&self) -> Specificity {
         let iter = 1..7;
@@ -101,6 +164,21 @@ impl ToSpecificity for Id {
 
 impl ToSpecificity for Selector {
     /// Computes the specificity of the selector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_id::selector;
+    /// use zrx_id::specificity::ToSpecificity;
+    ///
+    /// // Create selector and compute specificity
+    /// let selector = selector!(location = "**/*.md")?;
+    /// assert_eq!(selector.to_specificity(), (0, 1, 1, 3).into());
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     fn to_specificity(&self) -> Specificity {
         let iter = 1..7;
@@ -113,7 +191,7 @@ impl ToSpecificity for Selector {
 // ----------------------------------------------------------------------------
 
 impl ToSpecificity for Segments<'_> {
-    /// Computes the specificity of the segments set.
+    /// Computes the specificity of the segment set.
     #[inline]
     fn to_specificity(&self) -> Specificity {
         self.iter()
@@ -150,7 +228,7 @@ impl ToSpecificity for Atom<'_> {
             Atom::Group(data) => data
                 .iter()
                 .map(ToSpecificity::to_specificity)
-                .reduce(cmp::min)
+                .reduce(Specificity::min)
                 .unwrap_or_default(),
         }
     }
@@ -169,7 +247,7 @@ impl ToSpecificity for Wildcard {
 }
 
 impl ToSpecificity for Character<'_> {
-    /// Computes the specificity of the character.
+    /// Computes the specificity of the character class.
     #[inline]
     fn to_specificity(&self) -> Specificity {
         Specificity(0, 1, 0, 1)

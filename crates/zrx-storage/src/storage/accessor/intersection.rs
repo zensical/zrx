@@ -23,36 +23,57 @@
 
 // ----------------------------------------------------------------------------
 
-//! Filter error.
+//! Intersection accessor.
 
-use std::{num, result};
-use thiserror::Error;
+use zrx_store::{Key, Value};
 
-use crate::id::matcher;
-
-use super::expression;
+use crate::storage::Storage;
 
 // ----------------------------------------------------------------------------
-// Enums
+// Traits
 // ----------------------------------------------------------------------------
 
-/// Filter error.
-#[derive(Debug, Error)]
-pub enum Error {
-    /// Numeric conversion error.
-    #[error(transparent)]
-    Numeric(#[from] num::TryFromIntError),
-    /// Expression error.
-    #[error(transparent)]
-    Expression(#[from] expression::Error),
-    /// Matcher error.
-    #[error(transparent)]
-    Matcher(#[from] matcher::Error),
+/// Intersection accessor.
+pub trait Intersection<'a, K, V> {
+    /// Returns a reference to the value as a result of a set intersection.
+    #[must_use]
+    fn intersection(&self, key: &K) -> Option<&'a V>;
 }
 
 // ----------------------------------------------------------------------------
-// Type aliases
+// Trait implementations
 // ----------------------------------------------------------------------------
 
-/// Filter result.
-pub type Result<T = ()> = result::Result<T, Error>;
+impl<'a, K, V> Intersection<'a, K, V> for [&'a Storage<K, V>]
+where
+    K: Key,
+    V: Value + PartialEq,
+{
+    /// Returns a reference to the value as a result of a set intersection.
+    ///
+    /// This method queries each storage for the given key and only returns a
+    /// reference if all storages contain a value, and this value is the same
+    /// across all storages. Otherwise, [`None`] is returned, indicating that
+    /// the intersection is empty or values differ.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_storage::accessor::Intersection;
+    /// use zrx_storage::Storage;
+    ///
+    /// // Create storages from iterators
+    /// let a = Storage::from_iter([("key", 42)]);
+    /// let b = Storage::from_iter([("key", 42)]);
+    ///
+    /// // Obtain reference to value
+    /// let value = [&a, &b].intersection(&"key");
+    /// assert_eq!(value, Some(&42));
+    /// ```
+    fn intersection(&self, key: &K) -> Option<&'a V> {
+        let mut iter = self.iter();
+        let value = iter.next()?.get(key)?;
+        iter.all(|store| store.get(key) == Some(value))
+            .then_some(value)
+    }
+}

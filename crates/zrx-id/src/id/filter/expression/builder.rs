@@ -64,8 +64,8 @@ impl Expression {
     ///
     /// // Create expression
     /// let expr = Expression::any(|expr| {
-    ///     expr.with(selector!(location = "**/*.png")?)?
-    ///         .with(selector!(location = "**/*.jpg")?)
+    ///     expr.with(selector!(location = "**/*.jpg")?)?
+    ///         .with(selector!(location = "**/*.png")?)
     /// })?;
     /// # Ok(())
     /// # }
@@ -176,8 +176,8 @@ impl Builder {
     ///
     /// // Create expression
     /// let expr = Expression::any(|expr| {
-    ///     expr.with(selector!(location = "**/*.png")?)?
-    ///         .with(selector!(location = "**/*.jpg")?)
+    ///     expr.with(selector!(location = "**/*.jpg")?)?
+    ///         .with(selector!(location = "**/*.png")?)
     /// })?;
     /// # Ok(())
     /// # }

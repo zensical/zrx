@@ -23,22 +23,24 @@
 
 // ----------------------------------------------------------------------------
 
-//! Zen Reactive Extensions.
+//! Storage accessors.
 
-// ----------------------------------------------------------------------------
-// Re-exports
-// ----------------------------------------------------------------------------
+mod anti_join;
+mod coalesce;
+mod difference;
+mod full_join;
+mod intersection;
+mod join;
+mod left_join;
+mod semi_join;
+mod union;
 
-#[doc(inline)]
-#[rustfmt::skip]
-pub use {
-    zrx_diagnostic as diagnostic,
-    zrx_executor as executor,
-    zrx_graph as graph,
-    zrx_id as id,
-    zrx_path as path,
-    zrx_scheduler as scheduler,
-    zrx_storage as storage,
-    zrx_store as store,
-    zrx_stream as stream,
-};
+pub use anti_join::AntiJoin;
+pub use coalesce::Coalesce;
+pub use difference::Difference;
+pub use full_join::FullJoin;
+pub use intersection::Intersection;
+pub use join::Join;
+pub use left_join::LeftJoin;
+pub use semi_join::SemiJoin;
+pub use union::Union;

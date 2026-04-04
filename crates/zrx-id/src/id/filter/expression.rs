@@ -71,7 +71,7 @@ pub use operand::{Operand, Operator, Term};
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Expression {
     /// Expression operator.
     operator: Operator,
@@ -95,6 +95,18 @@ impl Expression {
     #[inline]
     pub fn operands(&self) -> &[Operand] {
         &self.operands
+    }
+
+    /// Returns the number of operands.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.operands.len()
+    }
+
+    /// Returns whether there are any operands.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.operands.is_empty()
     }
 }
 
@@ -134,8 +146,8 @@ impl IntoIterator for Expression {
     ///
     /// // Create expression
     /// let expr = Expression::any(|expr| {
-    ///     expr.with(selector!(location = "**/*.png")?)?
-    ///         .with(selector!(location = "**/*.jpg")?)
+    ///     expr.with(selector!(location = "**/*.jpg")?)?
+    ///         .with(selector!(location = "**/*.png")?)
     /// })?;
     ///
     /// // Create iterator over expression
@@ -148,5 +160,36 @@ impl IntoIterator for Expression {
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.operands.into_iter()
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl Default for Expression {
+    /// Creates an expression that matches everything.
+    ///
+    /// While it may seem counterintuitive to have the default expression match
+    /// everything, it is designed this way to align with the concept of vacuous
+    /// truth in logic. An expression with no operands is considered to be true,
+    /// as there are no conditions to violate it.
+    ///
+    /// In our implementation, we use an empty expression with a logical `NOT`
+    /// operator to represent this concept, to be distinguishable as a marker.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_id::Expression;
+    ///
+    /// // Create empty expression
+    /// let expr = Expression::default();
+    /// assert!(expr.is_empty());
+    /// ```
+    #[inline]
+    fn default() -> Self {
+        Self {
+            operator: Operator::Not,
+            operands: Vec::new(),
+        }
     }
 }

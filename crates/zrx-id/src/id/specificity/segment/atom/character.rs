@@ -32,29 +32,40 @@ use std::fmt::{self, Display, Write};
 // ----------------------------------------------------------------------------
 
 /// Character class.
+///
+/// For our case, we do not need to know the exact structure of the character
+/// class, as we'll score it as a single character anyway, same as `*`. We also
+/// don't care whether it's negated or not, as that doesn't affect scoring as
+/// well. Therefore, we can just store the string slices.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Character<'a> {
-    /// Negation marker.
-    pub negate: bool,
-    /// Characters.
-    pub values: Vec<&'a str>,
+    /// String slices.
+    values: Vec<&'a str>,
 }
 
 // ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
+impl<'a> FromIterator<&'a str> for Character<'a> {
+    /// Creates a character class from an iterator.
+    #[inline]
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = &'a str>,
+    {
+        Character {
+            values: iter.into_iter().collect(),
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 impl Display for Character<'_> {
     /// Formats the character class for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_char('[')?;
-
-        // Write negation marker
-        if self.negate {
-            f.write_char('!')?;
-        }
-
-        // Write characters
         for value in &self.values {
             f.write_str(value)?;
         }
