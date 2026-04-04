@@ -23,7 +23,7 @@
 
 [package]
 name = "zrx-storage"
-version = "0.0.0"
+version = "0.0.1"
 description = "Storage abstractions and utilities"
 edition.workspace = true
 rust-version.workspace = true
