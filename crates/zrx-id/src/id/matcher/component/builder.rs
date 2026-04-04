@@ -102,7 +102,7 @@ impl Default for Builder {
     /// Creates a component builder.
     #[inline]
     fn default() -> Self {
-        Builder {
+        Self {
             globset: GlobSetBuilder::new(),
             mapping: Vec::default(),
             matches: Matches::default(),

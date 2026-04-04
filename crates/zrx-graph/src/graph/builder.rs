@@ -429,7 +429,7 @@ impl<T> Default for Builder<T> {
     /// ```
     #[inline]
     fn default() -> Self {
-        Builder {
+        Self {
             nodes: Vec::default(),
             edges: Vec::default(),
         }

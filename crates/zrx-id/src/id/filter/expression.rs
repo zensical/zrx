@@ -187,7 +187,7 @@ impl Default for Expression {
     /// ```
     #[inline]
     fn default() -> Self {
-        Expression {
+        Self {
             operator: Operator::Not,
             operands: Vec::new(),
         }
