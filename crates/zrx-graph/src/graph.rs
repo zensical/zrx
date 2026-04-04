@@ -405,6 +405,6 @@ impl<T> Default for Graph<T> {
     /// ```
     #[inline]
     fn default() -> Self {
-        Graph::builder().build()
+        Self::builder().build()
     }
 }
