@@ -27,6 +27,7 @@
 
 use std::any::Any;
 use std::borrow::Cow;
+use std::ptr;
 
 use super::Storages;
 
@@ -149,8 +150,9 @@ impl Storages {
         // given index is not included in the list of indices. This allows us
         // to obtain a raw pointer to the storage set, so we can return both,
         // immutable and mutable references, at the same time.
+
         unsafe {
-            let pointer = self as *mut Self;
+            let pointer = ptr::from_mut(self);
             (
                 View { storages: &*pointer, indices },
                 ViewMut { storages: &mut *pointer, index },
