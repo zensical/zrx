@@ -105,7 +105,7 @@ impl<K, V> dyn Collection<K, V> {
     #[must_use]
     pub fn downcast_ref<T>(&self) -> Option<&T>
     where
-        T: Any,
+        T: Collection<K, V> + Any,
     {
         (self as &dyn Any).downcast_ref()
     }
@@ -115,7 +115,7 @@ impl<K, V> dyn Collection<K, V> {
     #[must_use]
     pub fn downcast_mut<T>(&mut self) -> Option<&mut T>
     where
-        T: Any,
+        T: Collection<K, V> + Any,
     {
         (self as &mut dyn Any).downcast_mut()
     }
