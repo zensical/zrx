@@ -23,22 +23,29 @@
 
 // ----------------------------------------------------------------------------
 
-//! Zen Reactive Extensions.
+//! Storage error.
+
+use std::result;
+use thiserror::Error;
 
 // ----------------------------------------------------------------------------
-// Re-exports
+// Enums
 // ----------------------------------------------------------------------------
 
-#[doc(inline)]
-#[rustfmt::skip]
-pub use {
-    zrx_diagnostic as diagnostic,
-    zrx_executor as executor,
-    zrx_graph as graph,
-    zrx_id as id,
-    zrx_path as path,
-    zrx_scheduler as scheduler,
-    zrx_storage as storage,
-    zrx_store as store,
-    zrx_stream as stream,
-};
+/// Storage error.
+#[derive(Debug, Error)]
+pub enum Error {
+    /// Storage number mismatch.
+    #[error("storage number mismatch")]
+    Mismatch,
+    /// Storage downcast failed.
+    #[error("storage downcast failed")]
+    Downcast,
+}
+
+// ----------------------------------------------------------------------------
+// Type aliases
+// ----------------------------------------------------------------------------
+
+/// Storage result.
+pub type Result<T = ()> = result::Result<T, Error>;

@@ -21,40 +21,24 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-[workspace]
-resolver = "3"
-members = ["crates/*"]
+[package]
+name = "zrx-storage"
+version = "0.0.0"
+description = "Storage abstractions and utilities"
+edition.workspace = true
+rust-version.workspace = true
+homepage.workspace = true
+repository.workspace = true
+authors.workspace = true
+license.workspace = true
+readme.workspace = true
 
-[workspace.package]
-edition = "2024"
-rust-version = "1.86"
-homepage = "https://github.com/zensical/zrx"
-repository = "https://github.com/zensical/zrx"
-authors = ["Zensical <contributors@zensical.org>"]
-license = "MIT"
+[lints]
+workspace = true
 
-[workspace.lints.clippy]
-all = { level = "warn", priority = -1 }
-pedantic = { level = "warn", priority = -1 }
+[dependencies]
+zrx-store.workspace = true
 
-[workspace.dependencies]
-zrx-diagnostic = { version = "0.0.1", path = "crates/zrx-diagnostic" }
-zrx-executor = { version = "0.0.3", path = "crates/zrx-executor" }
-zrx-graph = { version = "0.0.10", path = "crates/zrx-graph" }
-zrx-id = { version = "0.0.11", path = "crates/zrx-id" }
-zrx-path = { version = "0.0.1", path = "crates/zrx-path" }
-zrx-scheduler = { version = "0.0.12", path = "crates/zrx-scheduler" }
-zrx-storage = { version = "0.0.0", path = "crates/zrx-storage" }
-zrx-store = { version = "0.0.6", path = "crates/zrx-store" }
-zrx-stream = { version = "0.0.12", path = "crates/zrx-stream" }
-
-ahash = "0.8.12"
-crossbeam = "0.8.4"
-file-id = "0.2.3"
-globset = "0.4.18"
-notify = "8.2.0"
-percent-encoding = "2.3.2"
-slab = "0.4.12"
-thiserror = "2.0.18"
-tracing = "0.1.41"
-walkdir = "2.5.0"
+ahash.workspace = true
+slab.workspace = true
+thiserror.workspace = true

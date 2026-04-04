@@ -23,22 +23,12 @@
 
 // ----------------------------------------------------------------------------
 
-//! Zen Reactive Extensions.
+//! Storage abstractions and utilities.
 
-// ----------------------------------------------------------------------------
-// Re-exports
-// ----------------------------------------------------------------------------
+mod storage;
 
-#[doc(inline)]
-#[rustfmt::skip]
-pub use {
-    zrx_diagnostic as diagnostic,
-    zrx_executor as executor,
-    zrx_graph as graph,
-    zrx_id as id,
-    zrx_path as path,
-    zrx_scheduler as scheduler,
-    zrx_storage as storage,
-    zrx_store as store,
-    zrx_stream as stream,
-};
+pub use storage::accessor;
+pub use storage::borrow;
+pub use storage::convert;
+pub use storage::storages::{self, Storages};
+pub use storage::{Error, Result, Storage};

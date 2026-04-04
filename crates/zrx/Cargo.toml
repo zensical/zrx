@@ -43,6 +43,7 @@ zrx-graph.workspace = true
 zrx-id.workspace = true
 zrx-path.workspace = true
 zrx-scheduler.workspace = true
+zrx-storage.workspace = true
 zrx-store.workspace = true
 zrx-stream.workspace = true
 
