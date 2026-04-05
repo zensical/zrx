@@ -27,7 +27,6 @@
 
 use slab::Slab;
 
-use super::expression::{Expression, Term};
 use super::matcher::Matcher;
 
 mod builder;
