@@ -104,7 +104,7 @@ pub use specified::Specified;
 /// [`Operand`]: crate::id::expression::Operand
 /// [`Operator`]: crate::id::expression::Operator
 /// [`Segment`]: crate::id::specificity::segment::Segment
-/// [`Selector`]: crate::id::matcher::selector::Selector
+/// [`Selector`]: crate::id::selector::Selector
 /// [`Term`]: crate::id::expression::Term
 ///
 /// # Examples

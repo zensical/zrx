@@ -26,7 +26,7 @@
 //! Specificity computation.
 
 use crate::id::expression::{Expression, Operand, Operator, Term};
-use crate::id::matcher::selector::Selector;
+use crate::id::selector::Selector;
 use crate::id::Id;
 
 use super::segment::atom::{Character, Wildcard};

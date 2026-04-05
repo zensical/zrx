@@ -44,6 +44,7 @@ pub mod filter;
 pub mod format;
 mod macros;
 pub mod matcher;
+pub mod selector;
 pub mod specificity;
 pub mod uri;
 

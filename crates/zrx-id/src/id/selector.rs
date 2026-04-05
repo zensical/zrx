@@ -33,9 +33,9 @@ use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use crate::id::expression::Term;
-use crate::id::format::Format;
-use crate::id::{Error, Id, Result};
+use super::expression::Term;
+use super::format::Format;
+use super::{Error, Id, Result};
 
 mod builder;
 mod convert;

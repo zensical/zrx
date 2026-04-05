@@ -33,7 +33,6 @@ mod builder;
 mod component;
 mod error;
 pub mod matches;
-pub mod selector;
 
 pub use builder::Builder;
 use component::Component;
