@@ -112,8 +112,8 @@ pub use specified::Specified;
 /// ```
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_id::{selector, Expression};
 /// use zrx_id::specificity::ToSpecificity;
+/// use zrx_id::{selector, Expression};
 ///
 /// // Create expression and compute specificity
 /// let expr = Expression::any(|expr| {
