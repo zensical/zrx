@@ -27,8 +27,9 @@
 
 use slab::Iter;
 
+use crate::id::expression::Term;
+
 use super::condition::Condition;
-use super::expression::Term;
 use super::Filter;
 
 // ----------------------------------------------------------------------------

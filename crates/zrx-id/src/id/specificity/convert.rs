@@ -25,8 +25,7 @@
 
 //! Specificity computation.
 
-use crate::id::filter::expression::{Operand, Operator};
-use crate::id::filter::{Expression, Term};
+use crate::id::expression::{Expression, Operand, Operator, Term};
 use crate::id::matcher::selector::Selector;
 use crate::id::Id;
 
@@ -56,8 +55,7 @@ impl ToSpecificity for Expression {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::filter::Expression;
-    /// use zrx_id::selector;
+    /// use zrx_id::{selector, Expression};
     /// use zrx_id::specificity::ToSpecificity;
     ///
     /// // Create expression and compute specificity
@@ -88,7 +86,7 @@ impl ToSpecificity for Term {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::filter::expression::Term;
+    /// use zrx_id::expression::Term;
     /// use zrx_id::selector;
     /// use zrx_id::specificity::ToSpecificity;
     ///
@@ -115,7 +113,7 @@ impl ToSpecificity for Operand {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::filter::expression::Operand;
+    /// use zrx_id::expression::Operand;
     /// use zrx_id::selector;
     /// use zrx_id::specificity::ToSpecificity;
     ///

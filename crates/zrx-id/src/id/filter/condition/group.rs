@@ -25,7 +25,7 @@
 
 //! Condition group.
 
-use crate::id::filter::expression::Operator;
+use crate::id::expression::Operator;
 use crate::id::matcher::Matches;
 
 // ----------------------------------------------------------------------------

@@ -25,9 +25,8 @@
 
 //! Condition.
 
+use crate::id::expression::{Operator, Term};
 use crate::id::matcher::Matches;
-
-use super::expression::{Operator, Term};
 
 mod builder;
 mod group;
@@ -134,8 +133,8 @@ impl Condition {
 mod tests {
 
     mod satisfies {
-        use crate::id::filter::expression::Result;
-        use crate::id::filter::{Condition, Expression};
+        use crate::id::expression::{Expression, Result};
+        use crate::id::filter::Condition;
         use crate::id::matcher::Matches;
         use crate::selector;
 

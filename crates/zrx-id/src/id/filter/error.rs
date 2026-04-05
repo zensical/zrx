@@ -28,9 +28,8 @@
 use std::{num, result};
 use thiserror::Error;
 
+use crate::id::expression;
 use crate::id::matcher;
-
-use super::expression;
 
 // ----------------------------------------------------------------------------
 // Enums

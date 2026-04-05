@@ -39,6 +39,7 @@ use zrx_path::PathExt;
 mod builder;
 mod convert;
 mod error;
+pub mod expression;
 pub mod filter;
 pub mod format;
 mod macros;

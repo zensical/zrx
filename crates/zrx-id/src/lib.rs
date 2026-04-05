@@ -29,7 +29,8 @@
 
 mod id;
 
-pub use id::filter::{self, Expression, Filter};
+pub use id::expression::{self, Expression};
+pub use id::filter::{self, Filter};
 pub use id::format;
 pub use id::matcher::selector::{Selector, TryToSelector};
 pub use id::matcher::{self, Matcher, Matches};
