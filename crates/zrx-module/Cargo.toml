@@ -1,7 +1,7 @@
 # Copyright (c) 2025-2026 Zensical and contributors
 
 # SPDX-License-Identifier: MIT
-# All contributions are certified under the DCO
+# Third-party contributions licensed under DCO
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
@@ -22,9 +22,9 @@
 # IN THE SOFTWARE.
 
 [package]
-name = "zrx"
-version = "0.0.16"
-description = "Zen Reactive Extensions"
+name = "zrx-module"
+version = "0.0.0"
+description = "Module system"
 edition.workspace = true
 rust-version.workspace = true
 homepage.workspace = true
@@ -37,20 +37,7 @@ readme.workspace = true
 workspace = true
 
 [dependencies]
-zrx-diagnostic.workspace = true
-zrx-executor.workspace = true
-zrx-graph.workspace = true
 zrx-id.workspace = true
-zrx-module.workspace = true
-zrx-path.workspace = true
-zrx-scheduler.workspace = true
-zrx-storage.workspace = true
-zrx-store.workspace = true
 zrx-stream.workspace = true
 
-[features]
-default = []
-tracing = [
-  "zrx-scheduler/tracing",
-  "zrx-stream/tracing"
-]
+thiserror.workspace = true

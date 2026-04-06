@@ -1,7 +1,7 @@
 // Copyright (c) 2025-2026 Zensical and contributors
 
 // SPDX-License-Identifier: MIT
-// All contributions are certified under the DCO
+// Third-party contributions licensed under DCO
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -23,23 +23,10 @@
 
 // ----------------------------------------------------------------------------
 
-//! Zen Reactive Extensions.
+//! Module system.
 
-// ----------------------------------------------------------------------------
-// Re-exports
-// ----------------------------------------------------------------------------
+mod module;
 
-#[doc(inline)]
-#[rustfmt::skip]
-pub use {
-    zrx_diagnostic as diagnostic,
-    zrx_executor as executor,
-    zrx_graph as graph,
-    zrx_id as id,
-    zrx_module as module,
-    zrx_path as path,
-    zrx_scheduler as scheduler,
-    zrx_storage as storage,
-    zrx_store as store,
-    zrx_stream as stream,
-};
+pub use module::context::{self, Context};
+pub use module::error::{self, Error, Result};
+pub use module::Module;

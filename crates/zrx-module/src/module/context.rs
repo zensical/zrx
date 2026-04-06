@@ -1,7 +1,7 @@
 // Copyright (c) 2025-2026 Zensical and contributors
 
 // SPDX-License-Identifier: MIT
-// All contributions are certified under the DCO
+// Third-party contributions licensed under DCO
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -23,23 +23,46 @@
 
 // ----------------------------------------------------------------------------
 
-//! Zen Reactive Extensions.
+//! Context.
+
+use zrx_id::Id;
+use zrx_stream::workflow::Builder;
+use zrx_stream::{Stream, Value, Workflow};
 
 // ----------------------------------------------------------------------------
-// Re-exports
+// Structs
 // ----------------------------------------------------------------------------
 
-#[doc(inline)]
-#[rustfmt::skip]
-pub use {
-    zrx_diagnostic as diagnostic,
-    zrx_executor as executor,
-    zrx_graph as graph,
-    zrx_id as id,
-    zrx_module as module,
-    zrx_path as path,
-    zrx_scheduler as scheduler,
-    zrx_storage as storage,
-    zrx_store as store,
-    zrx_stream as stream,
-};
+/// Context.
+#[derive(Default)]
+pub struct Context {
+    /// Workflow builder.
+    builder: Builder<Id>,
+}
+
+// ----------------------------------------------------------------------------
+// Implementations
+// ----------------------------------------------------------------------------
+
+impl Context {
+    /// Adds a stream to the context.
+    #[must_use]
+    pub fn add<T>(&self) -> Stream<Id, T>
+    where
+        T: Value,
+    {
+        self.builder.add()
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Trait implementations
+// ----------------------------------------------------------------------------
+
+impl From<Context> for Workflow<Id> {
+    /// Creates a workflow from a context.
+    #[inline]
+    fn from(context: Context) -> Self {
+        context.builder.build().expect("invariant")
+    }
+}
