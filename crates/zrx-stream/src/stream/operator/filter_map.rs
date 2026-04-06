@@ -27,27 +27,26 @@
 
 use std::marker::PhantomData;
 
-use zrx_scheduler::action::descriptor::Property;
-use zrx_scheduler::action::output::IntoOutputs;
-use zrx_scheduler::action::Descriptor;
-use zrx_scheduler::effect::{Item, Task};
+use zrx_scheduler::action::context::Binding;
+use zrx_scheduler::action::{Action, Context};
+use zrx_scheduler::step::IntoSteps;
 use zrx_scheduler::{Id, Value};
 
 use crate::stream::function::FilterMapFn;
 use crate::stream::Stream;
 
-use super::{Operator, OperatorExt};
+use super::Operator;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
 /// Filter map operator.
-struct FilterMap<F, U> {
+pub struct FilterMap<T, F, U> {
     /// Operator function.
     function: F,
     /// Capture types.
-    marker: PhantomData<U>,
+    marker: PhantomData<(T, U)>,
 }
 
 // ----------------------------------------------------------------------------
@@ -57,14 +56,17 @@ struct FilterMap<F, U> {
 impl<I, T> Stream<I, T>
 where
     I: Id,
-    T: Value + Clone,
+    T: Value,
 {
+    /// Maps the stream using the provided function.
+    #[inline]
+    #[must_use]
     pub fn filter_map<F, U>(&self, f: F) -> Stream<I, U>
     where
         F: FilterMapFn<I, T, U> + Clone,
         U: Value,
     {
-        self.with_operator(FilterMap {
+        self.subscribe(FilterMap {
             function: f,
             marker: PhantomData,
         })
@@ -75,44 +77,39 @@ where
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I, T, F, U> Operator<I, T> for FilterMap<F, U>
+impl<I, T, F, U> Action<I> for FilterMap<T, F, U>
 where
     I: Id,
-    T: Value + Clone,
+    T: Value,
     F: FilterMapFn<I, T, U> + Clone,
     U: Value,
 {
-    type Item<'a> = Item<&'a I, &'a T>;
+    type Inputs = (T,);
+    type Output<'a> = U;
 
-    /// Handles the given item.
-    ///
-    /// This operator returns a task that applies the operator function to the
-    /// given item. While every insertion can be conditionally mapped to a new
-    /// type, deletions are just forwarded. If the operator function returns
-    /// [`None`], a deletion is returned.
-    #[cfg_attr(
-        feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(id = %item.id))
-    )]
-    fn handle(&mut self, item: Self::Item<'_>) -> impl IntoOutputs<I> {
-        let item = item.into_owned();
-        Task::new({
-            let function = self.function.clone();
-            move || {
-                function
-                    .execute(&item.id, item.data)
-                    .map(|report| report.map(|data| Item::new(item.id, data)))
-            }
+    /// Executes the operator.
+    fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {
+        let Binding { scopes, inputs, mut output, .. } = ctx.bind();
+        scopes.map(move |scope| {
+            let Some(value) = inputs.get(&scope).cloned() else {
+                output.remove(&scope);
+                return scope.done();
+            };
+            scope.task().build({
+                let function = self.function.clone();
+                move || {
+                    let opt = function.execute(&scope, &value)?;
+                    scope.then().build(move |mut ctx| {
+                        let mut output = ctx.output().expect("invariant");
+                        if let Some(value) = opt {
+                            output.insert((*scope).clone(), value);
+                        } else {
+                            output.remove(&scope);
+                        }
+                        scope.done()
+                    })
+                }
+            })
         })
-    }
-
-    /// Returns the descriptor.
-    #[inline]
-    fn descriptor(&self) -> Descriptor {
-        Descriptor::builder()
-            .property(Property::Pure)
-            .property(Property::Stable)
-            .property(Property::Flush)
-            .build()
     }
 }

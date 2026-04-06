@@ -26,21 +26,12 @@
 //! Session.
 
 use crossbeam::channel::Sender;
-use std::marker::PhantomData;
 
-use super::effect::Item;
-use super::executor::ToReceiver;
-use super::value::Value;
+use super::signal::{Diff, Scope, Value};
 
-mod collection;
-mod connector;
 mod error;
-mod message;
 
-pub use collection::Sessions;
-pub use connector::Connector;
 pub use error::{Error, Result};
-pub use message::Message;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -53,18 +44,11 @@ pub use message::Message;
 /// inserting or removing an item is a submission, not a synchronous operation.
 /// Sessions should be moved to dedicated threads to avoid deadlocks.
 ///
-/// Since sessions can have arbitrary types, items are upcasted to [`Value`]
-/// before sending, and downcasted by the [`Scheduler`][] when necessary.
-///
 /// [`Scheduler`]: crate::scheduler::Scheduler
 #[derive(Debug)]
 pub struct Session<I, T> {
-    /// Identifier.
-    id: usize,
-    /// Item submission sender.
-    sender: Sender<Message<I>>,
-    /// Capture types.
-    marker: PhantomData<T>,
+    /// Message submission sender.
+    pub(crate) sender: Sender<Diff<I, T>>,
 }
 
 // ----------------------------------------------------------------------------
@@ -77,10 +61,10 @@ where
 {
     /// Inserts an item into the session.
     ///
-    /// This method inserts an item with an identifier and associated data into
-    /// the session, meaning it is processed by the [`Scheduler`][] the session
-    /// belongs to. Note that this method might block, if the scheduler is at
-    /// capacity, in order to apply backpressure.
+    /// This method inserts an item with a scope and associated value into the
+    /// session, queueing it for processing by the [`Scheduler`][] the session
+    /// belongs to. Note that calling this method might block in order to apply
+    /// backpressure, which happens if the scheduler is at capacity.
     ///
     /// [`Scheduler`]: crate::scheduler::Scheduler
     ///
@@ -88,18 +72,21 @@ where
     ///
     /// Returns [`Error::Disconnected`] if the scheduler terminated.
     #[inline]
-    pub fn insert(&self, id: I, data: T) -> Result {
+    pub fn insert<S>(&self, scope: S, value: T) -> Result
+    where
+        S: Into<Scope<I>>,
+    {
         self.sender
-            .send(Message::Item(self.id, Item::new(id, Some(Box::new(data)))))
+            .send(Diff::Insert(scope.into(), value))
             .map_err(|_| Error::Disconnected)
     }
 
     /// Removes an item from the session.
     ///
-    /// This method removes an item associated with the given identifier from
-    /// the session, meaning it is processed by the [`Scheduler`][] the session
-    /// belongs to. Note that this method might block, if the scheduler is at
-    /// capacity, in order to apply backpressure.
+    /// This method removes the item associated with the given scope from the
+    /// session, queueing it for processing by the [`Scheduler`][] the session
+    /// belongs to. Note that calling this method might block in order to apply
+    /// backpressure, which happens if the scheduler is at capacity.
     ///
     /// [`Scheduler`]: crate::scheduler::Scheduler
     ///
@@ -107,34 +94,12 @@ where
     ///
     /// Returns [`Error::Disconnected`] if the scheduler terminated.
     #[inline]
-    pub fn remove(&self, id: I) -> Result {
+    pub fn remove<S>(&self, scope: S) -> Result
+    where
+        S: Into<Scope<I>>,
+    {
         self.sender
-            .send(Message::Item(self.id, Item::new(id, None)))
+            .send(Diff::Remove(scope.into()))
             .map_err(|_| Error::Disconnected)
-    }
-}
-
-#[allow(clippy::must_use_candidate)]
-impl<I, T> Session<I, T> {
-    /// Returns the identifier of the session.
-    #[inline]
-    pub fn id(&self) -> usize {
-        self.id
-    }
-}
-
-// ----------------------------------------------------------------------------
-// Trait implementations
-// ----------------------------------------------------------------------------
-
-impl<I, T> Drop for Session<I, T> {
-    /// Sends a drop notification to the scheduler.
-    ///
-    /// Note that it's safe for us to ignore the result of the send operation,
-    /// since it can only fail when the session is disconnected, which is the
-    /// case when the scheduler terminated anyway. Thus, we can just swallow
-    /// the error without panicking.
-    fn drop(&mut self) {
-        let _ = self.sender.send(Message::Drop(self.id));
     }
 }

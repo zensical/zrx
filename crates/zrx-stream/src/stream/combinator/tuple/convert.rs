@@ -25,102 +25,33 @@
 
 //! Stream tuple conversions.
 
+use zrx_scheduler::{Id, Value};
+
+use crate::stream::combinator::convert::IntoStreamTupleCons;
 use crate::stream::Stream;
 
-use super::StreamTuple;
+mod join;
+
+pub use join::IntoJoin;
 
 // ----------------------------------------------------------------------------
-// Traits
+// Implementations
 // ----------------------------------------------------------------------------
 
-/// Conversion into [`StreamTuple`].
-pub trait IntoStreamTuple<I> {
-    /// Output type of conversion.
-    type Output: StreamTuple<I>;
-
-    /// Converts a tuple of stream references into a stream tuple.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_stream::combinator::IntoStreamTuple;
-    /// use zrx_stream::workspace::Workspace;
-    ///
-    /// // Create workspace and workflow
-    /// let workspace = Workspace::<&str>::new();
-    /// let workflow = workspace.add_workflow();
-    ///
-    /// // Create streams (heterogeneous)
-    /// let a = workflow.add_source::<i32>();
-    /// let b = workflow.add_source::<bool>();
-    ///
-    /// // Create stream tuple
-    /// let tuple = (&a, &b).into_stream_tuple();
-    /// ```
-    fn into_stream_tuple(self) -> Self::Output;
-}
-
-// ----------------------------------------------------------------------------
-// Trait implementations
-// ----------------------------------------------------------------------------
-
-impl<I, T> IntoStreamTuple<I> for &Stream<I, T> {
-    type Output = (Stream<I, T>,);
-
-    /// Converts a stream reference into a stream tuple.
-    ///
-    /// Albeit this conversion is trivial, it allows to pass stream references
-    /// to functions that expect tuples, which can be quite convenient.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_stream::combinator::IntoStreamTuple;
-    /// use zrx_stream::workspace::Workspace;
-    ///
-    /// // Create workspace and workflow
-    /// let workspace = Workspace::<&str>::new();
-    /// let workflow = workspace.add_workflow();
-    ///
-    /// // Create stream
-    /// let stream = workflow.add_source::<i32>();
-    ///
-    /// // Create stream tuple
-    /// let tuple = stream.into_stream_tuple();
-    /// ```
+impl<I, T> Stream<I, T>
+where
+    I: Id,
+    T: Value,
+{
+    /// Joins the stream with a tuple of streams.
     #[inline]
-    fn into_stream_tuple(self) -> Self::Output {
-        (self.clone(),)
+    pub fn join<S, O>(&self, streams: S) -> Stream<I, O::Output>
+    where
+        S: IntoStreamTupleCons<I, T, Output = O>,
+        O: IntoJoin<I>,
+    {
+        streams // fmt
+            .into_stream_tuple_cons(self.clone())
+            .into_join()
     }
 }
-
-// ----------------------------------------------------------------------------
-// Macros
-// ----------------------------------------------------------------------------
-
-/// Implements stream tuple conversion trait.
-macro_rules! impl_into_stream_tuple {
-    ($($T:ident),+ $(,)?) => {
-        impl<I, $($T),+> IntoStreamTuple<I> for ($(&Stream<I, $T>,)+) {
-            type Output = ($(Stream<I, $T>,)+);
-
-            #[inline]
-            fn into_stream_tuple(self) -> Self::Output {
-                #[allow(non_snake_case)]
-                let ($($T,)+) = self;
-                ($($T.clone(),)+)
-            }
-        }
-    };
-}
-
-// ----------------------------------------------------------------------------
-
-impl_into_stream_tuple!(T1);
-impl_into_stream_tuple!(T1, T2);
-impl_into_stream_tuple!(T1, T2, T3);
-impl_into_stream_tuple!(T1, T2, T3, T4);
-impl_into_stream_tuple!(T1, T2, T3, T4, T5);
-impl_into_stream_tuple!(T1, T2, T3, T4, T5, T6);
-impl_into_stream_tuple!(T1, T2, T3, T4, T5, T6, T7);
-impl_into_stream_tuple!(T1, T2, T3, T4, T5, T6, T7, T8);

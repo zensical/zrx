@@ -350,6 +350,7 @@ dependencies = [
  "zrx-executor",
  "zrx-graph",
  "zrx-id",
+ "zrx-module",
  "zrx-path",
  "zrx-scheduler",
  "zrx-storage",
@@ -390,6 +391,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "zrx-module"
+version = "0.0.0"
+dependencies = [
+ "thiserror",
+ "zrx-id",
+ "zrx-stream",
+]
+
+[[package]]
 name = "zrx-path"
 version = "0.0.1"
 
@@ -405,7 +415,7 @@ dependencies = [
  "zrx-diagnostic",
  "zrx-executor",
  "zrx-graph",
- "zrx-id",
+ "zrx-storage",
  "zrx-store",
 ]
 
@@ -434,7 +444,6 @@ dependencies = [
  "ahash",
  "thiserror",
  "tracing",
- "zrx-id",
  "zrx-scheduler",
- "zrx-store",
+ "zrx-storage",
 ]

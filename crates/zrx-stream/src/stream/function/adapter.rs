@@ -25,8 +25,6 @@
 
 //! Function adapters.
 
-mod id;
 mod splat;
 
-pub use id::{with_id, WithId};
 pub use splat::{with_splat, WithSplat};

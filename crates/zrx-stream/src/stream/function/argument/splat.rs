@@ -47,7 +47,7 @@ use std::ptr;
 /// it doesn't implement [`Value`][], meaning it can only be used temporarily
 /// inside operators, but never returned.
 ///
-/// [`Value`]: zrx_scheduler::Value
+/// [`Value`]:  zrx_scheduler::Value
 ///
 /// # Examples
 ///
@@ -120,9 +120,9 @@ impl<T> Splat<T> {
     /// ```
     #[inline]
     pub fn from_ref(inner: &T) -> &Self {
-        // SAFETY: Safe, because `repr(transparent)` guarantees that the outer
-        // type always has the exact same memory layout as the inner type
-        unsafe { &*ptr::from_ref::<T>(inner).cast::<Splat<T>>() }
+        // SAFETY: `repr(transparent)` guarantees that the type is transparent,
+        // meaning the outer type has the same memory layout as the inner type
+        unsafe { &*ptr::from_ref(inner).cast() }
     }
 }
 

@@ -27,11 +27,10 @@
 
 use std::fmt::Display;
 
-use zrx_scheduler::action::report::IntoReport;
-use zrx_scheduler::action::Result;
-use zrx_scheduler::Value;
+use zrx_scheduler::step::Result;
+use zrx_scheduler::{Scope, Value};
 
-use crate::stream::function::adapter::{WithId, WithSplat};
+use crate::stream::function::adapter::WithSplat;
 use crate::stream::function::{catch, Splat};
 
 // ----------------------------------------------------------------------------
@@ -39,102 +38,32 @@ use crate::stream::function::{catch, Splat};
 // ----------------------------------------------------------------------------
 
 /// Filter map function.
-///
-/// This trait defines a function that transforms data of type `T` into optional
-/// data of type `U`. It's fundamentally the combination of the [`MapFn`][] and
-/// [`FilterFn`][] traits, as it allows for filtering and mapping data as part
-/// of a single operation. Since transformations can be expensive, this trait
-/// expects owned data, so that operators are able to move the function into a
-/// [`Task`][] for execution on a worker thread.
-///
-/// There's a range of different implementations of this trait, allowing you to
-/// use a variety of function shapes, including support for [`Splat`], as well
-/// as support for the [`WithId`] and [`WithSplat`] adapters. Furthermore, the
-/// trait can be implemented for custom types to add new behaviors. Note that
-/// all implementations also allow to return a [`Report`][], which makes it
-/// possible to return diagnostics from the function execution.
-///
-/// The `'static` lifetimes is mandatory as closures must be moved into actions,
-/// so requiring it here allows us to reduce the verbosity of trait bounds.
-///
-/// [`FilterFn`]: crate::stream::function::FilterFn
-/// [`MapFn`]: crate::stream::function::MapFn
-/// [`Report`]: zrx_scheduler::action::Report
-/// [`Task`]: zrx_scheduler::effect::Task
-///
-/// # Examples
-///
-/// Transform and filter data:
-///
-/// ```
-/// # use std::error::Error;
-/// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_stream::function::FilterMapFn;
-///
-/// // Define and execute function
-/// let f = |n: i32| (n > 0).then(|| n * n);
-/// f.execute(&"id", 42)?;
-/// # Ok(())
-/// # }
-/// ```
-///
-/// Transform and filter data with splat argument:
-///
-/// ```
-/// # use std::error::Error;
-/// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_stream::function::{FilterMapFn, Splat};
-///
-/// // Define and execute function
-/// let f = |a: i32, b: i32| (a < b).then(|| a + b);
-/// f.execute(&"id", Splat::from((1, 2)))?;
-/// # Ok(())
-/// # }
-/// ```
 pub trait FilterMapFn<I, T, U>: Send + 'static {
     /// Executes the filter map function.
     ///
     /// # Errors
     ///
     /// This method returns an error if the function fails to execute.
-    fn execute(&self, id: &I, data: T) -> Result<Option<U>>;
+    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<Option<U>>;
 }
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<F, R, I, T, U> FilterMapFn<I, T, U> for F
+impl<F, I, T, U> FilterMapFn<I, T, U> for F
 where
-    F: Fn(T) -> R + Send + 'static,
-    R: IntoReport<Option<U>>,
+    F: Fn(&T) -> Result<Option<U>> + Send + 'static,
     I: Display,
     T: Value,
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(id = %id))
+        tracing::instrument(level = "debug", skip_all, fields(id = %scope))
     )]
     #[inline]
-    fn execute(&self, id: &I, data: T) -> Result<Option<U>> {
-        catch(|| self(data).into_report())
-    }
-}
-
-impl<F, R, I, T, U> FilterMapFn<I, T, U> for WithId<F>
-where
-    F: Fn(&I, T) -> R + Send + 'static,
-    R: IntoReport<Option<U>>,
-    I: Display,
-    T: Value,
-{
-    #[cfg_attr(
-        feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(id = %id))
-    )]
-    #[inline]
-    fn execute(&self, id: &I, data: T) -> Result<Option<U>> {
-        catch(|| self(id, data).into_report())
+    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<Option<U>> {
+        catch(|| self(value))
     }
 }
 
@@ -143,8 +72,8 @@ where
     F: FilterMapFn<I, Splat<T>, U>,
 {
     #[inline]
-    fn execute(&self, id: &I, data: T) -> Result<Option<U>> {
-        F::execute(self, id, Splat::from(data))
+    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<Option<U>> {
+        F::execute(self, scope, Splat::from_ref(value))
     }
 }
 
@@ -155,23 +84,24 @@ where
 /// Implements filter map function trait for splat arguments.
 macro_rules! impl_filter_map_fn_for_splat {
     ($($T:ident),+) => {
-        impl<F, R, I, $($T,)+ U> FilterMapFn<I, Splat<($($T,)+)>, U> for F
+        impl<F, I, $($T,)+ U> FilterMapFn<I, Splat<($($T,)+)>, U> for F
         where
-            F: Fn($($T),+) -> R + Send + 'static,
-            R: IntoReport<Option<U>>,
+            F: Fn($(&$T),+) -> Result<Option<U>> + Send + 'static,
             I: Display,
         {
             #[cfg_attr(
                 feature = "tracing",
-                tracing::instrument(level = "debug", skip_all, fields(id = %id))
+                tracing::instrument(
+                    level = "debug", skip_all, fields(id = %scope)
+                )
             )]
             #[inline]
             fn execute(
-                &self, id: &I, data: Splat<($($T,)+)>
+                &self, scope: &Scope<I>, value: &Splat<($($T,)+)>
             ) -> Result<Option<U>> {
                 #[allow(non_snake_case)]
-                let ($($T,)+) = data.into_inner();
-                catch(|| self($($T),+).into_report())
+                let ($($T,)+) = value.inner();
+                catch(|| self($($T),+))
             }
         }
     };

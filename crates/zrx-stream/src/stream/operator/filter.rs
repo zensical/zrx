@@ -25,25 +25,28 @@
 
 //! Filter operator.
 
-use zrx_scheduler::action::descriptor::Property;
-use zrx_scheduler::action::output::IntoOutputs;
-use zrx_scheduler::action::Descriptor;
-use zrx_scheduler::effect::{Item, Task};
+use std::marker::PhantomData;
+
+use zrx_scheduler::action::context::Binding;
+use zrx_scheduler::action::{Action, Context};
+use zrx_scheduler::step::IntoSteps;
 use zrx_scheduler::{Id, Value};
 
 use crate::stream::function::FilterFn;
 use crate::stream::Stream;
 
-use super::{Operator, OperatorExt};
+use super::Operator;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
 /// Filter operator.
-struct Filter<F> {
+pub struct Filter<T, F> {
     /// Operator function.
     function: F,
+    /// Capture types.
+    marker: PhantomData<T>,
 }
 
 // ----------------------------------------------------------------------------
@@ -53,13 +56,19 @@ struct Filter<F> {
 impl<I, T> Stream<I, T>
 where
     I: Id,
-    T: Value + Clone,
+    T: Value,
 {
+    /// Filters the stream using the provided function.
+    #[inline]
+    #[must_use]
     pub fn filter<F>(&self, f: F) -> Stream<I, T>
     where
         F: FilterFn<I, T> + Clone,
     {
-        self.with_operator(Filter { function: f })
+        self.subscribe(Filter {
+            function: f,
+            marker: PhantomData,
+        })
     }
 }
 
@@ -67,47 +76,38 @@ where
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I, T, F> Operator<I, T> for Filter<F>
+impl<I, T, F> Action<I> for Filter<T, F>
 where
     I: Id,
-    T: Value + Clone,
+    T: Value,
     F: FilterFn<I, T> + Clone,
 {
-    type Item<'a> = Item<&'a I, &'a T>;
+    type Inputs = (T,);
+    type Output<'a> = T;
 
-    /// Handles the given item.
-    ///
-    /// This operator returns a task that passes the given item to the operator
-    /// function, only forwarding it if the predicate returns `true`. Note that
-    /// filtering might even involve fallible operations, e.g., using I/O or
-    /// network, and can include diagnostics.
-    #[cfg_attr(
-        feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(id = %item.id))
-    )]
-    fn handle(&mut self, item: Self::Item<'_>) -> impl IntoOutputs<I> {
-        let item = item.into_owned();
-        // We could theoretically assume that filtering is generally a cheap
-        // operation, and execute the operation function directly. However, as
-        // this would mean that filtering involving I/O or network would block
-        // the entire scheduler, we rather pay for cloning.
-        Task::new({
-            let function = self.function.clone();
-            move || {
-                function.execute(&item.id, &item.data).map(|report| {
-                    report.map(|keep| keep.then(|| item.map(Some)))
-                })
-            }
+    /// Executes the operator.
+    fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {
+        let Binding { scopes, inputs, mut output, .. } = ctx.bind();
+        scopes.map(move |scope| {
+            let Some(value) = inputs.get(&scope).cloned() else {
+                output.remove(&scope);
+                return scope.done();
+            };
+            scope.task().build({
+                let function = self.function.clone();
+                move || {
+                    let predicate = function.execute(&scope, &value)?;
+                    scope.then().build(move |mut ctx| {
+                        let mut output = ctx.output().expect("invariant");
+                        if predicate {
+                            output.insert((*scope).clone(), value);
+                        } else {
+                            output.remove(&scope);
+                        }
+                        scope.done()
+                    })
+                }
+            })
         })
-    }
-
-    /// Returns the descriptor.
-    #[inline]
-    fn descriptor(&self) -> Descriptor {
-        Descriptor::builder()
-            .property(Property::Pure)
-            .property(Property::Stable)
-            .property(Property::Flush)
-            .build()
     }
 }

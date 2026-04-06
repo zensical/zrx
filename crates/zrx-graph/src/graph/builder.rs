@@ -25,7 +25,6 @@
 
 //! Graph builder.
 
-use std::collections::BTreeMap;
 use std::ops::{Index, Range};
 
 use super::error::{Error, Result};
@@ -158,76 +157,6 @@ impl<T> Builder<T> {
         // Add edge, as both nodes were found
         self.edges.push(Edge { source, target });
         Ok(())
-    }
-
-    /// Creates the edge graph of the graph.
-    ///
-    /// This method derives a new graph from the given graph in which each edge
-    /// represents a transition from one edge to another based on their source
-    /// and target nodes in the original graph, which means that the nodes of
-    /// the edge graph are the edges of the original graph.
-    ///
-    /// Edge graphs are necessary for representing relationships between edges,
-    /// which is exactly what we need for action graphs, where edges represent
-    /// actions and their dependencies. During execution, we don't need to know
-    /// the actual nodes, but rather the dependencies between the edges.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::Graph;
-    ///
-    /// // Create graph builder and add nodes
-    /// let mut builder = Graph::builder();
-    /// let a = builder.add_node("a");
-    /// let b = builder.add_node("b");
-    /// let c = builder.add_node("c");
-    ///
-    /// // Create edges between nodes
-    /// builder.add_edge(a, b)?;
-    /// builder.add_edge(b, c)?;
-    ///
-    /// // Create edge graph
-    /// let edges = builder.to_edge_graph();
-    /// assert_eq!(edges.nodes(), builder.edges());
-    /// # Ok(())
-    /// # }
-    /// ```
-    #[deprecated(
-        since = "0.0.6",
-        note = "Edge graphs are no longer needed for action graphs"
-    )]
-    #[must_use]
-    pub fn to_edge_graph(&self) -> Builder<Edge> {
-        // We expect that the edges are ordered by target and weight, since the
-        // former represents the corresponding action, and the latter the index
-        // of the argument in the action. This is also why we index sources by
-        // targets and not the other way around, i.e., to keep the ordering.
-        let mut targets: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
-        for (source, edge) in self.edges.iter().enumerate() {
-            targets.entry(edge.target).or_default().push(source);
-        }
-
-        // Enumerate all sources for each target and create the edges between
-        // them in order to create the edge graph. The new edges don't receive
-        // a weight, since the original edges are now the nodes, and there's no
-        // other information that can't be obtained from the original graph.
-        let mut edges = Vec::with_capacity(targets.len());
-        for (target, edge) in self.edges.iter().enumerate() {
-            if let Some(sources) = targets.get(&edge.source) {
-                for &source in sources {
-                    edges.push(Edge { source, target });
-                }
-            }
-        }
-
-        // Return edge graph builder
-        Builder {
-            nodes: self.edges.clone(),
-            edges,
-        }
     }
 
     /// Creates an iterator over the graph builder.

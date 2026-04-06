@@ -23,14 +23,18 @@
 
 // ----------------------------------------------------------------------------
 
-//! tbd
+//! tbd.
 
 mod stream;
 
-pub use stream::barrier;
-pub use stream::combinator;
+pub use stream::combinator::StreamTupleExt;
 pub use stream::function;
 pub use stream::operator;
-pub use stream::value;
-pub use stream::workspace;
+pub use stream::workflow::{self, Workflow};
 pub use stream::Stream;
+
+// ----------------------------------------------------------------------------
+// Re-exports
+// ----------------------------------------------------------------------------
+
+pub use zrx_scheduler::Value;

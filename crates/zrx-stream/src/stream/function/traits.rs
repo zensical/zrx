@@ -27,18 +27,12 @@
 
 #![cfg_attr(not(feature = "tracing"), allow(unused_variables))]
 
-mod default;
 mod filter;
 mod filter_map;
 mod inspect;
-mod lift;
 mod map;
-mod select;
 
-pub use default::DefaultFn;
 pub use filter::FilterFn;
 pub use filter_map::FilterMapFn;
 pub use inspect::InspectFn;
-pub use lift::LiftFn;
 pub use map::MapFn;
-pub use select::SelectFn;

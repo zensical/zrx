@@ -24,14 +24,8 @@
 // ----------------------------------------------------------------------------
 
 //! Stream combinators.
-//!
-//! While all stream combinators are essentially collections of owned streams,
-//! in order to make the API more ergonomic and less lifetime-heavy, conversion
-//! traits are implemented for references of streams. This distinction ensures
-//! that streams don't need to be cloned when passed to combinators.
 
-pub mod set;
+pub mod convert;
 pub mod tuple;
 
-pub use set::{IntoStreamSet, StreamSet, StreamSetExt};
-pub use tuple::{IntoStreamTuple, StreamTuple, StreamTupleExt};
+pub use tuple::StreamTupleExt;

@@ -27,121 +27,78 @@
 
 use std::marker::PhantomData;
 
-use zrx_scheduler::action::descriptor::Property;
-use zrx_scheduler::action::output::IntoOutputs;
-use zrx_scheduler::action::Descriptor;
-use zrx_scheduler::effect::Item;
+use zrx_scheduler::action::context::Binding;
+use zrx_scheduler::action::{Action, Context};
+use zrx_scheduler::step::IntoSteps;
 use zrx_scheduler::{Id, Value};
-
-use crate::stream::combinator::tuple::cons::IntoStreamTupleCons;
-use crate::stream::combinator::tuple::join::IntoJoin;
-use crate::stream::combinator::tuple::StreamTupleJoin;
-use crate::stream::value::tuple::{All, Any, First, Presence};
-use crate::stream::value::Tuple;
-use crate::stream::Stream;
-
-use super::Operator;
+use zrx_storage::accessor::Join as _;
+use zrx_storage::borrow::IntoOwned;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
 /// Join operator.
-struct Join<T, P> {
+#[derive(Debug)]
+pub struct Join<T> {
     /// Capture types.
-    marker: PhantomData<(T, P)>,
+    marker: PhantomData<T>,
 }
 
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<I, T> Stream<I, T>
-where
-    I: Id,
-    T: Value,
-{
-    pub fn join<S, O>(&self, streams: S) -> Stream<I, O::Item>
-    where
-        S: IntoStreamTupleCons<I, T, Output = O>,
-        O: IntoJoin<I, All>,
-    {
-        streams // fmt
-            .into_stream_tuple_cons(self.clone())
-            .into_join()
-    }
-
-    pub fn left_join<S, O>(&self, streams: S) -> Stream<I, O::Item>
-    where
-        S: IntoStreamTupleCons<I, T, Output = O>,
-        O: IntoJoin<I, First>,
-    {
-        streams // fmt
-            .into_stream_tuple_cons(self.clone())
-            .into_join()
-    }
-
-    pub fn full_join<S, O>(&self, streams: S) -> Stream<I, O::Item>
-    where
-        S: IntoStreamTupleCons<I, T, Output = O>,
-        O: IntoJoin<I, Any>,
-    {
-        streams // fmt
-            .into_stream_tuple_cons(self.clone())
-            .into_join()
+impl<T> Join<T> {
+    /// Creates a join operator.
+    #[must_use]
+    pub fn new() -> Self {
+        Self { marker: PhantomData }
     }
 }
 
 // ----------------------------------------------------------------------------
-// Trait implementations
+// Macros
 // ----------------------------------------------------------------------------
 
-impl<I, T, P> Operator<I, T> for Join<T, P>
-where
-    I: Id,
-    T: Tuple<P>,
-{
-    type Item<'a> = Item<&'a I, T::Arguments<'a>>;
+/// Implements action trait.
+macro_rules! impl_action {
+    ($($T:ident),+ $(,)?) => {
+        impl<I, $($T),+> Action<I> for Join<($($T),+)>
+        where
+            I: Id,
+            $($T: Value,)+
+        {
+            type Inputs = ($($T,)+);
+            type Output<'a> = ($($T,)+);
 
-    /// Handles the given item.
-    ///
-    /// Joins are one of the most complex operations in stream processing, yet
-    /// the implementation here is surprisingly straightforward. The core idea
-    /// is to leverage the [`Tuple`] trait to represent the combined state of
-    /// all streams being joined.
-    #[cfg_attr(
-        feature = "tracing",
-        tracing::instrument(level = "debug" skip_all, fields(id = %item.id))
-    )]
-    fn handle(&mut self, item: Self::Item<'_>) -> impl IntoOutputs<I> {
-        item.into_owned().map(Some)
-    }
-
-    /// Returns the descriptor.
-    #[inline]
-    fn descriptor(&self) -> Descriptor {
-        Descriptor::builder()
-            .property(Property::Pure)
-            .property(Property::Stable)
-            .property(Property::Flush)
-            .build()
-    }
-}
-
-// ----------------------------------------------------------------------------
-// Blanket implementations
-// ----------------------------------------------------------------------------
-
-impl<S, I, P> IntoJoin<I, P> for S
-where
-    S: StreamTupleJoin<I, P>,
-    I: Id,
-    P: Presence,
-{
-    fn into_join(self) -> Stream<I, Self::Item> {
-        self.workflow().add_operator(
-            self.ids(),
-            Join::<Self::Item, P> { marker: PhantomData },
-        )
+            /// Executes the operator.
+            fn execute(
+                &mut self, ctx: Context<I, Self>
+            ) -> impl IntoSteps<I, Self> {
+                let Binding { scopes, inputs, mut output, .. } = ctx.bind();
+                scopes.map(move |scope| {
+                    match inputs.join(&scope) {
+                        Some(value) => {
+                            output.insert((*scope).clone(), value.into_owned());
+                        }
+                        None => {
+                            output.remove(&scope);
+                        }
+                    }
+                    scope.done()
+                })
+            }
+        }
     }
 }
+
+// ----------------------------------------------------------------------------
+
+impl_action!(T1, T2);
+impl_action!(T1, T2, T3);
+impl_action!(T1, T2, T3, T4);
+impl_action!(T1, T2, T3, T4, T5);
+impl_action!(T1, T2, T3, T4, T5, T6);
+impl_action!(T1, T2, T3, T4, T5, T6, T7);
+impl_action!(T1, T2, T3, T4, T5, T6, T7, T8);

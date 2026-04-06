@@ -25,17 +25,11 @@
 
 //! Action error.
 
-use std::any::Any;
-use std::{error, io, result};
+use std::result;
 use thiserror::Error;
 
-use zrx_diagnostic::report::Report;
-
-use crate::scheduler::value;
-
-mod convert;
-
-pub use convert::IntoError;
+use crate::scheduler::action::context;
+use crate::scheduler::step;
 
 // ----------------------------------------------------------------------------
 // Enums
@@ -44,21 +38,12 @@ pub use convert::IntoError;
 /// Action error.
 #[derive(Debug, Error)]
 pub enum Error {
-    /// I/O error.
+    /// Context error.
     #[error(transparent)]
-    Io(#[from] io::Error),
-
-    /// Value error.
+    Context(#[from] context::Error),
+    /// Step error.
     #[error(transparent)]
-    Value(#[from] value::Error),
-
-    /// Other error.
-    #[error(transparent)]
-    Other(#[from] Box<dyn error::Error + Send>),
-
-    /// Caught panic.
-    #[error("caught panic")]
-    Panic(Box<dyn Any + Send>),
+    Step(#[from] step::Error),
 }
 
 // ----------------------------------------------------------------------------
@@ -66,11 +51,4 @@ pub enum Error {
 // ----------------------------------------------------------------------------
 
 /// Action result.
-///
-/// Note that action results are always wrapped in a [`Report`], as actions
-/// should always return a [`Result`] type with the ability to add diagnostics.
-/// Additionally, the [`IntoOutputs`][] conversion trait is implemented for a
-/// multitude of types that ensure more ergonomic handling of action outputs.
-///
-/// [`IntoOutputs`]: crate::scheduler::action::output::IntoOutputs
-pub type Result<T = ()> = result::Result<Report<T>, Error>;
+pub type Result<T = ()> = result::Result<T, Error>;

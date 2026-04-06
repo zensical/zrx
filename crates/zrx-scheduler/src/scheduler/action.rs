@@ -25,20 +25,19 @@
 
 //! Action.
 
-use std::fmt::{self, Debug};
+use zrx_storage::convert::{TryAsStorageMut, TryAsStorages};
 
-pub mod descriptor;
+use super::signal::{Scope, Value};
+use super::step::IntoSteps;
+
+pub mod context;
 mod error;
-pub mod input;
-pub mod output;
-pub mod report;
+pub mod graph;
+pub mod options;
 
-pub use descriptor::Descriptor;
+pub use context::Context;
 pub use error::{Error, Result};
-pub use input::Input;
-use output::IntoOutputs;
-pub use output::{Output, Outputs};
-pub use report::Report;
+pub use options::Options;
 
 // ----------------------------------------------------------------------------
 // Traits
@@ -46,77 +45,54 @@ pub use report::Report;
 
 /// Action.
 ///
-/// Actions represent units of work that can be executed by a [`Scheduler`][],
-/// and which can hold state between executions, which is also why the execution
-/// of an action requires a mutable reference to the action. Any data passed to
-/// and returned from an action needs to be type-erased.
+/// Actions represent units of work that can be executed by a [`Scheduler`][]
+/// in a type-safe manner. Each action must define two associated types:
 ///
-/// Implementors can embed types into the implementation of the action, which
-/// can use the [`TryFromValues`][] trait to convert [`Values`][] contained in
-/// the [`Input`] into the expected types. The scheduler as such only ensures
-/// the correct order of execution, not the type safety of the data. Downstream
-/// actions can receive data from multiple upstream actions, which allows to
-/// model complex workflows using a [`Graph`][], created with a [`Builder`][]
-/// that is provided to aid in graph construction, representing the workflow of
-/// actions. Note that actions themselves are not aware of the structure of the
-/// underlying graph they're part of, which is why the [`Builder`][] helps to
-/// ensure type safety and coherence.
+/// - [`Action::Inputs`], which defines the input types of the action, sourced
+///   from the outputs of other actions that are considered its dependencies.
 ///
-/// [`Builder`]: crate::scheduler::graph::Builder
-/// [`Graph`]: crate::scheduler::graph::Graph
+/// - [`Action::Output`], which defines the output type of the action, turning
+///   the action into a dependency for dependent actions downstream.
+///
+/// This makes actions reusable and composable, as they are fundamentally just
+/// functions with typed inputs and outputs, which can be dynamically connected
+/// and executed by the scheduler in topological order. The input types of an
+/// action must implement [`TryAsStorages`], which ensures that the scheduler
+/// can downcast the type-erased upstream [`Storage`][] instances into concrete
+/// types the action can work with. The output type of an action must implement
+/// [`TryAsStorageMut`], ensuring that the action can store its output in a
+/// concrete [`Storage`][] to pass it to downstream actions as input.
+///
+/// The [`Action`] type is passed as `Self` to [`Context`] and [`IntoEffects`],
+/// two types that are used to provide an action with the necessary context and
+/// ability to return [`Effects`], to instruct the scheduler to perform certain
+/// operations like [`Task`][] scheduling or [`Timer`][] registration. The type
+/// parameter is erased by the scheduler when registering and executing actions
+/// through the implementation of the [`Tag`][] trait.
+///
+/// Note that actions themselves cannot be dyn-compatible, as they require the
+/// [`Sized`] bound to pass `Self` to [`Context`] and [`IntoEffects`]. Also note
+/// that the [`Action::Output`] associated type must be generic over a lifetime,
+/// as this is necessary to derive the output type from the input types.
+///
 /// [`Scheduler`]: crate::scheduler::Scheduler
-/// [`TryFromValues`]: crate::scheduler::value::TryFromValues
-/// [`Values`]: crate::scheduler::value::Values
-pub trait Action<I> {
+/// [`Storage`]: zrx_storage::Storage
+/// [`Tag`]: crate::scheduler::engine::Tag
+/// [`Task`]: crate::scheduler::effect::Task
+/// [`Timer`]: crate::scheduler::effect::Timer
+pub trait Action<I>: Sized {
+    /// Input types of action.
+    type Inputs: Value + TryAsStorages<Scope<I>>;
+    /// Output type of action.
+    type Output<'a>: Value + TryAsStorageMut<Scope<I>>;
+
     /// Executes the action.
     ///
     /// This method executes the action, and is expected to return any number
-    /// of [`Outputs`] that will then be handled accordingly by the scheduler.
+    /// of [`Effects`] that will then be handled accordingly by the scheduler.
     ///
     /// # Errors
     ///
     /// Errors returned by the action are forwarded.
-    fn execute(&mut self, input: Input<I>) -> Result<Outputs<I>>;
-
-    /// Returns the descriptor.
-    ///
-    /// This method returns the descriptor of the action, describing properties
-    /// of the action that can be used by the scheduler to optimize execution,
-    /// as well as interests of the action to instruct the scheduler to send
-    /// certain signals to it.
-    ///
-    /// The default implementation returns a descriptor that marks the action
-    /// as neither pure nor stable, and without interests, the safest default.
-    /// Note that we always return a new descriptor, since descriptors might
-    /// hold dynamically allocated data that is specific to the action.
-    #[inline]
-    fn descriptor(&self) -> Descriptor {
-        Descriptor::default()
-    }
-}
-
-// ----------------------------------------------------------------------------
-// Trait implementations
-// ----------------------------------------------------------------------------
-
-impl<I> Debug for Box<dyn Action<I>> {
-    /// Formats the action for debugging.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str("Box<dyn Action>")
-    }
-}
-
-// ----------------------------------------------------------------------------
-// Blanket implementations
-// ----------------------------------------------------------------------------
-
-impl<F, R, I> Action<I> for F
-where
-    F: FnMut(Input<I>) -> R,
-    R: IntoOutputs<I>,
-{
-    #[inline]
-    fn execute(&mut self, input: Input<I>) -> Result<Outputs<I>> {
-        self(input).into_outputs()
-    }
+    fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self>;
 }

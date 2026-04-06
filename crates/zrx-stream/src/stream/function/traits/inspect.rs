@@ -27,11 +27,10 @@
 
 use std::fmt::Display;
 
-use zrx_scheduler::action::report::IntoReport;
-use zrx_scheduler::action::Result;
-use zrx_scheduler::Value;
+use zrx_scheduler::step::Result;
+use zrx_scheduler::{Scope, Value};
 
-use crate::stream::function::adapter::{WithId, WithSplat};
+use crate::stream::function::adapter::WithSplat;
 use crate::stream::function::{catch, Splat};
 
 // ----------------------------------------------------------------------------
@@ -39,108 +38,42 @@ use crate::stream::function::{catch, Splat};
 // ----------------------------------------------------------------------------
 
 /// Inspect function.
-///
-/// This trait defines a function that can be used to inspect borrowed data in
-/// a stream without modifying it, and is not expected to return new data.
-///
-/// There's a range of different implementations of this trait, allowing you to
-/// use a variety of function shapes, including support for [`Splat`], as well
-/// as support for the [`WithId`] and [`WithSplat`] adapters. Furthermore, the
-/// trait can be implemented for custom types to add new behaviors. Note that
-/// all implementations also allow to return a [`Report`][], which makes it
-/// possible to return diagnostics from the function execution.
-///
-/// The `'static` lifetimes is mandatory as closures must be moved into actions,
-/// so requiring it here allows us to reduce the verbosity of trait bounds.
-///
-/// [`Report`]: zrx_scheduler::action::report::Report
-///
-/// # Examples
-///
-/// Inspect data:
-///
-/// ```
-/// # use std::error::Error;
-/// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_stream::function::InspectFn;
-///
-/// // Define and execute function
-/// let f = |&n: &i32| println!("{n}");
-/// f.execute(&"id", &42)?;
-/// # Ok(())
-/// # }
-/// ```
-///
-/// Inspect data with splat argument:
-///
-/// ```
-/// # use std::error::Error;
-/// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_stream::function::{InspectFn, Splat};
-///
-/// // Define and execute function
-/// let f = |&a: &i32, &b: &i32| println!("{a} < {b}");
-/// f.execute(&"id", Splat::from_ref(&(1, 2)))?;
-/// # Ok(())
-/// # }
-/// ```
-pub trait InspectFn<I, T>: Send + 'static
-where
-    T: ?Sized,
-{
+pub trait InspectFn<I, T, U>: Send + 'static {
     /// Executes the inspect function.
     ///
     /// # Errors
     ///
     /// This method returns an error if the function fails to execute.
-    fn execute(&self, id: &I, data: &T) -> Result;
+    fn execute(&self, scope: &Scope<I>, value: &T) -> Result;
 }
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<F, R, I, T> InspectFn<I, T> for F
+impl<F, I, T, U> InspectFn<I, T, U> for F
 where
-    F: Fn(&T) -> R + Send + 'static,
-    R: IntoReport,
+    F: Fn(&T) -> Result + Send + 'static,
     I: Display,
-    T: Value + ?Sized,
+    T: Value,
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(id = %id))
+        tracing::instrument(level = "debug", skip_all, fields(id = %scope))
     )]
     #[inline]
-    fn execute(&self, id: &I, data: &T) -> Result {
-        catch(|| self(data).into_report())
+    fn execute(&self, scope: &Scope<I>, value: &T) -> Result {
+        catch(|| self(value))
     }
 }
 
-impl<F, R, I, T> InspectFn<I, T> for WithId<F>
+impl<F, I, T, U> InspectFn<I, T, U> for WithSplat<F>
 where
-    F: Fn(&I, &T) -> R + Send + 'static,
-    R: IntoReport,
-    I: Display,
-    T: Value + ?Sized,
-{
-    #[cfg_attr(
-        feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(id = %id))
-    )]
-    #[inline]
-    fn execute(&self, id: &I, data: &T) -> Result {
-        catch(|| self(id, data).into_report())
-    }
-}
-
-impl<F, I, T> InspectFn<I, T> for WithSplat<F>
-where
-    F: InspectFn<I, Splat<T>>,
+    F: InspectFn<I, Splat<T>, U>,
 {
     #[inline]
-    fn execute(&self, id: &I, data: &T) -> Result {
-        F::execute(self, id, Splat::from_ref(data))
+    fn execute(&self, scope: &Scope<I>, value: &T) -> Result {
+        F::execute(self, scope, Splat::from_ref(value))
     }
 }
 
@@ -151,23 +84,24 @@ where
 /// Implements inspect function trait for splat arguments.
 macro_rules! impl_inspect_fn_for_splat {
     ($($T:ident),+) => {
-        impl<F, R, I, $($T,)+> InspectFn<I, Splat<($($T,)+)>> for F
+        impl<F, I, $($T,)+ U> InspectFn<I, Splat<($($T,)+)>, U> for F
         where
-            F: Fn($(&$T),+) -> R + Send + 'static,
-            R: IntoReport,
+            F: Fn($(&$T),+) -> Result + Send + 'static,
             I: Display,
         {
             #[cfg_attr(
                 feature = "tracing",
-                tracing::instrument(level = "debug", skip_all, fields(id = %id))
+                tracing::instrument(
+                    level = "debug", skip_all, fields(id = %scope)
+                )
             )]
             #[inline]
             fn execute(
-                &self, id: &I, data: &Splat<($($T,)+)>
+                &self, scope: &Scope<I>, value: &Splat<($($T,)+)>
             ) -> Result {
                 #[allow(non_snake_case)]
-                let ($($T,)+) = data.inner();
-                catch(|| self($($T),+).into_report())
+                let ($($T,)+) = value.inner();
+                catch(|| self($($T),+))
             }
         }
     };
