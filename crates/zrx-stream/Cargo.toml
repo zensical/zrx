@@ -37,9 +37,8 @@ readme.workspace = true
 workspace = true
 
 [dependencies]
-zrx-id.workspace = true
 zrx-scheduler.workspace = true
-zrx-store.workspace = true
+zrx-storage.workspace = true
 
 ahash.workspace = true
 thiserror.workspace = true

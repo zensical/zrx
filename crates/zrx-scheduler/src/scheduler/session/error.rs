@@ -35,10 +35,6 @@ use thiserror::Error;
 /// Session error.
 #[derive(Debug, Error)]
 pub enum Error {
-    /// Session type unknown.
-    #[error("session type unknown")]
-    Type,
-
     /// Session disconnected.
     #[error("session disconnected")]
     Disconnected,

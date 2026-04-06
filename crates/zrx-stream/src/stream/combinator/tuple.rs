@@ -25,65 +25,55 @@
 
 //! Stream tuple.
 
-use crate::stream::workspace::Workflow;
 use crate::stream::Stream;
 
-pub mod cons;
+use zrx_scheduler::Value;
+
 mod convert;
 mod ext;
-pub mod join;
 
-pub use cons::StreamTupleCons;
-pub use convert::IntoStreamTuple;
 pub use ext::StreamTupleExt;
-pub use join::StreamTupleJoin;
 
 // ----------------------------------------------------------------------------
 // Traits
 // ----------------------------------------------------------------------------
 
-/// Stream tuple.
+/// Stream tuple construction.
 ///
-/// Stream tuples are heterogeneous collections of streams, which are essential
-/// to differentially source inputs for functions that take multiple arguments.
-/// They are implemented as tuples of streams with the help of macros in sizes
-/// of 1 to 8, which also applies to all derived traits.
-///
-/// Operators implemented with stream tuples include:
-///
-/// - [`Stream::join`] + variations
-/// - [`Stream::left_join`] + variations
-/// - [`Stream::full_join`] + variations
-///
-/// As such, [`StreamTuple`] is solely a base trait with some methods attached
-/// that allows to conveniently work with stream tuples. Trait derivations like
-/// [`StreamTupleJoin`] and friends extend the functionality of [`StreamTuple`]
-/// to implement join operations on tuples of streams and more.
-pub trait StreamTuple<I>: Sized {
-    fn workflow(&self) -> &Workflow<I>;
-    fn ids(&self) -> Vec<usize>;
+/// This trait is used to prepend streams to existings stream tuples, which is
+/// necessary to implement stream methods that take a tuple of streams, as they
+/// need to be combined with the current stream (i.e. `self`) to construct a
+/// stream tuple for further consumption.
+pub trait StreamTupleCons<I, T> {
+    /// Output type of construction.
+    type Output;
+
+    /// Prepends a stream to the stream tuple.
+    ///
+    /// This method is used to prepend a stream to the tuple and consume it,
+    /// constructing a new stream tuple that includes the given stream.
+    fn cons(head: Stream<I, T>, tail: Self) -> Self::Output;
 }
 
 // ----------------------------------------------------------------------------
 // Macros
 // ----------------------------------------------------------------------------
 
-/// Implements stream tuple trait with all items required.
-macro_rules! impl_stream_tuple {
-    ($($T:ident),+ $(,)?) => {
-        impl<I, $($T),+> StreamTuple<I>
-            for ($(Stream<I, $T>,)+)
+/// Implements stream tuple construction trait.
+macro_rules! impl_stream_tuple_cons {
+    ($T1:ident $(, $T:ident)* $(,)?) => {
+        impl<I, $T1, $($T,)*> StreamTupleCons<I, $T1> for ($(Stream<I, $T>,)*)
+        where
+            $T1: Value,
+            $($T: Value,)*
         {
-            #[inline]
-            fn workflow(&self) -> &Workflow<I> {
-                &self.0.workflow
-            }
+            type Output = (Stream<I, $T1>, $(Stream<I, $T>,)*);
 
             #[inline]
-            fn ids(&self) -> Vec<usize> {
+            fn cons(head: Stream<I, $T1>, tail: Self) -> Self::Output {
                 #[allow(non_snake_case)]
-                let ($($T,)+) = self;
-                vec![$($T.id),+]
+                let ($($T,)*) = tail;
+                (head, $($T,)*)
             }
         }
     };
@@ -91,11 +81,11 @@ macro_rules! impl_stream_tuple {
 
 // ----------------------------------------------------------------------------
 
-impl_stream_tuple!(T1);
-impl_stream_tuple!(T1, T2);
-impl_stream_tuple!(T1, T2, T3);
-impl_stream_tuple!(T1, T2, T3, T4);
-impl_stream_tuple!(T1, T2, T3, T4, T5);
-impl_stream_tuple!(T1, T2, T3, T4, T5, T6);
-impl_stream_tuple!(T1, T2, T3, T4, T5, T6, T7);
-impl_stream_tuple!(T1, T2, T3, T4, T5, T6, T7, T8);
+impl_stream_tuple_cons!(T1);
+impl_stream_tuple_cons!(T1, T2);
+impl_stream_tuple_cons!(T1, T2, T3);
+impl_stream_tuple_cons!(T1, T2, T3, T4);
+impl_stream_tuple_cons!(T1, T2, T3, T4, T5);
+impl_stream_tuple_cons!(T1, T2, T3, T4, T5, T6);
+impl_stream_tuple_cons!(T1, T2, T3, T4, T5, T6, T7);
+impl_stream_tuple_cons!(T1, T2, T3, T4, T5, T6, T7, T8);

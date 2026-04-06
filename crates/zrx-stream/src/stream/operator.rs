@@ -1,7 +1,7 @@
 // Copyright (c) 2025-2026 Zensical and contributors
 
 // SPDX-License-Identifier: MIT
-// All contributions are certified under the DCO
+// Third-party contributions licensed under DCO
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -25,127 +25,115 @@
 
 //! Stream operators.
 
-#![allow(clippy::must_use_candidate)]
-#![allow(clippy::return_self_not_must_use)]
+#![allow(clippy::new_without_default)]
 
-use zrx_scheduler::action::input::TryFromInputItem;
-use zrx_scheduler::action::output::IntoOutputs;
-use zrx_scheduler::action::Descriptor;
-use zrx_scheduler::effect::Signal;
-use zrx_scheduler::{Id, Value};
+use std::marker::PhantomData;
+
+use zrx_scheduler::action::Action;
+use zrx_scheduler::schedule::Subscriber;
+use zrx_scheduler::Id;
 
 use super::Stream;
 
-mod audit;
-mod chunks;
-mod coalesce;
-mod count;
-mod debounce;
-mod delta_count;
-mod delta_filter;
-mod delta_filter_map;
-mod delta_map;
-mod delta_reduce;
-mod difference;
-mod fill;
 mod filter;
 mod filter_map;
-mod group;
-mod inspect;
-mod intersection;
 mod join;
-mod join_filter;
-mod join_filter_map;
-mod join_map;
-mod lift;
 mod map;
-mod product;
-mod reduce;
-mod sample;
-mod select;
-mod sort;
-mod throttle;
-mod transpose;
-mod union;
+
+pub use filter::Filter;
+pub use filter_map::FilterMap;
+pub use join::Join;
+pub use map::Map;
 
 // ----------------------------------------------------------------------------
 // Traits
 // ----------------------------------------------------------------------------
 
 /// Operator.
-#[allow(unused_variables)]
-pub trait Operator<I, T> {
-    /// Item type handled by operator.
-    type Item<'a>: TryFromInputItem<'a, I>;
-
-    /// Handles the given item.
-    ///
-    /// This method is called by the scheduler to handle an item from a stream,
-    /// and receives a mutable reference, since operators are allowed to change
-    /// their internal state at any given time. Anything which can be converted
-    /// into [`Outputs`][] can be returned, e.g., items, signals and tasks.
-    ///
-    /// We deliberately decided to use an RPIT (return-position impl trait), as
-    /// it's the most convenient to work with, instead of requiring yet another
-    /// associated type to be defined.
-    ///
-    /// [`Outputs`]: zrx_scheduler::action::Outputs
-    #[inline]
-    fn handle(&mut self, item: Self::Item<'_>) -> impl IntoOutputs<I> {}
-
-    /// Notifies the operator of a signal.
-    ///
-    /// This method allows the operator to react to system messages or custom
-    /// events, which can be used to change its internal state or to trigger
-    /// specific actions. The default implementation just swallows the signal,
-    /// which is suitable for most cases.
-    ///
-    /// As with [`Operator::handle`], this method is allowed to return anything
-    /// that can be converted into [`Outputs`][], expecting it to emit one or
-    /// more output items, further signals, tasks or nothing at all.
-    ///
-    /// __Warning__: only implement this method if the operator is expected to
-    /// react to signals. Otherwise, the default implementation is sufficient.
-    ///
-    /// [`Outputs`]: zrx_scheduler::action::Outputs
-    #[inline]
-    fn notify(&mut self, signal: Signal<I>) -> impl IntoOutputs<I> {}
-
-    /// Returns the descriptor of the operator.
-    fn descriptor(&self) -> Descriptor;
+pub trait Operator<'a, I, A>
+where
+    A: Action<I>,
+{
+    /// Subscribe the given subscriber.
+    fn subscribe<S>(&self, subscriber: S) -> Stream<I, A::Output<'a>>
+    where
+        S: Into<Subscriber<'a, I, A>>;
 }
 
 // ----------------------------------------------------------------------------
-
-/// Operator extension trait.
-pub trait OperatorExt<I, T, U>
-where
-    I: Id,
-    T: Value,
-{
-    /// Applies the given operator and returns a stream.
-    fn with_operator<O>(&self, operator: O) -> Stream<I, U>
-    where
-        O: Operator<I, T> + 'static,
-        U: Value;
-}
-
-// ----------------------------------------------------------------------------
-// Implementations
+// Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I, T, U> OperatorExt<I, T, U> for Stream<I, T>
+impl<'a, I, A, T> Operator<'a, I, A> for Stream<I, T>
 where
     I: Id,
-    T: Value,
+    A: Action<I, Inputs = (T,)> + 'static,
 {
-    /// Applies the given operator and returns a stream.
+    /// Subscribe the given subscriber.
     #[inline]
-    fn with_operator<O>(&self, operator: O) -> Stream<I, U>
+    fn subscribe<S>(&self, subscriber: S) -> Stream<I, A::Output<'a>>
     where
-        O: Operator<I, T> + 'static,
-        U: Value,
+        S: Into<Subscriber<'a, I, A>>,
     {
-        self.workflow.add_operator([self.id], operator)
+        // We can safely use expect here, as the stream interface prevents us
+        // from creating subscribers with invalid nodes. Otherwise, it's a bug.
+        let id = self.workflow.with(|builder| {
+            builder.add([self.id], subscriber).expect("invariant")
+        });
+        Stream {
+            id,
+            workflow: self.workflow.clone(),
+            marker: PhantomData,
+        }
     }
 }
+
+// ----------------------------------------------------------------------------
+// Macros
+// ----------------------------------------------------------------------------
+
+/// Implements operator trait for a tuple.
+macro_rules! impl_operator_for_tuple {
+    ($T1:ident $(, $T:ident)+ $(,)?) => {
+        impl<'a, I, A, $T1, $($T,)+> Operator<'a, I, A>
+            for (Stream<I, $T1>, $(Stream<I, $T>,)+)
+        where
+            I: Id,
+            A: Action<I, Inputs = ($T1, $($T,)+)> + 'static,
+        {
+            #[inline]
+            fn subscribe<S>(&self, subscriber: S) -> Stream<I, A::Output<'a>>
+            where
+                S: Into<Subscriber<'a, I, A>>,
+            {
+                #[allow(non_snake_case)]
+                let ($T1, $($T,)*) = self;
+                // Albeit this can practically never happen, we can technically
+                // have different workflows here if we somehow alter the stream
+                // interface. Thus, this assertion is just a cautionary measure
+                // to prevent our future selves from breaking it by accident.
+                $(assert_eq!($T1.workflow, $T.workflow);)+
+                let id = $T1.workflow.with(|builder| {
+                    builder
+                        .add([$T1.id, $($T.id,)*], subscriber)
+                        .expect("invariant")
+                });
+                Stream {
+                    id,
+                    workflow: $T1.workflow.clone(),
+                    marker: PhantomData,
+                }
+            }
+        }
+    };
+}
+
+// ----------------------------------------------------------------------------
+
+impl_operator_for_tuple!(T1, T2);
+impl_operator_for_tuple!(T1, T2, T3);
+impl_operator_for_tuple!(T1, T2, T3, T4);
+impl_operator_for_tuple!(T1, T2, T3, T4, T5);
+impl_operator_for_tuple!(T1, T2, T3, T4, T5, T6);
+impl_operator_for_tuple!(T1, T2, T3, T4, T5, T6, T7);
+impl_operator_for_tuple!(T1, T2, T3, T4, T5, T6, T7, T8);

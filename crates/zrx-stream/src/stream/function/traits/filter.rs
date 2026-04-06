@@ -27,11 +27,10 @@
 
 use std::fmt::Display;
 
-use zrx_scheduler::action::report::IntoReport;
-use zrx_scheduler::action::Result;
-use zrx_scheduler::Value;
+use zrx_scheduler::step::Result;
+use zrx_scheduler::{Scope, Value};
 
-use crate::stream::function::adapter::{WithId, WithSplat};
+use crate::stream::function::adapter::WithSplat;
 use crate::stream::function::{catch, Splat};
 
 // ----------------------------------------------------------------------------
@@ -39,100 +38,32 @@ use crate::stream::function::{catch, Splat};
 // ----------------------------------------------------------------------------
 
 /// Filter function.
-///
-/// This trait defines a function that can be used to filter data of type `T`.
-/// It expects borrowed data and should return a [`bool`] value to indicate to
-/// the caller whether it should exclude it from further processing, or to just
-/// pass it through as it is.
-///
-/// There's a range of different implementations of this trait, allowing you to
-/// use a variety of function shapes, including support for [`Splat`], as well
-/// as support for the [`WithId`] and [`WithSplat`] adapters. Furthermore, the
-/// trait can be implemented for custom types to add new behaviors. Note that
-/// all implementations also allow to return a [`Report`][], which makes it
-/// possible to return diagnostics from the function execution.
-///
-/// The `'static` lifetimes is mandatory as closures must be moved into actions,
-/// so requiring it here allows us to reduce the verbosity of trait bounds.
-///
-/// [`Report`]: zrx_scheduler::action::Report
-///
-/// # Examples
-///
-/// Filter data:
-///
-/// ```
-/// # use std::error::Error;
-/// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_stream::function::FilterFn;
-///
-/// // Define and execute function
-/// let f = |&n: &i32| n > 0;
-/// f.execute(&"id", &42)?;
-/// # Ok(())
-/// # }
-/// ```
-///
-/// Filter data with splat argument:
-///
-/// ```
-/// # use std::error::Error;
-/// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_stream::function::{FilterFn, Splat};
-///
-/// // Define and execute function
-/// let f = |&a: &i32, &b: &i32| a < b;
-/// f.execute(&"id", Splat::from_ref(&(1, 2)))?;
-/// # Ok(())
-/// # }
-/// ```
-pub trait FilterFn<I, T>: Send + 'static
-where
-    T: ?Sized,
-{
+pub trait FilterFn<I, T>: Send + 'static {
     /// Executes the filter function.
     ///
     /// # Errors
     ///
     /// This method returns an error if the function fails to execute.
-    fn execute(&self, id: &I, data: &T) -> Result<bool>;
+    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<bool>;
 }
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<F, R, I, T> FilterFn<I, T> for F
+impl<F, I, T> FilterFn<I, T> for F
 where
-    F: Fn(&T) -> R + Send + 'static,
-    R: IntoReport<bool>,
+    F: Fn(&T) -> Result<bool> + Send + 'static,
     I: Display,
-    T: Value + ?Sized,
+    T: Value,
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(id = %id))
+        tracing::instrument(level = "debug", skip_all, fields(id = %scope))
     )]
     #[inline]
-    fn execute(&self, id: &I, data: &T) -> Result<bool> {
-        catch(|| self(data).into_report())
-    }
-}
-
-impl<F, R, I, T> FilterFn<I, T> for WithId<F>
-where
-    F: Fn(&I, &T) -> R + Send + 'static,
-    R: IntoReport<bool>,
-    I: Display,
-    T: Value + ?Sized,
-{
-    #[cfg_attr(
-        feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(id = %id))
-    )]
-    #[inline]
-    fn execute(&self, id: &I, data: &T) -> Result<bool> {
-        catch(|| self(id, data).into_report())
+    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<bool> {
+        catch(|| self(value))
     }
 }
 
@@ -141,8 +72,8 @@ where
     F: FilterFn<I, Splat<T>>,
 {
     #[inline]
-    fn execute(&self, id: &I, data: &T) -> Result<bool> {
-        F::execute(self, id, Splat::from_ref(data))
+    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<bool> {
+        F::execute(self, scope, Splat::from_ref(value))
     }
 }
 
@@ -153,23 +84,24 @@ where
 /// Implements filter function trait for splat arguments.
 macro_rules! impl_filter_fn_for_splat {
     ($($T:ident),+) => {
-        impl<F, R, I, $($T: ,)+> FilterFn<I, Splat<($($T,)+)>> for F
+        impl<F, I, $($T,)+> FilterFn<I, Splat<($($T,)+)>> for F
         where
-            F: Fn($(&$T),+) -> R + Send + 'static,
-            R: IntoReport<bool>,
+            F: Fn($(&$T),+) -> Result<bool> + Send + 'static,
             I: Display,
         {
             #[cfg_attr(
                 feature = "tracing",
-                tracing::instrument(level = "debug", skip_all, fields(id = %id))
+                tracing::instrument(
+                    level = "debug", skip_all, fields(id = %scope)
+                )
             )]
             #[inline]
             fn execute(
-                &self, id: &I, data: &Splat<($($T,)+)>
+                &self, scope: &Scope<I>, value: &Splat<($($T,)+)>
             ) -> Result<bool> {
                 #[allow(non_snake_case)]
-                let ($($T,)+) = data.inner();
-                catch(|| self($($T),+).into_report())
+                let ($($T,)+) = value.inner();
+                catch(|| self($($T),+))
             }
         }
     };

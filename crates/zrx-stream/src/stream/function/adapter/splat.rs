@@ -78,20 +78,6 @@ impl<F> Deref for WithSplat<F> {
 /// struct that is used to differentiate between function implementations. This
 /// is also why the returned type implements [`Deref`], so that it behaves like
 /// the underlying function.
-///
-/// # Examples
-///
-/// ```
-/// # use std::error::Error;
-/// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_stream::function::{with_splat, InspectFn};
-///
-/// // Define and execute function
-/// let f = |&a: &i32, &b: &i32| println!("({a}, {b})");
-/// with_splat(f).execute(&"id", &(1, 2))?;
-/// # Ok(())
-/// # }
-/// ```
 #[inline]
 pub fn with_splat<F>(f: F) -> WithSplat<F> {
     WithSplat { function: f }

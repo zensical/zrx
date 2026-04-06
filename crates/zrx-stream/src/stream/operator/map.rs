@@ -27,29 +27,26 @@
 
 use std::marker::PhantomData;
 
-use zrx_scheduler::action::descriptor::Property;
-use zrx_scheduler::action::output::IntoOutputs;
-use zrx_scheduler::action::Descriptor;
-use zrx_scheduler::effect::{Item, Task};
+use zrx_scheduler::action::context::Binding;
+use zrx_scheduler::action::{Action, Context};
+use zrx_scheduler::step::IntoSteps;
 use zrx_scheduler::{Id, Value};
 
 use crate::stream::function::MapFn;
 use crate::stream::Stream;
 
-use super::{Operator, OperatorExt};
+use super::Operator;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
 /// Map operator.
-struct Map<F, U> {
+pub struct Map<T, F, U> {
     /// Operator function.
     function: F,
     /// Capture types.
-    marker: PhantomData<U>,
-    /// Concurrency.
-    concurrency: Option<usize>,
+    marker: PhantomData<(T, U)>,
 }
 
 // ----------------------------------------------------------------------------
@@ -59,33 +56,19 @@ struct Map<F, U> {
 impl<I, T> Stream<I, T>
 where
     I: Id,
-    T: Value + Clone,
+    T: Value,
 {
+    /// Maps the stream using the provided function.
+    #[inline]
+    #[must_use]
     pub fn map<F, U>(&self, f: F) -> Stream<I, U>
     where
         F: MapFn<I, T, U> + Clone,
         U: Value,
     {
-        self.with_operator(Map {
+        self.subscribe(Map {
             function: f,
             marker: PhantomData,
-            concurrency: None,
-        })
-    }
-
-    // @todo temporary solution to implement task concurrency, until we've
-    // implemented task groups in zrx, so we can properly manage concurrency
-    pub fn map_concurrency<F, U>(
-        &self, f: F, concurrency: usize,
-    ) -> Stream<I, U>
-    where
-        F: MapFn<I, T, U> + Clone,
-        U: Value,
-    {
-        self.with_operator(Map {
-            function: f,
-            marker: PhantomData,
-            concurrency: Some(concurrency),
         })
     }
 }
@@ -94,49 +77,35 @@ where
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I, T, F, U> Operator<I, T> for Map<F, U>
+impl<I, T, F, U> Action<I> for Map<T, F, U>
 where
     I: Id,
-    T: Value + Clone,
+    T: Value,
     F: MapFn<I, T, U> + Clone,
     U: Value,
 {
-    type Item<'a> = Item<&'a I, &'a T>;
+    type Inputs = (T,);
+    type Output<'a> = U;
 
-    /// Handles the given item.
-    ///
-    /// This operator returns a task that produces an output item by applying
-    /// the operator function to the input item. The input item is moved into
-    /// the task, and the output item is sent back to the main thread when
-    /// the worker thread finishes.
-    #[cfg_attr(
-        feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(id = %item.id))
-    )]
-    fn handle(&mut self, item: Self::Item<'_>) -> impl IntoOutputs<I> {
-        let item = item.into_owned();
-        Task::new({
-            let function = self.function.clone();
-            move || {
-                function.execute(&item.id, item.data).map(|report| {
-                    report.map(|data| Item::new(item.id, Some(data)))
-                })
-            }
+    /// Executes the operator.
+    fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {
+        let Binding { scopes, inputs, mut output, .. } = ctx.bind();
+        scopes.map(move |scope| {
+            let Some(value) = inputs.get(&scope).cloned() else {
+                output.remove(&scope);
+                return scope.done();
+            };
+            scope.task().build({
+                let function = self.function.clone();
+                move || {
+                    let value = function.execute(&scope, &value)?;
+                    scope.then().build(move |mut ctx| {
+                        let mut output = ctx.output().expect("invariant");
+                        output.insert((*scope).clone(), value);
+                        scope.done()
+                    })
+                }
+            })
         })
-    }
-
-    /// Returns the descriptor.
-    #[inline]
-    fn descriptor(&self) -> Descriptor {
-        let mut builder = Descriptor::builder()
-            .property(Property::Pure)
-            .property(Property::Stable)
-            .property(Property::Flush);
-
-        // Limit concurrency, if set
-        if let Some(concurrency) = self.concurrency {
-            builder = builder.property(Property::Concurrency(concurrency));
-        }
-        builder.build()
     }
 }

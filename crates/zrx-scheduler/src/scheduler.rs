@@ -25,29 +25,30 @@
 
 //! Scheduler.
 
-use std::time::{Duration, Instant};
+use crossbeam::channel::Select;
+use std::fmt::Debug;
+use std::time::Instant;
 
-use zrx_diagnostic::report::Report;
 use zrx_executor::strategy::WorkSharing;
-use zrx_executor::{self, Strategy};
+use zrx_executor::{Executor, Strategy};
 
 pub mod action;
-pub mod effect;
-mod executor;
-pub mod graph;
-pub mod id;
+mod engine;
+pub mod router;
+pub mod schedule;
 pub mod session;
-mod tick;
-pub mod value;
+pub mod signal;
+pub mod step;
 
-use action::{Output, Outputs};
-use executor::queue::{Tasks, Timers};
-use executor::{Executor, Token};
-use graph::Graph;
-use id::Id;
-use session::{Connector, Message, Result, Session, Sessions};
-use tick::Tick;
-use value::Value;
+use engine::queue::{Tasks, Timers};
+use engine::{Actions, AsReceiver, Token, TokenFull};
+use router::Router;
+use schedule::Schedule;
+use session::Session;
+use signal::{Id, Value};
+use step::effect::timer::{IntoDuration, IntoInstant};
+use step::effect::Effect;
+use step::{Step, Steps};
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -55,162 +56,270 @@ use value::Value;
 
 /// Scheduler.
 #[derive(Debug)]
-pub struct Scheduler<I, S>
+pub struct Scheduler<I, S = WorkSharing>
 where
-    I: Id,
     S: Strategy,
 {
-    /// Executor.
-    executor: Executor<I>,
-    /// Session connector.
-    connector: Connector<I>,
-    /// Session manager.
-    sessions: Sessions,
-    /// Task queue.
-    tasks: Tasks<I, S>,
+    /// Router.
+    router: Router<I>,
+    /// Action queue.
+    actions: Actions<I>,
     /// Timer queue.
     timers: Timers<I>,
-    /// Total items processed.
-    total: usize,
+    /// Task queue.
+    tasks: Tasks<I, S>,
 }
 
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<I> Scheduler<I, WorkSharing>
-where
-    I: Id,
-{
-    /// Creates a scheduler.
-    ///
-    /// This method creates a scheduler with an [`Executor`] which utilizes a
-    /// [`WorkSharing`] strategy, probably the best choice for most workloads.
-    /// The number of workers is determined by the number of logical CPUs minus
-    /// one, which reserves one core for the main thread for orchestration.
-    #[must_use]
-    pub fn new(meta: Graph<I>) -> Self {
-        Self::with_executor(meta, zrx_executor::Executor::default())
-    }
-}
-
 impl<I, S> Scheduler<I, S>
 where
     I: Id,
     S: Strategy,
 {
-    /// Creates a scheduler with the given executor.
-    ///
-    /// For most workloads, the [`WorkSharing`] scheduling strategy should be
-    /// the best choice, as it offers the lowest possible overhead and applies
-    /// backpressure by rejecting tasks after the system has reached a certain
-    /// load. Thus, start with [`Scheduler::new`] before fine-tuning.
-    ///
-    /// For more information, see [`WorkSharing::with_capacity`].
+    /// Creates a scheduler.
     #[must_use]
-    pub fn with_executor(
-        meta: Graph<I>, executor: zrx_executor::Executor<S>,
-    ) -> Self {
+    pub fn new(executor: Executor<S>) -> Self {
         Self {
-            executor: Executor::new(meta.actions),
-            connector: Connector::new(),
-            sessions: Sessions::new(meta.sources),
-            tasks: Tasks::new(executor),
+            router: Router::default(),
+            actions: Actions::new(),
             timers: Timers::new(),
-            total: 0,
+            tasks: Tasks::new(executor),
         }
+    }
+
+    /// Attaches a schedule to the scheduler.
+    #[inline]
+    pub fn attach<W>(&mut self, schedule: W) -> usize
+    where
+        W: Into<Schedule<I>>,
+    {
+        let s = self.actions.attach(schedule.into());
+
+        // Obtain workflow and register all sources in the router
+        let schedule = &mut self.actions[s];
+        let graph = &mut schedule.graph;
+        for n in graph.sources().collect::<Vec<_>>() {
+            if let Some(source) = graph[n].as_source_mut() {
+                self.router
+                    .add(Token { module: s, node: n }, source.sender());
+            }
+        }
+
+        // Return index
+        s
+    }
+
+    /// Detaches a schedule from the scheduler.
+    #[inline]
+    pub fn detach(&mut self, index: usize) -> Option<Schedule<I>> {
+        self.actions.detach(index)
     }
 
     /// Creates a session.
-    ///
-    /// __Warning__: Sessions are generally not meant for use on the same thread
-    /// as the scheduler. In case the capacity of the [`Connector`] is reached,
-    /// a session might block, and thus deadlock the scheduler. Thus, always
-    /// move sessions to a separate thread.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`Error::Type`][] if the type is unknown.
-    ///
-    /// [`Error::Type`]: crate::scheduler::session::Error::Type
     #[inline]
-    pub fn session<T>(&mut self) -> Result<Session<I, T>>
+    #[must_use]
+    pub fn session<T>(&mut self) -> Session<I, T>
     where
         T: Value,
     {
-        // this API is still not ideal, feels kinda weird
-        let session = self.connector.session();
-        self.sessions.insert::<T>(session.id()).map(|()| session)
+        self.router.session()
     }
 
-    /// Runs a tick.
-    ///
-    /// This method processes all [`Tasks`] and [`Timers`] in the scheduler, and
-    /// returns a report containing the results of the tick. Note that it never
-    /// blocks, which means that it will return immediately after all tasks
-    /// and timers have been processed.
+    /// Processes the next tick.
     #[inline]
-    pub fn tick(&mut self) -> Report {
-        Tick::new(None).run(self)
+    pub fn tick(&mut self) {
+        self.process(None);
     }
 
-    /// Runs a tick or waits until the given deadline.
-    ///
-    /// After processing completed tasks and timers, the scheduler waits until
-    /// the given deadline if it can't make progress on its own. This means that
-    /// this method might block, depending on the state of the queue and whether
-    /// there's any new input to be processed.
+    /// Processes the next tick, waiting until the given deadline.
     #[inline]
-    pub fn tick_deadline(&mut self, deadline: Instant) -> Report {
-        Tick::new(Some(deadline)).run(self)
+    pub fn tick_deadline<T>(&mut self, deadline: T)
+    where
+        T: IntoInstant,
+    {
+        self.process(Some(deadline.into_instant()));
     }
 
-    /// Runs a tick or waits until the given timeout.
-    ///
-    /// After processing completed tasks and timers, the scheduler waits until
-    /// the given timeout if it can't make progress on its own. This means that
-    /// this method might block, depending on the state of the queue and whether
-    /// there's any new input to be processed.
+    /// Processes the next tick, waiting for the given timeout.
     #[inline]
-    pub fn tick_timeout(&mut self, timeout: Duration) -> Report {
-        Tick::new(Some(Instant::now() + timeout)).run(self)
+    pub fn tick_timeout<T>(&mut self, timeout: T)
+    where
+        T: IntoDuration,
+    {
+        self.process(Some(timeout.into_duration().into_instant()));
     }
 
-    /// Handles the given message.
+    /// Processes the next tick.
     ///
-    /// This method processes the given message received from a session, either
-    /// forwarding a new item to the executor or terminating the session.
-    fn handle_message(&mut self, message: Message<I>) {
-        match message {
-            Message::Item(id, item) => {
-                self.executor.submit(item, self.sessions.get(id));
+    /// [`Timer`][] and [`Task`][] effects are drained first, as they represent
+    /// work that is already complete or due. Handling them before pulling new
+    /// items from sessions feeds their effects back into the underlying graph
+    /// immediately, potentially unblocking further frontiers and giving the
+    /// executor new work. Pulling from sessions first would load new work onto
+    /// a system that may already have actionable results waiting.
+    ///
+    /// Timers in particular are time-sensitive — they are already late by the
+    /// time this runs, so any delay adds latency to time-critical paths.
+    ///
+    /// [`Task`]: crate::scheduler::step::effect::Task
+    /// [`Timer`]: crate::scheduler::step::effect::Timer
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "trace", skip_all)
+    )]
+    fn process(&mut self, deadline: Option<Instant>) {
+        self.process_timers();
+        self.process_tasks();
+
+        // Check, if there's at least one action that can be scheduled, and if
+        // so, run it. Otherwise, if the queue is empty, enter waiting phase.
+        if self.actions.is_empty() {
+            self.waiting(deadline.or(self.is_empty().then(Instant::now)));
+        } else {
+            self.running();
+        }
+    }
+
+    /// Processes timers.
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", skip_all)
+    )]
+    fn process_timers(&mut self) {
+        while let Some((token, steps)) = self.timers.take() {
+            self.handle(
+                Token {
+                    module: token.module,
+                    node: token.node,
+                },
+                steps,
+            );
+        }
+    }
+
+    /// Processes tasks.
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", skip_all)
+    )]
+    fn process_tasks(&mut self) {
+        while let Some((token, res)) = self.tasks.take() {
+            self.handle(
+                Token {
+                    module: token.module,
+                    node: token.node,
+                },
+                res.unwrap(),
+            );
+        }
+
+        // Queue next tasks - this method returns whether any new tasks could
+        // be submitted, and if there were some in the queue.
+        self.tasks.update();
+    }
+
+    /// Waiting phase - the scheduler can't make progress on any of the active
+    /// frontiers, either because all frontiers have been processed, or because
+    /// the executor is waiting for tasks or timers to be completed. In case a
+    /// deadline was provided, and the sessions don't have any more items to
+    /// emit, the scheduler will wait until the deadline is reached. Otherwise,
+    /// the scheduler returns immediately.
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", skip_all)
+    )]
+    fn waiting(&mut self, deadline: Option<Instant>) {
+        let mut select = Select::new();
+        assert_eq!(0, select.recv(self.timers.as_receiver()));
+        assert_eq!(1, select.recv(self.tasks.as_receiver()));
+        self.router.add_to_select(&mut select);
+
+        // Poll until deadline is reached, if given
+        let n = if let Some(deadline) = deadline {
+            match select.ready_deadline(deadline) {
+                Ok(ready) => ready,
+                Err(_) => return,
             }
-            Message::Drop(id) => {
-                self.sessions.remove(id);
+        } else {
+            select.ready()
+        };
+
+        // Poll all channels
+        match n {
+            0 => self.process_timers(),
+            1 => self.process_tasks(),
+            n => {
+                for token in self.router.poll(n - 2) {
+                    self.actions.submit(token);
+                }
             }
         }
     }
 
-    /// Handles the given output.
-    ///
-    /// This method processes the output of a task, timer, or other effect, and
-    /// updates the executor or respective queue in the process.
-    fn handle(&mut self, token: Token, outputs: Outputs<I>) {
-        let mut items = Vec::new();
-        let has_outputs = !outputs.is_empty();
-        // println!("?? handle outputs: {:#?}", outputs);
-        for output in outputs {
-            match output {
-                Output::Item(item) => items.push(item),
-                Output::Task(task) => self.tasks.submit(token, task),
-                Output::Timer(timer) => self.timers.submit(token, timer),
+    /// Running phase
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", skip_all)
+    )]
+    fn running(&mut self) {
+        while let Some((token, steps)) = self.actions.take() {
+            for res in steps {
+                self.handle(token, res.unwrap());
+            }
+
+            // In case timers or tasks became ready in the meantime, we break
+            // the loop to process them first, as they may unblock frontiers
+            if self.tasks.is_ready() || self.timers.is_ready() {
+                break;
             }
         }
+    }
 
-        // there might be only tasks or timers, but no items - we need a better
-        // solution for that - note that nodes can only be completed once
-        if !has_outputs || !items.is_empty() {
-            self.executor.update(token, items);
+    /// Handle the given steps for the given token.
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "trace", skip_all)
+    )]
+    fn handle(&mut self, token: Token, steps: Steps<I>) {
+        for step in steps {
+            let Step { scoped, effect } = step;
+
+            // Ensure the scope has a frontier attached
+            let scoped = self.actions.ensure(token, &scoped);
+            match effect {
+                Effect::Then(then) => {
+                    let (token, inner) = self.actions.resume(token, then);
+                    for res in inner {
+                        self.handle(token, res.unwrap());
+                    }
+                }
+                Effect::Timer(timer) => {
+                    self.timers.submit(
+                        TokenFull {
+                            module: token.module,
+                            node: token.node,
+                            frontier: scoped.id().expect("invariant"),
+                        },
+                        timer,
+                    );
+                }
+                Effect::Task(task) => {
+                    self.tasks.submit(
+                        TokenFull {
+                            module: token.module,
+                            node: token.node,
+                            frontier: scoped.id().expect("invariant"),
+                        },
+                        task,
+                    );
+                }
+                Effect::Done => {
+                    self.actions.complete(token, &scoped);
+                }
+            }
         }
     }
 }
@@ -218,24 +327,39 @@ where
 #[allow(clippy::must_use_candidate)]
 impl<I, S> Scheduler<I, S>
 where
-    I: Id,
     S: Strategy,
 {
-    /// Returns the number of unprocessed items.
+    /// Returns the number of work to be done.
     #[inline]
     pub fn len(&self) -> usize {
-        self.executor.len()
+        self.router.len()
+            + self.actions.len()
+            + self.timers.len()
+            + self.tasks.len()
     }
 
-    /// Returns whether there are any unprocessed items.
+    /// Returns whether there is any work to be done.
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.executor.is_empty() && self.connector.is_empty()
+        self.router.is_empty()
+            && self.actions.is_empty()
+            && self.timers.is_empty()
+            && self.tasks.is_empty()
     }
+}
 
-    /// Returns the total number of items processed since creation.
+// ----------------------------------------------------------------------------
+// Trait implementations
+// ----------------------------------------------------------------------------
+
+impl<I, S> Default for Scheduler<I, S>
+where
+    I: Id,
+    S: Strategy + Default,
+{
+    /// Creates a scheduler using the default work-sharing strategy.
     #[inline]
-    pub fn total(&self) -> usize {
-        self.total
+    fn default() -> Self {
+        Self::new(Executor::new(S::default()))
     }
 }

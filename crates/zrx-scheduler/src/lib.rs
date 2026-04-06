@@ -23,14 +23,15 @@
 
 // ----------------------------------------------------------------------------
 
-//! Scheduler for workflow execution.
+//! Scheduler.
+
+#![allow(clippy::match_same_arms)]
 
 mod scheduler;
 
-pub use scheduler::action::{self, Action};
-pub use scheduler::effect;
-pub use scheduler::graph;
-pub use scheduler::id::Id;
+pub use scheduler::action;
+pub use scheduler::schedule::{self, Schedule};
 pub use scheduler::session::{self, Session};
-pub use scheduler::value::{self, Value, ValueExt};
+pub use scheduler::signal::{self, Id, Scope, Value};
+pub use scheduler::step;
 pub use scheduler::Scheduler;

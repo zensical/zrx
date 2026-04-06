@@ -27,13 +27,13 @@
 
 use std::panic::{self, AssertUnwindSafe};
 
-use zrx_scheduler::action::Error;
+use zrx_scheduler::step::Error;
 
 mod adapter;
 mod argument;
 mod traits;
 
-pub use adapter::{with_id, with_splat};
+pub use adapter::with_splat;
 pub use argument::Splat;
 pub use traits::*;
 
@@ -60,7 +60,7 @@ pub use traits::*;
 /// # Examples
 ///
 /// ```
-/// use zrx_scheduler::action::Error;
+/// use zrx_scheduler::step::Error;
 /// use zrx_stream::function::catch;
 ///
 /// // Define function that panics
