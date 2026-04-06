@@ -95,26 +95,25 @@ pub use specified::Specified;
 /// at the [`Atom`][] level and follow the same rules.
 ///
 /// [`Atom`]: crate::id::specificity::segment::Atom
-/// [`Expression`]: crate::id::filter::Expression
-/// [`Expression::all`]: crate::id::filter::Expression::all
-/// [`Expression::any`]: crate::id::filter::Expression::any
-/// [`Expression::not`]: crate::id::filter::Expression::not
+/// [`Expression`]: crate::id::expression::Expression
+/// [`Expression::all`]: crate::id::expression::Expression::all
+/// [`Expression::any`]: crate::id::expression::Expression::any
+/// [`Expression::not`]: crate::id::expression::Expression::not
 /// [`Glob`]: globset::Glob
 /// [`Id`]: crate::id::Id
-/// [`Operand`]: crate::id::filter::expression::Operand
-/// [`Operator`]: crate::id::filter::expression::Operator
+/// [`Operand`]: crate::id::expression::Operand
+/// [`Operator`]: crate::id::expression::Operator
 /// [`Segment`]: crate::id::specificity::segment::Segment
-/// [`Selector`]: crate::id::matcher::selector::Selector
-/// [`Term`]: crate::id::filter::Term
+/// [`Selector`]: crate::id::selector::Selector
+/// [`Term`]: crate::id::expression::Term
 ///
 /// # Examples
 ///
 /// ```
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_id::filter::Expression;
-/// use zrx_id::selector;
 /// use zrx_id::specificity::ToSpecificity;
+/// use zrx_id::{selector, Expression};
 ///
 /// // Create expression and compute specificity
 /// let expr = Expression::any(|expr| {

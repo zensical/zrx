@@ -66,7 +66,7 @@ use path::validate;
 ///
 /// [`Arc`]: std::sync::Arc
 /// [`Id`]: crate::id::Id
-/// [`Selector`]: crate::id::matcher::selector::Selector
+/// [`Selector`]: crate::id::selector::Selector
 ///
 /// # Examples
 ///

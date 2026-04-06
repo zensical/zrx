@@ -27,9 +27,10 @@
 
 use globset::{Glob, GlobBuilder};
 
+use crate::id::selector::TryToSelector;
+
 use super::component;
 use super::error::Result;
-use super::selector::TryToSelector;
 use super::Matcher;
 
 // ----------------------------------------------------------------------------
@@ -84,7 +85,7 @@ impl Builder {
     /// for each component and adding it to a [`GlobSetBuilder`][].
     ///
     /// [`GlobSetBuilder`]: globset::GlobSetBuilder
-    /// [`Selector`]: crate::id::matcher::selector::Selector
+    /// [`Selector`]: crate::id::selector::Selector
     ///
     /// # Errors
     ///

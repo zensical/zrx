@@ -33,9 +33,9 @@ use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use crate::id::filter::Term;
-use crate::id::format::Format;
-use crate::id::{Error, Id, Result};
+use super::expression::Term;
+use super::format::Format;
+use super::{Error, Id, Result};
 
 mod builder;
 mod convert;
@@ -304,7 +304,7 @@ impl TryFrom<Term> for Selector {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::filter::Term;
+    /// use zrx_id::expression::Term;
     /// use zrx_id::{Id, Selector};
     ///
     /// // Create selector from identifier

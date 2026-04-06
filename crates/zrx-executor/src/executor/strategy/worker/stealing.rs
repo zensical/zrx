@@ -406,7 +406,7 @@ impl Default for WorkStealing {
     /// the number of logical CPUs is fewer than 1, the strategy defaults to a
     /// single worker thread.
     ///
-    /// __Warning__: this method makes use of [`thread::available_parallelism`]
+    /// __Warning__: This method makes use of [`thread::available_parallelism`]
     /// to determine the number of available cores, which has some limitations.
     /// Please refer to the documentation of that function for more details, or
     /// consider using [`num_cpus`][] as an alternative.

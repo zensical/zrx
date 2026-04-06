@@ -53,7 +53,7 @@ impl Expression {
     ///
     /// Returns [`Error::Id`][] if any of the operands are invalid.
     ///
-    /// [`Error::Id`]: crate::id::filter::expression::Error::Id
+    /// [`Error::Id`]: crate::id::expression::Error::Id
     ///
     /// # Examples
     ///
@@ -88,7 +88,7 @@ impl Expression {
     ///
     /// Returns [`Error::Id`][] if any of the operands are invalid.
     ///
-    /// [`Error::Id`]: crate::id::filter::expression::Error::Id
+    /// [`Error::Id`]: crate::id::expression::Error::Id
     ///
     /// # Examples
     ///
@@ -123,7 +123,7 @@ impl Expression {
     ///
     /// Returns [`Error::Id`][] if any of the operands are invalid.
     ///
-    /// [`Error::Id`]: crate::id::filter::expression::Error::Id
+    /// [`Error::Id`]: crate::id::expression::Error::Id
     ///
     /// # Examples
     ///
@@ -165,7 +165,7 @@ impl Builder {
     ///
     /// Returns [`Error::Id`][] if any of the operands are invalid.
     ///
-    /// [`Error::Id`]: crate::id::filter::expression::Error::Id
+    /// [`Error::Id`]: crate::id::expression::Error::Id
     ///
     /// # Examples
     ///

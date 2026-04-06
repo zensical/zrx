@@ -27,7 +27,7 @@
 
 use std::fmt::{self, Debug, Display};
 
-use crate::id::matcher::selector::Selector;
+use crate::id::selector::Selector;
 use crate::id::Id;
 
 // ----------------------------------------------------------------------------

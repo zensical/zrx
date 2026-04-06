@@ -27,11 +27,11 @@
 
 use slab::Slab;
 
+use crate::id::expression::{Expression, Operator, Term};
 use crate::id::matcher::Matcher;
 
 use super::condition::Condition;
 use super::error::Result;
-use super::expression::{Expression, Operator, Term};
 use super::Filter;
 
 // ----------------------------------------------------------------------------
@@ -107,7 +107,7 @@ impl Builder {
     /// store expressions directly, removing or inserting new expressions into
     /// the filter would mandate recompilation of all expressions.
     ///
-    /// [`Expression`]: crate::id::filter::expression::Expression
+    /// [`Expression`]: crate::id::expression::Expression
     ///
     /// # Examples
     ///

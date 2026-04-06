@@ -36,8 +36,8 @@
 /// also allows to create a new selector based on an existing one by passing it
 /// as the first argument.
 ///
-/// [`Selector`]: crate::id::matcher::selector::Selector
-/// [`Selector::builder`]: crate::id::matcher::selector::Selector::builder
+/// [`Selector`]: crate::id::selector::Selector
+/// [`Selector::builder`]: crate::id::selector::Selector::builder
 ///
 /// # Examples
 ///

@@ -25,8 +25,7 @@
 
 //! Condition builder.
 
-use crate::id::filter::expression::{Operand, Operator, Term};
-use crate::id::filter::Expression;
+use crate::id::expression::{Expression, Operand, Operator, Term};
 use crate::id::matcher::Matches;
 
 use super::group::Group;
@@ -239,9 +238,9 @@ fn optimize_hoistable(group: Group) -> Group {
 mod tests {
 
     mod builder {
+        use crate::id::expression::{Expression, Operator, Result, Term};
         use crate::id::filter::condition::group::Group;
-        use crate::id::filter::expression::{Operator, Result, Term};
-        use crate::id::filter::{Condition, Expression};
+        use crate::id::filter::Condition;
         use crate::selector;
 
         #[test]
@@ -303,9 +302,9 @@ mod tests {
     }
 
     mod optimize {
+        use crate::id::expression::{Expression, Operator, Result};
         use crate::id::filter::condition::group::Group;
-        use crate::id::filter::expression::{Operator, Result};
-        use crate::id::filter::{Condition, Expression};
+        use crate::id::filter::Condition;
         use crate::id::matcher::Matches;
         use crate::selector;
 

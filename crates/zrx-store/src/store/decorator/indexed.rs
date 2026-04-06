@@ -60,7 +60,7 @@ pub use iter::{Iter, Keys, Values};
 /// Note that it's a good idea to use [`Indexed::default`][], since it leverages
 /// [`ahash`] as a [`BuildHasher`][], which is the fastest known hasher.
 ///
-/// __Warning__: the affected ranges for insertions and deletions only cover the
+/// __Warning__: The affected ranges for insertions and deletions only cover the
 /// changed indices of those operations, not the range of items that might need
 /// to be updated when each item has an explicit position. This makes sure that
 /// this data type can be used in both cases, i.e., when the position is part of

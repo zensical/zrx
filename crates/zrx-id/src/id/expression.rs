@@ -51,7 +51,7 @@ pub use operand::{Operand, Operator, Term};
 /// - [`Expression::not`]: Logical `NOT` - no operand must match.
 ///
 /// [`Id`]: crate::id::Id
-/// [`Selector`]: crate::id::matcher::selector::Selector
+/// [`Selector`]: crate::id::selector::Selector
 ///
 /// # Examples
 ///

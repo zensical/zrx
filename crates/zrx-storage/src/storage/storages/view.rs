@@ -150,7 +150,6 @@ impl Storages {
         // given index is not included in the list of indices. This allows us
         // to obtain a raw pointer to the storage set, so we can return both,
         // immutable and mutable references, at the same time.
-
         unsafe {
             let pointer = ptr::from_mut(self);
             (

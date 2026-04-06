@@ -193,7 +193,8 @@ impl Iterator for Candidates<'_> {
 mod tests {
 
     mod matches {
-        use crate::id::filter::{Expression, Filter, Result};
+        use crate::id::expression::Expression;
+        use crate::id::filter::{Filter, Result};
         use crate::selector;
 
         #[test]

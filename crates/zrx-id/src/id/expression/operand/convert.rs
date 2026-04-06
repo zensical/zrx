@@ -25,7 +25,7 @@
 
 //! Operand conversions.
 
-use crate::id::filter::expression::Result;
+use crate::id::expression::Result;
 
 use super::Operand;
 
@@ -40,7 +40,7 @@ use super::Operand;
 /// for fallible operations within closures. Operands itself can't fail to be
 /// created, but the constructs from which operands are created can.
 ///
-/// [`Expression`]: crate::id::filter::expression::Expression
+/// [`Expression`]: crate::id::expression::Expression
 pub trait TryIntoOperand {
     /// Attempts to convert into an operand.
     ///
