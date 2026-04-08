@@ -82,7 +82,7 @@ impl Storages {
     /// use zrx_storage::Storages;
     ///
     /// // Create storage set and add storages
-    /// let mut storages = Storages::default();
+    /// let mut storages = Storages::new();
     /// let a = storages.insert([("key", 42)]);
     /// let b = storages.insert([("key", true)]);
     ///
@@ -109,7 +109,7 @@ impl Storages {
     /// use zrx_storage::Storages;
     ///
     /// // Create storage set and add storages
-    /// let mut storages = Storages::default();
+    /// let mut storages = Storages::new();
     /// let a = storages.insert([("key", 42)]);
     /// let b = storages.insert([("key", true)]);
     ///
@@ -130,7 +130,7 @@ impl Storages {
     /// use zrx_storage::Storages;
     ///
     /// // Create storage set and add storages
-    /// let mut storages = Storages::default();
+    /// let mut storages = Storages::new();
     /// let a = storages.insert([("key", 42)]);
     /// let b = storages.insert([("key", true)]);
     ///

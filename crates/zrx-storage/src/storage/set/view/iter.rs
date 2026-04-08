@@ -61,7 +61,7 @@ impl View<'_> {
     /// use zrx_storage::{Storage, Storages};
     ///
     /// // Create storage set and add storages
-    /// let mut storages = Storages::default();
+    /// let mut storages = Storages::new();
     /// let a = storages.insert([("key", 42)]);
     /// let b = storages.insert([("key", true)]);
     ///
@@ -130,7 +130,7 @@ impl<'a> IntoIterator for &'a View<'a> {
     /// use zrx_storage::{Storage, Storages};
     ///
     /// // Create storage set and add storages
-    /// let mut storages = Storages::default();
+    /// let mut storages = Storages::new();
     /// let a = storages.insert([("key", 42)]);
     /// let b = storages.insert([("key", true)]);
     ///
@@ -158,7 +158,7 @@ impl<'a> IntoIterator for View<'a> {
     /// use zrx_storage::{Storage, Storages};
     ///
     /// // Create storage set and add storages
-    /// let mut storages = Storages::default();
+    /// let mut storages = Storages::new();
     /// let a = storages.insert([("key", 42)]);
     /// let b = storages.insert([("key", true)]);
     ///

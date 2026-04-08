@@ -64,7 +64,7 @@ pub use view::{View, ViewMut, Views};
 /// storage.insert("key", 42);
 ///
 /// // Create storage set and add storage
-/// let mut storages = Storages::default();
+/// let mut storages = Storages::new();
 /// let n = storages.insert(storage);
 /// ```
 #[derive(Debug, Default)]
@@ -78,6 +78,21 @@ pub struct Storages {
 // ----------------------------------------------------------------------------
 
 impl Storages {
+    /// Creates a storage set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_storage::Storages;
+    ///
+    /// // Create storage set
+    /// let mut storages = Storages::new();
+    /// ```
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Inserts a storage into the storage set and returns its index.
     ///
     /// This method takes a storage and adds it to the storage set, which will
@@ -95,7 +110,7 @@ impl Storages {
     /// storage.insert("key", 42);
     ///
     /// // Create storage set and add storage
-    /// let mut storages = Storages::default();
+    /// let mut storages = Storages::new();
     /// let n = storages.insert(storage);
     /// ```
     #[inline]
@@ -121,7 +136,7 @@ impl Storages {
     /// storage.insert("key", 42);
     ///
     /// // Create storage set and add storage
-    /// let mut storages = Storages::default();
+    /// let mut storages = Storages::new();
     /// let n = storages.insert(storage);
     /// ```
     #[inline]
@@ -176,7 +191,7 @@ impl Index<usize> for Storages {
     /// storage.insert("key", 42);
     ///
     /// // Create storage set and add storage
-    /// let mut storages = Storages::default();
+    /// let mut storages = Storages::new();
     /// let n = storages.insert(storage);
     ///
     /// // Obtain reference to storage
@@ -205,7 +220,7 @@ impl IndexMut<usize> for Storages {
     /// storage.insert("key", 42);
     ///
     /// // Create storage set and add storage
-    /// let mut storages = Storages::default();
+    /// let mut storages = Storages::new();
     /// let n = storages.insert(storage);
     ///
     /// // Obtain mutable reference to storage
