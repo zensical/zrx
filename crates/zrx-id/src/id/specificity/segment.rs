@@ -30,11 +30,11 @@ use std::slice::Iter;
 
 pub mod atom;
 mod convert;
-mod segments;
+mod set;
 
 pub use atom::Atom;
 pub use convert::ToSegments;
-pub use segments::Segments;
+pub use set::Segments;
 
 // ----------------------------------------------------------------------------
 // Structs

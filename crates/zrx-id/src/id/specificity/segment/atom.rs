@@ -27,7 +27,7 @@
 
 use std::fmt::{self, Display, Write};
 
-use super::segments::Segments;
+use super::set::Segments;
 
 mod character;
 mod wildcard;

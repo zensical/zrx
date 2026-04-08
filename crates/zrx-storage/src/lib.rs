@@ -30,5 +30,5 @@ mod storage;
 pub use storage::accessor;
 pub use storage::borrow;
 pub use storage::convert;
-pub use storage::storages::{self, Storages};
+pub use storage::set::{self, Storages};
 pub use storage::{Error, Result, Storage};

@@ -28,9 +28,9 @@
 use std::fmt::{self, Debug};
 use std::panic::UnwindSafe;
 
-mod tasks;
+mod set;
 
-pub use tasks::Tasks;
+pub use set::Tasks;
 
 // ----------------------------------------------------------------------------
 // Traits

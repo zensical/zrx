@@ -31,12 +31,12 @@ pub mod effect;
 pub mod error;
 mod macros;
 mod scoped;
-mod steps;
+mod set;
 
 use effect::Effect;
 pub use error::{Error, Result};
 pub use scoped::Scoped;
-pub use steps::{IntoSteps, Steps};
+pub use set::{IntoSteps, Steps};
 
 // ----------------------------------------------------------------------------
 // Structs
