@@ -52,7 +52,7 @@ pub use convert::IntoSteps;
 /// When registering actions, the scheduler will erase the type information, as
 /// it's only necessary during compile time, not during execution.
 pub struct Steps<I, C = ()> {
-    /// Vector of steps.
+    /// Inner set of steps.
     inner: Vec<Step<I, C>>,
 }
 

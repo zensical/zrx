@@ -69,7 +69,7 @@ pub use view::{View, ViewMut, Views};
 /// ```
 #[derive(Debug, Default)]
 pub struct Storages {
-    /// Slab of storages.
+    /// Inner set of storages.
     inner: Slab<Box<dyn Any>>,
 }
 

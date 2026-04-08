@@ -34,7 +34,7 @@ use crate::scheduler::step::{IntoSteps, Result, Scoped, Steps};
 /// Scope set.
 #[derive(Debug)]
 pub struct Scopes<I> {
-    /// Vector of scopes.
+    /// Inner set of scopes.
     inner: Vec<Scoped<I>>,
 }
 

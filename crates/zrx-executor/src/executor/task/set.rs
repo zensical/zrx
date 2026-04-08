@@ -65,7 +65,7 @@ use super::Task;
 /// ```
 #[derive(Debug, Default)]
 pub struct Tasks {
-    /// Vector of tasks.
+    /// Inner set of tasks.
     inner: Vec<Box<dyn Task>>,
 }
 

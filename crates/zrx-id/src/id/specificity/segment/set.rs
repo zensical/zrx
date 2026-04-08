@@ -42,7 +42,7 @@ use super::Segment;
 /// [`Glob`]: globset::Glob
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Segments<'a> {
-    /// Vector of segments.
+    /// Inner set of segments.
     inner: Vec<Segment<'a>>,
 }
 
