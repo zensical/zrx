@@ -153,7 +153,7 @@ where
         V: Clone + Eq,
     {
         HashMap::get_mut(self, key)
-            .map(|check| update_if_changed(check, value))
+            .map(|prior| update_if_changed(prior, value))
             .unwrap_or_else(|| {
                 HashMap::insert(self, key.clone(), value.clone());
                 true
@@ -402,7 +402,7 @@ where
         V: Clone + Eq,
     {
         BTreeMap::get_mut(self, key)
-            .map(|check| update_if_changed(check, value))
+            .map(|prior| update_if_changed(prior, value))
             .unwrap_or_else(|| {
                 BTreeMap::insert(self, key.clone(), value.clone());
                 true
