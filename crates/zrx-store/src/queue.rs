@@ -33,7 +33,7 @@ use std::mem;
 use std::time::Instant;
 
 use crate::store::decorator::Ordered;
-use crate::store::item::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreMut, StoreMutRef};
 
 mod item;
@@ -77,7 +77,7 @@ pub use iter::{Iter, Keys, Values};
 /// queue.insert("d", 1);
 ///
 /// // Create iterator over the queue
-/// for (key, value) in queue.iter() {
+/// for (key, value) in &queue {
 ///     println!("{key}: {value}");
 /// }
 /// ```
@@ -499,6 +499,43 @@ where
 
         // We can safely use expect here, as the key is present
         self.get_mut(key).expect("invariant")
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+#[allow(clippy::into_iter_without_iter)]
+impl<'a, K, V, S> IntoIterator for &'a Queue<K, V, S>
+where
+    K: Key,
+    V: Value,
+    S: StoreIterable<K, Item>,
+{
+    type Item = (&'a K, &'a V);
+    type IntoIter = Iter<'a, K, V>;
+
+    /// Creates an iterator over the queue.
+    ///
+    /// The returned iterator is not ordered
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_store::queue::Queue;
+    /// use zrx_store::StoreMut;
+    ///
+    /// // Create queue and initial state
+    /// let mut queue = Queue::default();
+    /// queue.insert("key", 42);
+    ///
+    /// // Create iterator over the queue
+    /// for (key, value) in &queue {
+    ///     println!("{key}: {value}");
+    /// }
+    /// ```
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 
