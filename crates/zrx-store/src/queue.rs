@@ -66,8 +66,7 @@ pub use iter::{Iter, Keys, Values};
 /// # Examples
 ///
 /// ```
-/// use zrx_store::queue::Queue;
-/// use zrx_store::{StoreIterable, StoreMut};
+/// use zrx_store::{Queue, StoreIterable, StoreMut};
 ///
 /// // Create queue and initial state
 /// let mut queue = Queue::default();
@@ -108,8 +107,7 @@ where
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue
     /// let mut queue = Queue::<_, _, HashMap<_, _>>::new();
@@ -132,8 +130,7 @@ where
     ///
     /// ```
     /// use std::time::Instant;
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -160,8 +157,7 @@ where
     ///
     /// ```
     /// use std::time::Instant;
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -194,8 +190,7 @@ where
     ///
     /// ```
     /// use std::time::Instant;
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -218,8 +213,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -269,8 +263,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::{Store, StoreMut};
+    /// use zrx_store::{Queue, Store, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -297,8 +290,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::{Store, StoreMut};
+    /// use zrx_store::{Queue, Store, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -341,8 +333,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue
     /// let mut queue = Queue::default();
@@ -367,8 +358,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -394,8 +384,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -421,8 +410,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::{Store, StoreMut};
+    /// use zrx_store::{Queue, Store, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -449,8 +437,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::{StoreMut, StoreMutRef};
+    /// use zrx_store::{Queue, StoreMut, StoreMutRef};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -477,8 +464,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMutRef;
+    /// use zrx_store::{Queue, StoreMutRef};
     ///
     /// // Create queue
     /// let mut queue = Queue::<_, i32>::default();
@@ -521,8 +507,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -556,8 +541,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue
     /// let mut queue = Queue::default();

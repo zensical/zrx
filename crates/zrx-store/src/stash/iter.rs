@@ -102,8 +102,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::stash::Stash;
-    /// use zrx_store::{StoreIterable, StoreMut};
+    /// use zrx_store::{Stash, StoreIterable, StoreMut};
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -138,8 +137,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::stash::Stash;
-    /// use zrx_store::{StoreIterableMut, StoreMut};
+    /// use zrx_store::{Stash, StoreIterableMut, StoreMut};
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -173,8 +171,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::stash::Stash;
-    /// use zrx_store::{StoreKeys, StoreMut};
+    /// use zrx_store::{Stash, StoreKeys, StoreMut};
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -206,8 +203,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::stash::Stash;
-    /// use zrx_store::{StoreMut, StoreValues};
+    /// use zrx_store::{Stash, StoreMut, StoreValues};
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();

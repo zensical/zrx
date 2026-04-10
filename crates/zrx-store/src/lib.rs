@@ -29,6 +29,8 @@ pub mod queue;
 pub mod stash;
 mod store;
 
+pub use queue::Queue;
+pub use stash::Stash;
 pub use store::adapter;
 pub use store::collection::{self, Collection};
 pub use store::comparator::{self, Comparator};
