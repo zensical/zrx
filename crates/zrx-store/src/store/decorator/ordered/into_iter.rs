@@ -104,3 +104,15 @@ where
         self.ordering.size_hint()
     }
 }
+
+impl<K, V, C> ExactSizeIterator for IntoIter<K, V, C>
+where
+    K: Key,
+    V: Clone,
+{
+    /// Returns the exact remaining length of the iterator.
+    #[inline]
+    fn len(&self) -> usize {
+        self.ordering.len()
+    }
+}
