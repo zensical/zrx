@@ -106,7 +106,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the items of a queue.
+    /// Creates an iterator over the items of the queue.
     ///
     /// # Examples
     ///
@@ -142,7 +142,7 @@ where
     where
         Self: 'a;
 
-    /// Creates a mutable iterator over the items of a queue.
+    /// Creates a mutable iterator over the items of the queue.
     ///
     /// # Examples
     ///
@@ -177,7 +177,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the keys of a queue.
+    /// Creates an iterator over the keys of the queue.
     ///
     /// # Examples
     ///
@@ -212,7 +212,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the values of the store.
+    /// Creates an iterator over the values of the queue.
     ///
     /// # Examples
     ///

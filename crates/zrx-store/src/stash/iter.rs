@@ -97,7 +97,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the items of a stash.
+    /// Creates an iterator over the items of the stash.
     ///
     /// # Examples
     ///
@@ -132,7 +132,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the items of a stash.
+    /// Creates a mutable iterator over the items of the stash.
     ///
     /// # Examples
     ///
@@ -166,7 +166,7 @@ where
     where
         Self: 'a;
 
-    /// Creates an iterator over the keys of a stash.
+    /// Creates an iterator over the keys of the stash.
     ///
     /// # Examples
     ///
