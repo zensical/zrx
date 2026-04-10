@@ -36,8 +36,10 @@ use std::ops::{Index, IndexMut};
 use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreMut, StoreMutRef};
 
+pub mod items;
 mod iter;
 
+pub use items::Items;
 pub use iter::{Iter, IterMut, Keys, Values};
 
 // ----------------------------------------------------------------------------
