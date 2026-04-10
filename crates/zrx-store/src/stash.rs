@@ -50,7 +50,7 @@ pub use iter::{Iter, IterMut, Keys, Values};
 ///
 /// This data type implements a simple stash, which is a key-value store that
 /// is optimized for fast insertion and retrieval of items by index. It's built
-/// on a [`Slab`], together with a [`Store`] that provides the underlying key
+/// on a [`Slab`], together with a [`Store`] that provides the underlying item
 /// storage. Stashes offer optimal performance for temporary storage.
 ///
 /// The underlying store implementation allows to customize ordering during
@@ -80,7 +80,7 @@ where
     /// Underlying store.
     store: S,
     /// Stash items.
-    items: Slab<V>,
+    items: Slab<(K, V)>,
     /// Capture types.
     marker: PhantomData<K>,
 }
@@ -171,10 +171,10 @@ where
     #[inline]
     pub fn insert(&mut self, key: K, value: V) -> usize {
         if let Some(&n) = self.store.get(&key) {
-            self.items[n] = value;
+            self.items[n].1 = value;
             n
         } else {
-            let n = self.items.insert(value);
+            let n = self.items.insert((key.clone(), value));
             self.store.insert(key, n);
             n
         }
@@ -212,7 +212,7 @@ where
         Q: Key,
     {
         match self.store.get(key) {
-            Some(&n) => self.items.get(n),
+            Some(&n) => self.items.get(n).map(|(_, value)| value),
             None => None,
         }
     }
@@ -269,9 +269,9 @@ where
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
         if let Some(&n) = self.store.get(&key) {
-            Some(mem::replace(&mut self.items[n], value))
+            Some(mem::replace(&mut self.items[n].1, value))
         } else {
-            let n = self.items.insert(value);
+            let n = self.items.insert((key.clone(), value));
             self.store.insert(key, n);
             None
         }
@@ -307,9 +307,9 @@ where
     {
         self.store
             .get(key)
-            .map(|&n| update_if_changed(&mut self.items[n], value))
+            .map(|&n| update_if_changed(&mut self.items[n].1, value))
             .unwrap_or_else(|| {
-                let n = self.items.insert(value.clone());
+                let n = self.items.insert((key.clone(), value.clone()));
                 self.store.insert(key.clone(), n);
                 true
             })
@@ -336,7 +336,10 @@ where
         K: Borrow<Q>,
         Q: Key,
     {
-        self.store.remove(key).map(|n| self.items.remove(n))
+        self.store.remove(key).map(|n| {
+            let (_, value) = self.items.remove(n);
+            value
+        })
     }
 
     /// Removes the value identified by the key and returns both.
@@ -360,9 +363,7 @@ where
         K: Borrow<Q>,
         Q: Key,
     {
-        self.store
-            .remove_entry(key)
-            .map(|(key, n)| (key, self.items.remove(n)))
+        self.store.remove(key).map(|n| self.items.remove(n))
     }
 
     /// Clears the stash, removing all items.
@@ -414,7 +415,7 @@ where
         Q: Key,
     {
         match self.store.get(key) {
-            Some(&n) => self.items.get_mut(n),
+            Some(&n) => self.items.get_mut(n).map(|(_, value)| value),
             None => None,
         }
     }
@@ -439,7 +440,7 @@ where
         V: Default,
     {
         if !self.store.contains_key(key) {
-            let n = self.items.insert(V::default());
+            let n = self.items.insert((key.clone(), V::default()));
             self.store.insert(key.clone(), n);
         }
 
@@ -455,9 +456,9 @@ where
     K: Key,
     S: Store<K, usize>,
 {
-    type Output = V;
+    type Output = (K, V);
 
-    /// Returns a reference to the value at the index.
+    /// Returns a reference to the item at the index.
     ///
     /// # Panics
     ///
@@ -473,9 +474,9 @@ where
     /// stash.insert("a", 42);
     /// stash.insert("b", 84);
     ///
-    /// // Obtain reference to value
-    /// let value = &stash[1];
-    /// assert_eq!(value, &84);
+    /// // Obtain reference to item
+    /// let item = &stash[1];
+    /// assert_eq!(item, &("b", 84));
     /// ```
     #[inline]
     fn index(&self, n: usize) -> &Self::Output {
@@ -488,7 +489,7 @@ where
     K: Key,
     S: Store<K, usize>,
 {
-    /// Returns a mutable reference to the value at the index.
+    /// Returns a mutable reference to the item at the index.
     ///
     /// # Panics
     ///
@@ -505,8 +506,8 @@ where
     /// stash.insert("b", 84);
     ///
     /// // Obtain mutable reference to value
-    /// let value = &mut stash[1];
-    /// assert_eq!(value, &mut 84);
+    /// let item = &mut stash[1];
+    /// assert_eq!(item, &mut ("b", 84));
     /// ```
     #[inline]
     fn index_mut(&mut self, n: usize) -> &mut Self::Output {

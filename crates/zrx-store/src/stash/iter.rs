@@ -46,7 +46,7 @@ where
     /// Inner iterator.
     inner: S::Iter<'a>,
     /// Stash items.
-    items: &'a Slab<V>,
+    items: &'a Slab<(K, V)>,
 }
 
 /// Mutable iterator over the items of a [`Stash`].
@@ -58,7 +58,7 @@ where
     /// Inner iterator.
     inner: S::IterMut<'a>,
     /// Stash items.
-    items: &'a mut Slab<V>,
+    items: &'a mut Slab<(K, V)>,
 }
 
 /// Iterator over the keys of a [`Stash`].
@@ -80,7 +80,7 @@ where
     /// Inner iterator.
     inner: S::Values<'a>,
     /// Stash items.
-    items: &'a Slab<V>,
+    items: &'a Slab<(K, V)>,
 }
 
 // ----------------------------------------------------------------------------
@@ -236,7 +236,7 @@ where
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let opt = self.inner.next();
-        opt.map(|(key, &n)| (key, &self.items[n]))
+        opt.map(|(key, &n)| (key, &self.items[n].1))
     }
 
     /// Returns the bounds on the remaining length of the iterator.
@@ -276,7 +276,7 @@ where
             let items = ptr::addr_of_mut!(self.items);
             // SAFETY: Since both data structures are synchronized with each
             // other, and we have a mutable reference to the store, it's safe
-            (key, unsafe { &mut (&mut *items)[n] })
+            (key, unsafe { &mut (&mut *items)[n].1 })
         })
     }
 
@@ -348,7 +348,7 @@ where
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let opt = self.inner.next();
-        opt.map(|&n| &self.items[n])
+        opt.map(|&n| &self.items[n].1)
     }
 
     /// Returns the bounds on the remaining length of the iterator.
