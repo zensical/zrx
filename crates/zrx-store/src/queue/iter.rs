@@ -221,15 +221,15 @@ where
     ///
     /// ```
     /// use zrx_store::queue::Queue;
-    /// use zrx_store::{StoreKeys, StoreMut};
+    /// use zrx_store::{StoreMut, StoreValues};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
     /// queue.insert("key", 42);
     ///
     /// // Create iterator over the queue
-    /// for key in queue.keys() {
-    ///     println!("{key}");
+    /// for value in queue.values() {
+    ///     println!("{value}");
     /// }
     /// ```
     #[inline]
@@ -266,6 +266,8 @@ where
     }
 }
 
+// ----------------------------------------------------------------------------
+
 impl<'a, K, V> Iterator for IterMut<'a, K, V>
 where
     K: Key,
@@ -295,6 +297,8 @@ where
     }
 }
 
+// ----------------------------------------------------------------------------
+
 impl<'a, K> Iterator for Keys<'a, K>
 where
     K: Key,
@@ -315,6 +319,8 @@ where
         self.inner.size_hint()
     }
 }
+
+// ----------------------------------------------------------------------------
 
 impl<'a, K, V> Iterator for Values<'a, K, V>
 where
