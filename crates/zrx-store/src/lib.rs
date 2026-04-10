@@ -26,6 +26,7 @@
 //! Store abstractions and utilities.
 
 pub mod queue;
+pub mod stash;
 mod store;
 
 pub use store::adapter;
