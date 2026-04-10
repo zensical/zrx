@@ -236,7 +236,7 @@ where
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let opt = self.inner.next();
-        opt.map(|(key, &n)| (key, &self.items[n].1))
+        opt.map(|(key, &index)| (key, &self.items[index].1))
     }
 
     /// Returns the bounds on the remaining length of the iterator.
@@ -272,11 +272,11 @@ where
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let opt = self.inner.next();
-        opt.map(|(key, &mut n)| {
+        opt.map(|(key, &mut index)| {
             let items = ptr::addr_of_mut!(self.items);
             // SAFETY: Since both data structures are synchronized with each
             // other, and we have a mutable reference to the store, it's safe
-            (key, unsafe { &mut (&mut *items)[n].1 })
+            (key, unsafe { &mut (&mut *items)[index].1 })
         })
     }
 
@@ -348,7 +348,7 @@ where
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let opt = self.inner.next();
-        opt.map(|&n| &self.items[n].1)
+        opt.map(|&index| &self.items[index].1)
     }
 
     /// Returns the bounds on the remaining length of the iterator.
