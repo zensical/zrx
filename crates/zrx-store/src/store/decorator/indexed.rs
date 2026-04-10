@@ -611,8 +611,8 @@ where
     /// assert_eq!(key, &"b");
     /// ```
     #[inline]
-    fn index(&self, n: usize) -> &Self::Output {
-        &self.ordering[n]
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.ordering[index]
     }
 }
 

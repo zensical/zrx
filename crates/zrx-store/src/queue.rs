@@ -344,11 +344,11 @@ where
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
         if let Some(item) = self.store.get(&key) {
-            let n = *item.data();
-            Some(mem::replace(&mut self.items[n], value))
+            let index = *item.data();
+            Some(mem::replace(&mut self.items[index], value))
         } else {
-            let n = self.items.insert(value);
-            self.store.insert(key, Item::new(n));
+            let index = self.items.insert(value);
+            self.store.insert(key, Item::new(index));
             None
         }
     }
@@ -479,8 +479,8 @@ where
         V: Default,
     {
         if !self.store.contains_key(key) {
-            let n = self.items.insert(V::default());
-            self.store.insert(key.clone(), Item::new(n));
+            let index = self.items.insert(V::default());
+            self.store.insert(key.clone(), Item::new(index));
         }
 
         // We can safely use expect here, as the key is present
