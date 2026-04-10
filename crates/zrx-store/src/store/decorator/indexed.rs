@@ -95,7 +95,7 @@ pub use iter::{Iter, Keys, Values};
 /// store.insert("d", 1);
 ///
 /// // Create iterator over the store
-/// for (key, value) in store {
+/// for (key, value) in &store {
 ///     println!("{key}: {value}");
 /// }
 /// ```
