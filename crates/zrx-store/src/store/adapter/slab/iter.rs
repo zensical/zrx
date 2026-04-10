@@ -210,6 +210,19 @@ where
     }
 }
 
+impl<K, V> ExactSizeIterator for Iter<'_, K, V>
+where
+    K: Key,
+{
+    /// Returns the exact remaining length of the iterator.
+    #[inline]
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 impl<'a, K, V> Iterator for IterMut<'a, K, V>
 where
     K: Key,
@@ -228,6 +241,19 @@ where
         self.inner.size_hint()
     }
 }
+
+impl<K, V> ExactSizeIterator for IterMut<'_, K, V>
+where
+    K: Key,
+{
+    /// Returns the exact remaining length of the iterator.
+    #[inline]
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+// ----------------------------------------------------------------------------
 
 impl<'a, K, V> Iterator for Keys<'a, K, V>
 where
@@ -248,6 +274,19 @@ where
     }
 }
 
+impl<K, V> ExactSizeIterator for Keys<'_, K, V>
+where
+    K: Key,
+{
+    /// Returns the exact remaining length of the iterator.
+    #[inline]
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 impl<'a, K, V> Iterator for Values<'a, K, V>
 where
     K: Key,
@@ -264,5 +303,16 @@ where
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.inner.size_hint()
+    }
+}
+
+impl<K, V> ExactSizeIterator for Values<'_, K, V>
+where
+    K: Key,
+{
+    /// Returns the exact remaining length of the iterator.
+    #[inline]
+    fn len(&self) -> usize {
+        self.inner.len()
     }
 }
