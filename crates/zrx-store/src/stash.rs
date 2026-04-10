@@ -131,6 +131,7 @@ where
     /// use zrx_store::stash::Stash;
     /// use zrx_store::StoreMut;
     ///
+    /// // Create stash and initial state
     /// let mut stash = Stash::default();
     /// stash.insert("a", 1);
     /// stash.insert("b", 2);
