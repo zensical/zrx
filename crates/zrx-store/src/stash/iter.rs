@@ -253,10 +253,11 @@ where
     /// # Examples
     ///
     /// ```
+    /// use std::collections::BTreeMap;
     /// use zrx_store::{Stash, StoreMut, StoreRange};
     ///
     /// // Create stash and initial state
-    /// let mut stash = Stash::default();
+    /// let mut stash = Stash::<_, _, BTreeMap<_, _>>::new();
     /// stash.insert("a", 42);
     /// stash.insert("b", 84);
     ///
