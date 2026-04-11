@@ -26,10 +26,13 @@
 //! Iterator implementations for [`Stash`].
 
 use slab::Slab;
+use std::ops::RangeBounds;
 use std::ptr;
 
 use crate::store::item::{Key, Value};
-use crate::store::{StoreIterable, StoreIterableMut, StoreKeys, StoreValues};
+use crate::store::{
+    StoreIterable, StoreIterableMut, StoreKeys, StoreRange, StoreValues,
+};
 
 use super::Stash;
 
@@ -79,6 +82,18 @@ where
 {
     /// Inner iterator.
     inner: S::Values<'a>,
+    /// Stash items.
+    items: &'a Slab<(K, V)>,
+}
+
+/// Iterator over a range of items of a [`Stash`].
+pub struct Range<'a, K, V, S>
+where
+    K: Key,
+    S: StoreRange<K, usize> + 'a,
+{
+    /// Inner iterator.
+    inner: S::Range<'a>,
     /// Stash items.
     items: &'a Slab<(K, V)>,
 }
@@ -218,6 +233,45 @@ where
     fn values(&self) -> Self::Values<'_> {
         Values {
             inner: self.store.values(),
+            items: &self.items,
+        }
+    }
+}
+
+impl<K, V, S> StoreRange<K, V> for Stash<K, V, S>
+where
+    K: Key,
+    V: Value,
+    S: StoreRange<K, usize>,
+{
+    type Range<'a> = Range<'a, K, V, S>
+    where
+        Self: 'a;
+
+    /// Creates an iterator over a range of items of the stash.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_store::{Stash, StoreMut, StoreRange};
+    ///
+    /// // Create stash and initial state
+    /// let mut stash = Stash::default();
+    /// stash.insert("a", 42);
+    /// stash.insert("b", 84);
+    ///
+    /// // Create iterator over the stash
+    /// for (key, value) in stash.range("b"..) {
+    ///     println!("{key}: {value}");
+    /// }
+    /// ```
+    #[inline]
+    fn range<R>(&self, range: R) -> Self::Range<'_>
+    where
+        R: RangeBounds<K>,
+    {
+        Range {
+            inner: self.store.range(range),
             items: &self.items,
         }
     }
@@ -363,6 +417,42 @@ where
     K: Key,
     S: StoreValues<K, usize>,
     S::Values<'a>: ExactSizeIterator,
+{
+    /// Returns the exact remaining length of the iterator.
+    #[inline]
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl<'a, K, V, S> Iterator for Range<'a, K, V, S>
+where
+    K: Key,
+    S: StoreRange<K, usize>,
+{
+    type Item = (&'a K, &'a V);
+
+    /// Returns the next item.
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        let opt = self.inner.next();
+        opt.map(|(key, &index)| (key, &self.items[index].1))
+    }
+
+    /// Returns the bounds on the remaining length of the iterator.
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+impl<'a, K, V, S> ExactSizeIterator for Range<'a, K, V, S>
+where
+    K: Key,
+    S: StoreRange<K, usize>,
+    S::Range<'a>: ExactSizeIterator,
 {
     /// Returns the exact remaining length of the iterator.
     #[inline]
