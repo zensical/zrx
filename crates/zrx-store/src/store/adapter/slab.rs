@@ -274,7 +274,7 @@ where
         Q: Key,
     {
         Slab::iter_mut(self).find_map(|(_, (check, value))| {
-            ((&*check).borrow() == key).then_some(value)
+            ((*check).borrow() == key).then_some(value)
         })
     }
 
