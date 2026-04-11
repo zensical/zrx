@@ -34,13 +34,15 @@ use std::time::Instant;
 
 use crate::store::decorator::Ordered;
 use crate::store::item::{Key, Value};
-use crate::store::{Store, StoreIterable, StoreMut, StoreMutRef};
+use crate::store::{
+    Store, StoreIterable, StoreIterableMut, StoreMut, StoreMutRef,
+};
 
 mod item;
 mod iter;
 
 pub use item::Item;
-pub use iter::{Iter, Keys, Values};
+pub use iter::{Iter, IterMut, Keys, Values};
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -521,6 +523,40 @@ where
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
+    }
+}
+
+#[allow(clippy::into_iter_without_iter)]
+impl<'a, K, V, S> IntoIterator for &'a mut Queue<K, V, S>
+where
+    K: Key,
+    V: Value,
+    S: StoreMut<K, Item> + StoreIterable<K, Item>,
+{
+    type Item = (&'a K, &'a mut V);
+    type IntoIter = IterMut<'a, K, V>;
+
+    /// Creates an iterator over the queue.
+    ///
+    /// The returned iterator is not ordered
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_store::{Queue, StoreMut};
+    ///
+    /// // Create queue and initial state
+    /// let mut queue = Queue::default();
+    /// queue.insert("key", 42);
+    ///
+    /// // Create iterator over the queue
+    /// for (key, value) in &mut queue {
+    ///     println!("{key}: {value}");
+    /// }
+    /// ```
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
     }
 }
 
