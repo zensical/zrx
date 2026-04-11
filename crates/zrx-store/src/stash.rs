@@ -33,9 +33,11 @@ use std::marker::PhantomData;
 use std::mem;
 use std::ops::{Index, IndexMut};
 
-use crate::store::adapter::slab::Iter;
+use crate::store::adapter::slab::{Iter, IterMut};
 use crate::store::item::{Key, Value};
-use crate::store::{Store, StoreIterable, StoreMut, StoreMutRef};
+use crate::store::{
+    Store, StoreIterable, StoreIterableMut, StoreMut, StoreMutRef,
+};
 
 pub mod items;
 mod iter;
@@ -610,8 +612,6 @@ where
 
     /// Creates an iterator over the stash.
     ///
-    /// The returned iterator is not ordered
-    ///
     /// # Examples
     ///
     /// ```
@@ -629,6 +629,38 @@ where
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         StoreIterable::iter(&self.items)
+    }
+}
+
+#[allow(clippy::into_iter_without_iter)]
+impl<'a, K, V, S> IntoIterator for &'a mut Stash<K, V, S>
+where
+    K: Key,
+    V: Value,
+    S: StoreIterableMut<K, usize>,
+{
+    type Item = (&'a K, &'a mut V);
+    type IntoIter = IterMut<'a, K, V>;
+
+    /// Creates a mutable iterator over the stash.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_store::{Stash, StoreMut};
+    ///
+    /// // Create stash and initial state
+    /// let mut stash = Stash::default();
+    /// stash.insert("key", 42);
+    ///
+    /// // Create iterator over the stash
+    /// for (key, value) in &mut stash {
+    ///     println!("{key}: {value}");
+    /// }
+    /// ```
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        StoreIterableMut::iter_mut(&mut self.items)
     }
 }
 

@@ -504,8 +504,6 @@ where
 
     /// Creates an iterator over the queue.
     ///
-    /// The returned iterator is not ordered
-    ///
     /// # Examples
     ///
     /// ```
@@ -536,9 +534,7 @@ where
     type Item = (&'a K, &'a mut V);
     type IntoIter = IterMut<'a, K, V>;
 
-    /// Creates an iterator over the queue.
-    ///
-    /// The returned iterator is not ordered
+    /// Creates a mutable iterator over the queue.
     ///
     /// # Examples
     ///
