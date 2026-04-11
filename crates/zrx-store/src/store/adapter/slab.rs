@@ -134,6 +134,45 @@ where
         None
     }
 
+    /// Inserts the value identified by the key if it changed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use slab::Slab;
+    /// use zrx_store::StoreMut;
+    ///
+    /// // Create store
+    /// let mut store = Slab::new();
+    ///
+    /// // Insert value
+    /// let check = StoreMut::insert_if_changed(&mut store, &"key", &42);
+    /// assert_eq!(check, true);
+    ///
+    /// // Ignore unchanged value
+    /// let check = StoreMut::insert_if_changed(&mut store, &"key", &42);
+    /// assert_eq!(check, false);
+    ///
+    /// // Update value
+    /// let check = StoreMut::insert_if_changed(&mut store, &"key", &84);
+    /// assert_eq!(check, true);
+    /// ```
+    #[inline]
+    fn insert_if_changed(&mut self, key: &K, value: &V) -> bool
+    where
+        V: Clone + Eq,
+    {
+        for (_, (check, prior)) in self.iter_mut() {
+            if check == key {
+                return update_if_changed(prior, value);
+            }
+        }
+
+        // Insert new entry
+        self.insert((key.clone(), value.clone()));
+        true
+    }
+
     /// Removes the value identified by the key.
     ///
     /// # Examples
@@ -234,8 +273,8 @@ where
         K: Borrow<Q>,
         Q: Key,
     {
-        Slab::iter_mut(self).find_map(|(_, entry)| {
-            (entry.0.borrow() == key).then_some(&mut entry.1)
+        Slab::iter_mut(self).find_map(|(_, (check, value))| {
+            ((&*check).borrow() == key).then_some(value)
         })
     }
 
@@ -266,5 +305,23 @@ where
 
         // Return mutable reference
         &mut self[index].1
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Functions
+// ----------------------------------------------------------------------------
+
+/// Updates the prior value if it has changed.
+#[inline]
+fn update_if_changed<V>(prior: &mut V, value: &V) -> bool
+where
+    V: Clone + Eq,
+{
+    if prior == value {
+        false
+    } else {
+        *prior = value.clone();
+        true
     }
 }
