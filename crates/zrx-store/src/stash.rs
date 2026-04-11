@@ -33,6 +33,7 @@ use std::marker::PhantomData;
 use std::mem;
 use std::ops::{Index, IndexMut};
 
+use crate::store::adapter::slab::Iter;
 use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreMut, StoreMutRef};
 
@@ -40,7 +41,6 @@ pub mod items;
 mod iter;
 
 pub use items::Items;
-pub use iter::{Iter, IterMut, Keys, Values};
 
 // ----------------------------------------------------------------------------
 // Implementations
@@ -53,10 +53,14 @@ pub use iter::{Iter, IterMut, Keys, Values};
 /// on a [`Slab`], together with a [`Store`] that provides the underlying item
 /// storage. Stashes offer optimal performance for temporary storage.
 ///
-/// The underlying store implementation allows to customize ordering during
-/// iteration. Sensible choices are of course [`HashMap`] and [`BTreeMap`][],
-///
-/// [`BTreeMap`]: std::collections::BTreeMap
+/// Iteration happens on the underlying [`Slab`], which means that the order of
+/// items is stable, but not ordered by key. This ensures, that iteration is not
+/// affected by insertions and removals, and cache efficient, since no lookups
+/// need to be performed on the underlying [`Store`] to obtain the items. Note
+/// that it's not possible to return the indices of the [`Slab`] upon iteration,
+/// as the iterator implementations must adhere to the store traits. In case the
+/// indices are required, the underlying [`Slab`] can be iterated immutably by
+/// obtaining a reference to it through the [`Stash::items`][] method.
 ///
 /// # Examples
 ///
@@ -141,33 +145,6 @@ where
     {
         self.store.get(key).copied()
     }
-
-    /// Returns a reference to the slots of the stash.
-    ///
-    /// This method allows to inspect the mappings between keys and slots, as
-    /// is sometimes necessary in order to provide performant implementations.
-    /// Only an immutable reference to the slots can ever be returned, so the
-    /// invariants of the stash are guaranteed to hold.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_store::{Stash, StoreMut};
-    ///
-    /// // Create stash and initial state
-    /// let mut stash = Stash::default();
-    /// stash.insert("a", 1);
-    /// stash.insert("b", 2);
-    ///
-    /// // Create iterator over the slots
-    /// for (key, n) in stash.slots() {
-    ///     println!("{key}: {n}");
-    /// }
-    /// ```
-    #[inline]
-    pub fn slots(&self) -> &S {
-        &self.store
-    }
 }
 
 impl<K, V, S> Stash<K, V, S>
@@ -226,6 +203,19 @@ where
         } else {
             None
         }
+    }
+}
+
+#[allow(clippy::must_use_candidate)]
+impl<K, V, S> Stash<K, V, S>
+where
+    K: Key,
+    S: Store<K, usize>,
+{
+    /// Returns a reference to the items of the stash.
+    #[inline]
+    pub fn items(&self) -> &Slab<(K, V)> {
+        &self.items
     }
 }
 
@@ -616,7 +606,7 @@ where
     S: StoreIterable<K, usize>,
 {
     type Item = (&'a K, &'a V);
-    type IntoIter = Iter<'a, K, V, S>;
+    type IntoIter = Iter<'a, K, V>;
 
     /// Creates an iterator over the stash.
     ///
@@ -638,7 +628,7 @@ where
     /// ```
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        self.iter()
+        StoreIterable::iter(&self.items)
     }
 }
 
