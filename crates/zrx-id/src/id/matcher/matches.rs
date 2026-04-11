@@ -109,7 +109,7 @@ impl Matches {
     #[inline]
     #[must_use]
     pub fn contains(&self, index: usize) -> bool {
-        (self.data[index >> 6] & 1 << (index & 63)) != 0
+        (self.data[index >> 6] & mask(index)) != 0
     }
 
     /// Adds a match to the match set.
@@ -128,7 +128,7 @@ impl Matches {
     #[inline]
     pub fn add(&mut self, index: usize) {
         let block = self.resolve(index);
-        self.data[block] |= 1 << (index & 63);
+        self.data[block] |= mask(index);
     }
 
     /// Clears all matches in the match set.
@@ -308,4 +308,14 @@ impl Default for Matches {
     fn default() -> Self {
         Self::new()
     }
+}
+
+// ----------------------------------------------------------------------------
+// Functions
+// ----------------------------------------------------------------------------
+
+/// Returns the mask for the given index.
+#[inline]
+const fn mask(index: usize) -> u64 {
+    1 << (index & 63)
 }
