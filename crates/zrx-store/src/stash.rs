@@ -43,6 +43,7 @@ pub mod items;
 mod iter;
 
 pub use items::Items;
+pub use iter::{Slots, SlotsMut};
 
 // ----------------------------------------------------------------------------
 // Implementations
@@ -56,13 +57,13 @@ pub use items::Items;
 /// storage. Stashes offer optimal performance for temporary storage.
 ///
 /// Iteration happens on the underlying [`Slab`], which means that the order of
-/// items is stable, but not ordered by key. This ensures, that iteration is not
+/// items is stable, but not sorted by key. This ensures, that iteration is not
 /// affected by insertions and removals, and cache efficient, since no lookups
 /// need to be performed on the underlying [`Store`] to obtain the items. Note
-/// that it's not possible to return the indices of the [`Slab`] upon iteration,
-/// as the iterator implementations must adhere to the store traits. In case the
-/// indices are required, the underlying [`Slab`] can be iterated immutably by
-/// obtaining a reference to it through the [`Stash::items`][] method.
+/// that the store iterator traits don't allow to return indices for the items,
+/// only references to keys and values. In case indices are required, the stash
+/// can be iterated with [`Stash::slots`] or [`Stash::slots_mut`], since those
+/// return both, indices and references to keys and values.
 ///
 /// # Examples
 ///
@@ -205,19 +206,6 @@ where
         } else {
             None
         }
-    }
-}
-
-#[allow(clippy::must_use_candidate)]
-impl<K, V, S> Stash<K, V, S>
-where
-    K: Key,
-    S: Store<K, usize>,
-{
-    /// Returns a reference to the items of the stash.
-    #[inline]
-    pub fn items(&self) -> &Slab<(K, V)> {
-        &self.items
     }
 }
 
