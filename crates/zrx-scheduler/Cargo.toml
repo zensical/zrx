@@ -23,7 +23,7 @@
 
 [package]
 name = "zrx-scheduler"
-version = "0.0.14"
+version = "0.0.15"
 description = "Scheduler for workflow execution"
 edition.workspace = true
 rust-version.workspace = true
