@@ -178,6 +178,17 @@ where
     }
 }
 
+impl<K, V, S> ExactSizeIterator for Iter<'_, K, V, S>
+where
+    K: Key,
+{
+    /// Returns the exact remaining length of the iterator.
+    #[inline]
+    fn len(&self) -> usize {
+        self.ordering.len()
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 impl<'a, K, V, C> Iterator for Keys<'a, K, V, C>
@@ -199,6 +210,17 @@ where
     }
 }
 
+impl<K, V, S> ExactSizeIterator for Keys<'_, K, V, S>
+where
+    K: Key,
+{
+    /// Returns the exact remaining length of the iterator.
+    #[inline]
+    fn len(&self) -> usize {
+        self.ordering.len()
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 impl<'a, K, V, C> Iterator for Values<'a, K, V, C>
@@ -217,5 +239,16 @@ where
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.ordering.size_hint()
+    }
+}
+
+impl<K, V, S> ExactSizeIterator for Values<'_, K, V, S>
+where
+    K: Key,
+{
+    /// Returns the exact remaining length of the iterator.
+    #[inline]
+    fn len(&self) -> usize {
+        self.ordering.len()
     }
 }

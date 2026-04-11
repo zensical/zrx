@@ -28,7 +28,7 @@
 use std::fmt::{self, Debug};
 use std::marker::PhantomData;
 
-use zrx_storage::storages::{View, ViewMut};
+use zrx_storage::set::{View, ViewMut};
 
 use crate::scheduler::engine::Tag;
 

@@ -95,7 +95,7 @@ pub use iter::{Iter, Keys, Values};
 /// store.insert("d", 1);
 ///
 /// // Create iterator over the store
-/// for (key, value) in store {
+/// for (key, value) in &store {
 ///     println!("{key}: {value}");
 /// }
 /// ```
@@ -611,8 +611,8 @@ where
     /// assert_eq!(key, &"b");
     /// ```
     #[inline]
-    fn index(&self, n: usize) -> &Self::Output {
-        &self.ordering[n]
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.ordering[index]
     }
 }
 

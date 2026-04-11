@@ -29,7 +29,6 @@ use std::borrow::Borrow;
 use std::ops::RangeBounds;
 
 pub mod adapter;
-pub mod behavior;
 pub mod collection;
 pub mod comparator;
 pub mod decorator;

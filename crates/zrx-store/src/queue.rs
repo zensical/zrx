@@ -33,7 +33,7 @@ use std::mem;
 use std::time::Instant;
 
 use crate::store::decorator::Ordered;
-use crate::store::item::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreMut, StoreMutRef};
 
 mod item;
@@ -66,8 +66,7 @@ pub use iter::{Iter, Keys, Values};
 /// # Examples
 ///
 /// ```
-/// use zrx_store::queue::Queue;
-/// use zrx_store::{StoreIterable, StoreMut};
+/// use zrx_store::{Queue, StoreIterable, StoreMut};
 ///
 /// // Create queue and initial state
 /// let mut queue = Queue::default();
@@ -77,7 +76,7 @@ pub use iter::{Iter, Keys, Values};
 /// queue.insert("d", 1);
 ///
 /// // Create iterator over the queue
-/// for (key, value) in queue.iter() {
+/// for (key, value) in &queue {
 ///     println!("{key}: {value}");
 /// }
 /// ```
@@ -108,8 +107,7 @@ where
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue
     /// let mut queue = Queue::<_, _, HashMap<_, _>>::new();
@@ -132,8 +130,7 @@ where
     ///
     /// ```
     /// use std::time::Instant;
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -160,8 +157,7 @@ where
     ///
     /// ```
     /// use std::time::Instant;
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -194,8 +190,7 @@ where
     ///
     /// ```
     /// use std::time::Instant;
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -218,8 +213,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -269,8 +263,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::{Store, StoreMut};
+    /// use zrx_store::{Queue, Store, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -297,8 +290,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::{Store, StoreMut};
+    /// use zrx_store::{Queue, Store, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -341,8 +333,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue
     /// let mut queue = Queue::default();
@@ -353,11 +344,11 @@ where
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
         if let Some(item) = self.store.get(&key) {
-            let n = *item.data();
-            Some(mem::replace(&mut self.items[n], value))
+            let index = *item.data();
+            Some(mem::replace(&mut self.items[index], value))
         } else {
-            let n = self.items.insert(value);
-            self.store.insert(key, Item::new(n));
+            let index = self.items.insert(value);
+            self.store.insert(key, Item::new(index));
             None
         }
     }
@@ -367,8 +358,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -394,8 +384,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -421,8 +410,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::{Store, StoreMut};
+    /// use zrx_store::{Queue, Store, StoreMut};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -449,8 +437,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::{StoreMut, StoreMutRef};
+    /// use zrx_store::{Queue, StoreMut, StoreMutRef};
     ///
     /// // Create queue and initial state
     /// let mut queue = Queue::default();
@@ -477,8 +464,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMutRef;
+    /// use zrx_store::{Queue, StoreMutRef};
     ///
     /// // Create queue
     /// let mut queue = Queue::<_, i32>::default();
@@ -493,12 +479,48 @@ where
         V: Default,
     {
         if !self.store.contains_key(key) {
-            let n = self.items.insert(V::default());
-            self.store.insert(key.clone(), Item::new(n));
+            let index = self.items.insert(V::default());
+            self.store.insert(key.clone(), Item::new(index));
         }
 
         // We can safely use expect here, as the key is present
         self.get_mut(key).expect("invariant")
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+#[allow(clippy::into_iter_without_iter)]
+impl<'a, K, V, S> IntoIterator for &'a Queue<K, V, S>
+where
+    K: Key,
+    V: Value,
+    S: StoreIterable<K, Item>,
+{
+    type Item = (&'a K, &'a V);
+    type IntoIter = Iter<'a, K, V>;
+
+    /// Creates an iterator over the queue.
+    ///
+    /// The returned iterator is not ordered
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_store::{Queue, StoreMut};
+    ///
+    /// // Create queue and initial state
+    /// let mut queue = Queue::default();
+    /// queue.insert("key", 42);
+    ///
+    /// // Create iterator over the queue
+    /// for (key, value) in &queue {
+    ///     println!("{key}: {value}");
+    /// }
+    /// ```
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 
@@ -519,8 +541,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::queue::Queue;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Queue, StoreMut};
     ///
     /// // Create queue
     /// let mut queue = Queue::default();

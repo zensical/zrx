@@ -30,9 +30,9 @@ use zrx_graph::Traversal;
 
 use crate::scheduler::signal::{Id, Scope};
 
-mod frontiers;
+mod set;
 
-pub use frontiers::Frontiers;
+pub use set::Frontiers;
 
 // ----------------------------------------------------------------------------
 // Structs

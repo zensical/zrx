@@ -28,8 +28,7 @@
 use crossbeam::channel::{at, never, Receiver};
 use std::time::Instant;
 
-use zrx_store::queue::Queue;
-use zrx_store::{Store, StoreMut, StoreMutRef};
+use zrx_store::{Queue, Store, StoreMut, StoreMutRef};
 
 use crate::scheduler::engine::{AsReceiver, TokenFull};
 use crate::scheduler::step::effect::Timer;

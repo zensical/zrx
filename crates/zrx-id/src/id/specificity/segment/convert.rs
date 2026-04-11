@@ -30,7 +30,7 @@ use std::iter::Peekable;
 use crate::id::specificity::tokens::{AsTokens, Token, Tokens};
 
 use super::atom::{Atom, Character, Wildcard};
-use super::segments::Segments;
+use super::set::Segments;
 use super::Segment;
 
 // ----------------------------------------------------------------------------

@@ -23,51 +23,84 @@
 
 // ----------------------------------------------------------------------------
 
-//! Scope set.
+//! Consuming iterator implementation for [`Items`].
 
-use crate::scheduler::step::{IntoSteps, Result, Scoped, Steps};
+use super::Items;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Scope set.
-#[derive(Debug)]
-pub struct Scopes<I> {
-    /// Inner set of scopes.
-    inner: Vec<Scoped<I>>,
-}
-
-// ----------------------------------------------------------------------------
-// Implementations
-// ----------------------------------------------------------------------------
-
-impl<I> Scopes<I> {
-    /// Maps a function over the scopes in the set.
-    #[inline]
-    pub fn map<F, T>(self, f: F) -> impl IntoSteps<I, T>
-    where
-        F: FnMut(Scoped<I>) -> Result<Steps<I, T>>,
-    {
-        self.inner.into_iter().map(f)
-    }
+/// Consuming iterator for [`Items`].
+pub struct IntoIter {
+    /// Blocks of bits.
+    data: Vec<u64>,
+    /// Current block index.
+    index: usize,
+    /// Current block.
+    block: u64,
 }
 
 // ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<S, I> FromIterator<S> for Scopes<I>
-where
-    S: Into<Scoped<I>>,
-{
-    /// Creates a scope set from an iterator.
+impl IntoIterator for Items {
+    type Item = usize;
+    type IntoIter = IntoIter;
+
+    /// Creates a consuming iterator over the item set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_store::stash::Items;
+    ///
+    /// // Create item set from iterator
+    /// let mut items = Items::from_iter([0, 1]);
+    ///
+    /// // Create iterator over item set
+    /// for index in items {
+    ///     println!("{index:?}");
+    /// }
+    /// ```
     #[inline]
-    fn from_iter<T>(iter: T) -> Self
-    where
-        T: IntoIterator<Item = S>,
-    {
-        let iter = iter.into_iter().map(Into::into);
-        Self { inner: iter.collect() }
+    fn into_iter(self) -> Self::IntoIter {
+        let block = self.data[0];
+        IntoIter {
+            data: self.data,
+            index: 0,
+            block,
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl Iterator for IntoIter {
+    type Item = usize;
+
+    /// Returns the next item.
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if self.block != 0 {
+                let num = self.block.trailing_zeros() as usize;
+
+                // Clear the lowest bit and return it
+                self.block &= self.block - 1;
+                return Some(self.index << 6 | num);
+            }
+
+            // Move to the next block
+            self.index += 1;
+
+            // If all blocks are exhausted, we're done
+            if self.index >= self.data.len() {
+                return None;
+            }
+
+            // Update the current block to the next block
+            self.block = self.data[self.index];
+        }
     }
 }
