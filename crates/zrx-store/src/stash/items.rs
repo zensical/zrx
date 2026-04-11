@@ -101,20 +101,18 @@ impl Items {
     ///
     /// // Create item set
     /// let items = Items::from_iter([1]);
+    ///
+    /// // Ensure presence of items
     /// assert_eq!(items.contains(0), false);
     /// assert_eq!(items.contains(1), true);
     /// ```
     #[inline]
     #[must_use]
     pub fn contains(&self, index: usize) -> bool {
-        (self.data[index >> 6] & 1 << (index & 63)) != 0
+        (self.data[index >> 6] & mask(index)) != 0
     }
 
     /// Inserts an item into the item set.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is out of bounds.
     ///
     /// # Examples
     ///
@@ -125,19 +123,21 @@ impl Items {
     /// let mut items = Items::new();
     ///
     /// // Insert item
-    /// items.insert(0);
+    /// assert_eq!(items.insert(0), true);
+    /// assert_eq!(items.insert(0), false);
     /// ```
     #[inline]
-    pub fn insert(&mut self, index: usize) {
+    pub fn insert(&mut self, index: usize) -> bool {
         let block = self.resolve(index);
-        self.data[block] |= 1 << (index & 63);
+        if (self.data[block] & mask(index)) == 0 {
+            self.data[block] |= mask(index);
+            true
+        } else {
+            false
+        }
     }
 
     /// Removes an item from the item set.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is out of bounds.
     ///
     /// # Examples
     ///
@@ -148,12 +148,18 @@ impl Items {
     /// let mut items = Items::from_iter([0, 1]);
     ///
     /// // Remove item
-    /// items.remove(0);
+    /// assert_eq!(items.remove(0), true);
+    /// assert_eq!(items.remove(0), false);
     /// ```
     #[inline]
-    pub fn remove(&mut self, index: usize) {
+    pub fn remove(&mut self, index: usize) -> bool {
         let block = self.resolve(index);
-        self.data[block] &= !(1 << (index & 63));
+        if (self.data[block] & mask(index)) != 0 {
+            self.data[block] &= !mask(index);
+            true
+        } else {
+            false
+        }
     }
 
     /// Clears all items in the item set.
@@ -333,4 +339,14 @@ impl Default for Items {
     fn default() -> Self {
         Self::new()
     }
+}
+
+// ----------------------------------------------------------------------------
+// Functions
+// ----------------------------------------------------------------------------
+
+/// Returns the mask for the given index.
+#[inline]
+const fn mask(index: usize) -> u64 {
+    1 << (index & 63)
 }
