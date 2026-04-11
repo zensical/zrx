@@ -80,9 +80,9 @@ impl Condition {
                 Instruction::Compare(operator, terms) => {
                     stack = (stack << 1)
                         | u64::from(match operator {
-                            Operator::Any => terms.has_any(matches),
-                            Operator::All => terms.has_all(matches),
-                            Operator::Not => terms.has_any(matches),
+                            Operator::Any => matches.has_any(terms),
+                            Operator::All => matches.has_all(terms),
+                            Operator::Not => matches.has_any(terms),
                         });
                 }
                 // Combine prior results according to the operator semantics,

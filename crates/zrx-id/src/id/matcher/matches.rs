@@ -101,6 +101,8 @@ impl Matches {
     ///
     /// // Create match set
     /// let matches = Matches::from_iter([1]);
+    ///
+    /// // Ensure presence of matches
     /// assert_eq!(matches.contains(0), false);
     /// assert_eq!(matches.contains(1), true);
     /// ```
@@ -155,7 +157,7 @@ impl Matches {
     /// ```
     /// use zrx_id::Matches;
     ///
-    /// // Create two match set
+    /// // Create two match sets
     /// let mut a = Matches::from_iter([0, 1]);
     /// let mut b = Matches::from_iter([1, 2]);
     ///
@@ -176,7 +178,7 @@ impl Matches {
     /// ```
     /// use zrx_id::Matches;
     ///
-    /// // Create two match set
+    /// // Create two match sets
     /// let mut a = Matches::from_iter([0, 1]);
     /// let mut b = Matches::from_iter([1, 2]);
     ///
@@ -190,19 +192,19 @@ impl Matches {
         }
     }
 
-    /// Returns whether both match sets have any matches in common.
+    /// Returns whether any of the given matches is present.
     ///
     /// # Examples
     ///
     /// ```
     /// use zrx_id::Matches;
     ///
-    /// // Create two match set
+    /// // Create two match sets
     /// let mut a = Matches::from_iter([0, 1]);
     /// let mut b = Matches::from_iter([1, 2]);
     ///
-    /// // Ensure match sets have any matches in common
-    /// assert!(a.has_any(&b));
+    /// // Ensure presence of matches
+    /// assert!(b.has_any(&a));
     /// ```
     #[inline]
     #[must_use]
@@ -211,25 +213,25 @@ impl Matches {
         iter.any(|(a, b)| (*a & *b) != 0)
     }
 
-    /// Returns whether both match sets have all matches in common.
+    /// Returns whether the given matches are all present.
     ///
     /// # Examples
     ///
     /// ```
     /// use zrx_id::Matches;
     ///
-    /// // Create two match set
+    /// // Create two match sets
     /// let mut a = Matches::from_iter([0, 1]);
     /// let mut b = Matches::from_iter([0, 1, 2]);
     ///
-    /// // Ensure match sets have all matches in common
-    /// assert!(a.has_all(&b));
+    /// // Ensure presence of matches
+    /// assert!(b.has_all(&a));
     /// ```
     #[inline]
     #[must_use]
     pub fn has_all(&self, other: &Self) -> bool {
         let mut iter = self.data.iter().zip(&other.data);
-        iter.all(|(a, b)| (*a & *b) == *a)
+        iter.all(|(a, b)| (*a & *b) == *b)
     }
 
     /// Resolve the block for the given match.
