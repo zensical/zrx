@@ -429,7 +429,7 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Ordered;
-    /// use zrx_store::{StoreIterable, StoreMut};
+    /// use zrx_store::StoreMut;
     ///
     /// // Create store and initial state
     /// let mut store = Ordered::default();

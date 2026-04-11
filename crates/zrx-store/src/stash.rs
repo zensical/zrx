@@ -515,7 +515,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreIterable, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -546,7 +546,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreIterable, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -576,7 +576,7 @@ where
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create a vector of key-value pairs
     /// let items = vec![
@@ -623,7 +623,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -655,7 +655,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -689,7 +689,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();

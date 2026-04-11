@@ -132,7 +132,6 @@ where
     /// ```
     /// use std::collections::HashMap;
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store
     /// let mut store = Indexed::<_, _, HashMap<_, _>>::new();
@@ -227,7 +226,6 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store
     /// let mut store = Indexed::default();
@@ -256,7 +254,6 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store
     /// let mut store = Indexed::default();
@@ -294,7 +291,6 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -339,7 +335,7 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{Store, StoreMut};
+    /// use zrx_store::Store;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -364,7 +360,7 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{Store, StoreMut};
+    /// use zrx_store::Store;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -409,7 +405,7 @@ where
     /// let mut store = Indexed::default();
     ///
     /// // Insert value
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     /// ```
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
@@ -553,7 +549,7 @@ where
     /// use std::collections::HashMap;
     /// use zrx_store::comparator::Descending;
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{StoreMut, StoreWithComparator};
+    /// use zrx_store::StoreWithComparator;
     ///
     /// // Create store
     /// let mut store: Indexed::<_, _, HashMap<_, _>, _> =
@@ -599,7 +595,6 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -631,7 +626,6 @@ where
     /// ```
     /// use std::collections::HashMap;
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create a vector of key-value pairs
     /// let items = vec![
@@ -679,7 +673,6 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{StoreIterable, StoreMut};
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -715,7 +708,6 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store
     /// let mut store = Indexed::default();
