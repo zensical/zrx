@@ -26,8 +26,10 @@
 //! Item set.
 
 mod into_iter;
+mod iter;
 
 pub use into_iter::IntoIter;
+pub use iter::Iter;
 
 // ----------------------------------------------------------------------------
 // Structs
