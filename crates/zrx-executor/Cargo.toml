@@ -23,7 +23,7 @@
 
 [package]
 name = "zrx-executor"
-version = "0.0.4"
+version = "0.0.5"
 description = "Executor for parallelization of tasks"
 edition.workspace = true
 rust-version.workspace = true
