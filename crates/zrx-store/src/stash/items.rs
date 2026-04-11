@@ -256,13 +256,13 @@ impl Items {
     /// let mut b = Items::from_iter([0, 1, 2]);
     ///
     /// // Ensure presence of items
-    /// assert!(a.has_all(&b));
+    /// assert!(b.has_all(&a));
     /// ```
     #[inline]
     #[must_use]
     pub fn has_all(&self, other: &Self) -> bool {
         let mut iter = self.data.iter().zip(&other.data);
-        iter.all(|(a, b)| (*a & *b) == *a)
+        iter.all(|(a, b)| (*a & *b) == *b)
     }
 
     /// Resolve the block for the given item.
