@@ -107,7 +107,7 @@ where
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash
     /// let mut stash = Stash::<_, _, HashMap<_, _>>::new();
@@ -130,7 +130,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, Store, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -148,6 +148,26 @@ where
     {
         self.store.get(key).copied()
     }
+
+    /// Returns a reference to the key at the index.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_store::Stash;
+    ///
+    /// // Create stash and initial state
+    /// let mut stash = Stash::default();
+    /// stash.insert("key", 42);
+    ///
+    /// // Obtain key at index
+    /// let key = stash.key(0);
+    /// assert_eq!(key, Some(&"key"));
+    /// ```
+    #[inline]
+    pub fn key(&self, index: usize) -> Option<&K> {
+        self.items.get(index).map(|(key, _)| key)
+    }
 }
 
 impl<K, V, S> Stash<K, V, S>
@@ -163,7 +183,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash
     /// let mut stash = Stash::default();
@@ -189,7 +209,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -223,7 +243,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, Store, StoreMut};
+    /// use zrx_store::{Stash, Store};
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -250,7 +270,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, Store, StoreMut};
+    /// use zrx_store::{Stash, Store};
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -292,7 +312,7 @@ where
     /// let mut stash = Stash::default();
     ///
     /// // Insert value
-    /// stash.insert("key", 42);
+    /// StoreMut::insert(&mut stash, "key", 42);
     /// ```
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
