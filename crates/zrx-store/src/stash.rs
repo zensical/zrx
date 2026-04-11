@@ -496,9 +496,9 @@ where
     K: Key,
     S: Store<K, usize>,
 {
-    type Output = (K, V);
+    type Output = V;
 
-    /// Returns a reference to the entry at the index.
+    /// Returns a reference to the value at the index.
     ///
     /// # Panics
     ///
@@ -514,13 +514,13 @@ where
     /// stash.insert("a", 42);
     /// stash.insert("b", 84);
     ///
-    /// // Obtain reference to entry
-    /// let entry = &stash[1];
-    /// assert_eq!(entry, &("b", 84));
+    /// // Obtain reference to value
+    /// let value = &stash[1];
+    /// assert_eq!(value, &84);
     /// ```
     #[inline]
     fn index(&self, index: usize) -> &Self::Output {
-        &self.items[index]
+        &self.items[index].1
     }
 }
 
@@ -529,7 +529,7 @@ where
     K: Key,
     S: Store<K, usize>,
 {
-    /// Returns a mutable reference to the entry at the index.
+    /// Returns a mutable reference to the value at the index.
     ///
     /// # Panics
     ///
@@ -545,13 +545,13 @@ where
     /// stash.insert("a", 42);
     /// stash.insert("b", 84);
     ///
-    /// // Obtain mutable reference to entry
-    /// let entry = &mut stash[1];
-    /// assert_eq!(entry, &mut ("b", 84));
+    /// // Obtain mutable reference to value
+    /// let value = &mut stash[1];
+    /// assert_eq!(value, &mut 84);
     /// ```
     #[inline]
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.items[index]
+        &mut self.items[index].1
     }
 }
 
