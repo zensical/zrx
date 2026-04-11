@@ -171,7 +171,7 @@ impl Iterator for Candidates<'_> {
                 while let Some(index) =
                     self.matches.next_if(|&index| self.mapping[index] == check)
                 {
-                    self.workset.insert(index - start);
+                    self.workset.add(index - start);
                 }
             }
 

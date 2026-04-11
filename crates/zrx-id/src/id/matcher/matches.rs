@@ -110,11 +110,7 @@ impl Matches {
         (self.data[index >> 6] & 1 << (index & 63)) != 0
     }
 
-    /// Inserts a match into the match set.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is out of bounds.
+    /// Adds a match to the match set.
     ///
     /// # Examples
     ///
@@ -124,11 +120,11 @@ impl Matches {
     /// // Create match set
     /// let mut matches = Matches::new();
     ///
-    /// // Insert match
-    /// matches.insert(0);
+    /// // Add match to set
+    /// matches.add(0);
     /// ```
     #[inline]
-    pub fn insert(&mut self, index: usize) {
+    pub fn add(&mut self, index: usize) {
         let block = self.resolve(index);
         self.data[block] |= 1 << (index & 63);
     }
@@ -288,7 +284,7 @@ impl FromIterator<usize> for Matches {
     {
         let mut matches = Matches::new();
         for index in iter {
-            matches.insert(index);
+            matches.add(index);
         }
         matches
     }

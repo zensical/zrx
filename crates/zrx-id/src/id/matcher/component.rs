@@ -57,16 +57,16 @@ impl Component {
     /// Returns a match set with indices of all matching patterns.
     ///
     /// Empty patterns are considered wildcards and thus equivalent to `**`,
-    /// which means they're always included in the match set. Additionally,
-    /// all patterns matching the given path are included, reconstructed from
-    /// the internal mapping.
+    /// which means they're always included in the match set. Additionally, all
+    /// patterns matching the given path are included, reconstructed from the
+    /// internal mapping.
     pub fn matches<S>(&self, path: S) -> Matches
     where
         S: AsRef<Path>,
     {
         let mut matches = self.matches.clone();
         for index in self.globset.matches(path) {
-            matches.insert(self.mapping[index]);
+            matches.add(self.mapping[index]);
         }
 
         // Return matches
