@@ -223,7 +223,7 @@ impl Items {
         }
     }
 
-    /// Returns whether both item sets have any items in common.
+    /// Returns whether any of the given items is present.
     ///
     /// # Examples
     ///
@@ -234,8 +234,8 @@ impl Items {
     /// let mut a = Items::from_iter([0, 1]);
     /// let mut b = Items::from_iter([1, 2]);
     ///
-    /// // Ensure item sets have any items in common
-    /// assert!(a.has_any(&b));
+    /// // Ensure presence of items
+    /// assert!(b.has_any(&a));
     /// ```
     #[inline]
     #[must_use]
@@ -244,7 +244,7 @@ impl Items {
         iter.any(|(a, b)| (*a & *b) != 0)
     }
 
-    /// Returns whether both item sets have all items in common.
+    /// Returns whether the given items are all present.
     ///
     /// # Examples
     ///
@@ -255,7 +255,7 @@ impl Items {
     /// let mut a = Items::from_iter([0, 1]);
     /// let mut b = Items::from_iter([0, 1, 2]);
     ///
-    /// // Ensure item sets have all items in common
+    /// // Ensure presence of items
     /// assert!(a.has_all(&b));
     /// ```
     #[inline]
