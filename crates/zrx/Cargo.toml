@@ -23,7 +23,7 @@
 
 [package]
 name = "zrx"
-version = "0.0.18"
+version = "0.0.19"
 description = "Zen Reactive Extensions"
 edition.workspace = true
 rust-version.workspace = true
