@@ -79,6 +79,7 @@ pub use iter::{Slots, SlotsMut};
 ///     println!("{key}: {value}");
 /// }
 /// ```
+#[derive(Clone)]
 pub struct Stash<K, V, S = HashMap<K, usize>> {
     /// Underlying store.
     store: S,
