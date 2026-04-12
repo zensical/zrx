@@ -195,6 +195,7 @@ impl Builder {
     ///
     /// This method is private, as building is done implicitly through the
     /// construction methods defined as part of [`Expression`].
+    #[inline]
     #[must_use]
     fn build(self) -> Expression {
         Expression {
