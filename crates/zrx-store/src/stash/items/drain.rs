@@ -15,8 +15,6 @@ pub struct Drain<'a> {
     data: &'a mut Vec<u64>,
     /// Current block index.
     index: usize,
-    /// Current block.
-    block: u64,
 }
 
 // ----------------------------------------------------------------------------
@@ -44,12 +42,7 @@ impl Items {
     /// ```
     #[inline]
     pub fn drain(&mut self) -> Drain<'_> {
-        let block = self.data[0];
-        Drain {
-            block,
-            data: &mut self.data,
-            index: 0,
-        }
+        Drain { data: &mut self.data, index: 0 }
     }
 }
 
@@ -61,12 +54,12 @@ impl Iterator for Drain<'_> {
     /// Returns the next item.
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if self.block != 0 {
-                let num = self.block.trailing_zeros() as usize;
-                self.data[self.index] &= self.data[self.index] - 1;
+            let block = self.data[self.index];
+            if block != 0 {
+                let num = block.trailing_zeros() as usize;
+                self.data[self.index] = block & (block - 1);
 
                 // Clear the lowest bit and return it
-                self.block &= self.block - 1;
                 return Some(self.index << 6 | num);
             }
 
@@ -77,8 +70,6 @@ impl Iterator for Drain<'_> {
             if self.index >= self.data.len() {
                 return None;
             }
-
-            self.block = self.data[self.index];
         }
     }
 }
