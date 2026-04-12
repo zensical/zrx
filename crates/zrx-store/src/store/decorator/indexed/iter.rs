@@ -79,7 +79,6 @@ impl<K, V, S, C> Indexed<K, V, S, C> {
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -143,7 +142,7 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{StoreIterable, StoreMut};
+    /// use zrx_store::StoreIterable;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -179,7 +178,7 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{StoreKeys, StoreMut};
+    /// use zrx_store::StoreKeys;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -212,7 +211,7 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{StoreMut, StoreValues};
+    /// use zrx_store::StoreValues;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
