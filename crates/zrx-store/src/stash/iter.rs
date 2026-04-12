@@ -27,9 +27,7 @@
 
 use crate::store::adapter::slab::{Iter, IterMut, Keys, Values};
 use crate::store::item::{Key, Value};
-use crate::store::{
-    Store, StoreIterable, StoreIterableMut, StoreKeys, StoreValues,
-};
+use crate::store::{StoreIterable, StoreIterableMut, StoreKeys, StoreValues};
 
 use super::Stash;
 
@@ -53,11 +51,7 @@ pub struct SlotsMut<'a, K, V> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<K, V, S> Stash<K, V, S>
-where
-    K: Key,
-    S: Store<K, usize>,
-{
+impl<K, V, S> Stash<K, V, S> {
     /// Creates an iterator over the slots of the stash.
     ///
     /// # Examples
@@ -236,10 +230,7 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl<'a, K, V> Iterator for Slots<'a, K, V>
-where
-    K: Key,
-{
+impl<'a, K, V> Iterator for Slots<'a, K, V> {
     type Item = (usize, (&'a K, &'a V));
 
     /// Returns the next item.
@@ -256,10 +247,7 @@ where
     }
 }
 
-impl<K, V> ExactSizeIterator for Slots<'_, K, V>
-where
-    K: Key,
-{
+impl<K, V> ExactSizeIterator for Slots<'_, K, V> {
     /// Returns the exact remaining length of the iterator.
     #[inline]
     fn len(&self) -> usize {
@@ -269,10 +257,7 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl<'a, K, V> Iterator for SlotsMut<'a, K, V>
-where
-    K: Key,
-{
+impl<'a, K, V> Iterator for SlotsMut<'a, K, V> {
     type Item = (usize, (&'a K, &'a mut V));
 
     /// Returns the next item.
@@ -289,10 +274,7 @@ where
     }
 }
 
-impl<K, V> ExactSizeIterator for SlotsMut<'_, K, V>
-where
-    K: Key,
-{
+impl<K, V> ExactSizeIterator for SlotsMut<'_, K, V> {
     /// Returns the exact remaining length of the iterator.
     #[inline]
     fn len(&self) -> usize {

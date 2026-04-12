@@ -100,11 +100,7 @@ pub use iter::{Iter, Keys, Values};
 /// }
 /// ```
 #[derive(Clone, PartialEq, Eq)]
-pub struct Indexed<K, V, S = HashMap<K, V>, C = Ascending>
-where
-    K: Key,
-    S: Store<K, V>,
-{
+pub struct Indexed<K, V, S = HashMap<K, V>, C = Ascending> {
     /// Underlying store.
     store: S,
     /// Ordering of values.
@@ -654,8 +650,8 @@ where
 
 impl<K, V, S, C> Debug for Indexed<K, V, S, C>
 where
-    K: Debug + Key,
-    S: Debug + Store<K, V>,
+    K: Debug,
+    S: Debug,
     C: Debug,
 {
     /// Formats the indexing decorator for debugging.

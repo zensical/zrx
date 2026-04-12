@@ -94,10 +94,7 @@ use item::{Key, Value};
 /// let value = store.get(&"key");
 /// assert_eq!(value, Some(&42));
 /// ```
-pub trait Store<K, V>
-where
-    K: Key,
-{
+pub trait Store<K, V> {
     /// Returns a reference to the value identified by the key.
     fn get<Q>(&self, key: &Q) -> Option<&V>
     where
@@ -139,10 +136,7 @@ where
 /// let value = store.remove(&"key");
 /// assert_eq!(value, Some(42));
 /// ```
-pub trait StoreMut<K, V>: Store<K, V>
-where
-    K: Key,
-{
+pub trait StoreMut<K, V>: Store<K, V> {
     /// Inserts the value identified by the key.
     fn insert(&mut self, key: K, value: V) -> Option<V>;
 
@@ -181,10 +175,7 @@ where
 /// let value = store.get_mut(&"key");
 /// assert_eq!(value, Some(&mut 42));
 /// ```
-pub trait StoreMutRef<K, V>: Store<K, V>
-where
-    K: Key,
-{
+pub trait StoreMutRef<K, V>: Store<K, V> {
     /// Returns a mutable reference to the value identified by the key.
     fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
     where
@@ -388,7 +379,6 @@ where
 /// ```
 pub trait StoreWithComparator<K, V, C>: Store<K, V>
 where
-    K: Key,
     C: Comparator<V>,
 {
     /// Creates a store with the given comparator.

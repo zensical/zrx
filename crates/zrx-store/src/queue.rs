@@ -83,11 +83,7 @@ pub use iter::{Iter, IterMut, Keys, Values};
 /// }
 /// ```
 #[derive(Clone)]
-pub struct Queue<K, V, S = HashMap<K, Item>>
-where
-    K: Key,
-    S: Store<K, Item>,
-{
+pub struct Queue<K, V, S = HashMap<K, Item>> {
     /// Underlying store.
     store: Ordered<K, Item, S>,
     /// Queue items.
@@ -590,9 +586,9 @@ where
 
 impl<K, V, S> Debug for Queue<K, V, S>
 where
-    K: Debug + Key,
+    K: Debug,
     V: Debug,
-    S: Debug + Store<K, Item>,
+    S: Debug,
 {
     /// Formats the queue for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

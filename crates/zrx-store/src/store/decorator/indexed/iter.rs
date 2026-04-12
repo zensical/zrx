@@ -63,12 +63,7 @@ pub struct Values<'a, K, V, S = HashMap<K, V>> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<K, V, S, C> Indexed<K, V, S, C>
-where
-    K: Key,
-    V: Ord,
-    S: Store<K, V>,
-{
+impl<K, V, S, C> Indexed<K, V, S, C> {
     /// Creates an iterator over a range of items of the store.
     ///
     /// This method is not implemented as part of [`StoreRange`][], because it

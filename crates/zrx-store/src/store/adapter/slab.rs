@@ -40,10 +40,7 @@ pub use iter::{Iter, IterMut, Keys, Values};
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<K, V> Store<K, V> for Slab<(K, V)>
-where
-    K: Key,
-{
+impl<K, V> Store<K, V> for Slab<(K, V)> {
     /// Returns a reference to the value identified by the key.
     ///
     /// # Examples
@@ -261,7 +258,7 @@ where
         V: Default,
     {
         let index = Slab::iter(self)
-            .position(|(_, (check, _))| check.borrow() == key)
+            .position(|(_, (check, _))| check == key)
             .unwrap_or_else(|| Slab::insert(self, (key.clone(), V::default())));
 
         // Return mutable reference

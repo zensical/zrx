@@ -79,11 +79,7 @@ pub use iter::{Slots, SlotsMut};
 ///     println!("{key}: {value}");
 /// }
 /// ```
-pub struct Stash<K, V, S = HashMap<K, usize>>
-where
-    K: Key,
-    S: Store<K, usize>,
-{
+pub struct Stash<K, V, S = HashMap<K, usize>> {
     /// Underlying store.
     store: S,
     /// Stash items.
@@ -670,9 +666,9 @@ where
 
 impl<K, V, S> Debug for Stash<K, V, S>
 where
-    K: Debug + Key,
+    K: Debug,
     V: Debug,
-    S: Debug + Store<K, usize>,
+    S: Debug,
 {
     /// Formats the stash for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
