@@ -32,6 +32,7 @@ use super::Items;
 // ----------------------------------------------------------------------------
 
 /// Consuming iterator for [`Items`].
+#[derive(Debug)]
 pub struct IntoIter {
     /// Blocks of bits.
     data: Vec<u64>,
