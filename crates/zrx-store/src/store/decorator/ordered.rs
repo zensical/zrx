@@ -238,19 +238,22 @@ where
     /// let mut store = Ordered::default();
     ///
     /// // Insert value
-    /// store.insert("key", 42);
+    /// let value = store.insert("key", 42);
+    /// assert_eq!(value, None);
     /// ```
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
+        let exists = self.store.contains_key(&key);
         if let Some(prior) = self.store.insert(key.clone(), value.clone()) {
-            self.remove_ordering(key, prior).map(|(key, prior)| {
+            return self.remove_ordering(key, prior).map(|(key, prior)| {
                 self.insert_ordering(key, value);
                 prior
-            })
-        } else {
-            self.insert_ordering(key, value);
-            None
+            });
         }
+        if !exists {
+            self.insert_ordering(key, value);
+        }
+        None
     }
 
     /// Removes the value identified by the key.
@@ -276,7 +279,6 @@ where
         Q: Key,
     {
         self.store.remove_entry(key).and_then(|(key, value)| {
-            // Remove entry from ordering and return value
             self.remove_ordering(key, value).map(|(_, value)| value)
         })
     }
@@ -304,8 +306,7 @@ where
         Q: Key,
     {
         self.store.remove_entry(key).and_then(|(key, value)| {
-            // Remove entry from ordering and return entry
-            self.remove_ordering(key, value)
+            self.remove_ordering(key, value) // fmt
         })
     }
 

@@ -59,7 +59,7 @@ pub trait Key: Clone + Debug + Eq + Hash + Ord + 'static {}
 /// to almost all types using this trait, which makes it cumbersome to use.
 ///
 /// [`Store`]: crate::store::Store
-pub trait Value: Debug + 'static {}
+pub trait Value: Debug + Eq + 'static {}
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
@@ -67,4 +67,4 @@ pub trait Value: Debug + 'static {}
 
 impl<T> Key for T where T: Clone + Debug + Eq + Hash + Ord + 'static {}
 
-impl<T> Value for T where T: Debug + 'static {}
+impl<T> Value for T where T: Debug + Eq + 'static {}

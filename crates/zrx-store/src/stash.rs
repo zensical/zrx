@@ -299,6 +299,7 @@ where
 impl<K, V, S> StoreMut<K, V> for Stash<K, V, S>
 where
     K: Key,
+    V: Value,
     S: StoreMut<K, usize>,
 {
     /// Inserts the value identified by the key.
@@ -312,55 +313,19 @@ where
     /// let mut stash = Stash::default();
     ///
     /// // Insert value
-    /// StoreMut::insert(&mut stash, "key", 42);
+    /// let value = StoreMut::insert(&mut stash, "key", 42);
+    /// assert_eq!(value, None);
     /// ```
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
         if let Some(&index) = self.store.get(&key) {
-            Some(mem::replace(&mut self.items[index].1, value))
+            let prior = &mut self.items[index].1;
+            (prior != &value).then(|| mem::replace(prior, value))
         } else {
             let index = self.items.insert((key.clone(), value));
             self.store.insert(key, index);
             None
         }
-    }
-
-    /// Inserts the value identified by the key if it changed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_store::{Stash, StoreMut};
-    ///
-    /// // Create stash
-    /// let mut stash = Stash::default();
-    ///
-    /// // Insert value
-    /// let check = stash.insert_if_changed(&"key", &42);
-    /// assert_eq!(check, true);
-    ///
-    /// // Ignore unchanged value
-    /// let check = stash.insert_if_changed(&"key", &42);
-    /// assert_eq!(check, false);
-    ///
-    /// // Update value
-    /// let check = stash.insert_if_changed(&"key", &84);
-    /// assert_eq!(check, true);
-    /// ```
-    #[allow(clippy::map_unwrap_or)]
-    #[inline]
-    fn insert_if_changed(&mut self, key: &K, value: &V) -> bool
-    where
-        V: Clone + Eq,
-    {
-        self.store
-            .get(key)
-            .map(|&index| update_if_changed(&mut self.items[index].1, value))
-            .unwrap_or_else(|| {
-                let index = self.items.insert((key.clone(), value.clone()));
-                self.store.insert(key.clone(), index);
-                true
-            })
     }
 
     /// Removes the value identified by the key.
@@ -715,23 +680,5 @@ where
             .field("store", &self.store)
             .field("items", &self.items)
             .finish()
-    }
-}
-
-// ----------------------------------------------------------------------------
-// Functions
-// ----------------------------------------------------------------------------
-
-/// Updates the prior value if it has changed.
-#[inline]
-fn update_if_changed<V>(prior: &mut V, value: &V) -> bool
-where
-    V: Clone + Eq,
-{
-    if prior == value {
-        false
-    } else {
-        *prior = value.clone();
-        true
     }
 }

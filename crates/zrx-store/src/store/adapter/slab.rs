@@ -29,7 +29,7 @@ use slab::Slab;
 use std::borrow::Borrow;
 use std::mem;
 
-use crate::store::item::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreMut, StoreMutRef};
 
 mod iter;
@@ -106,6 +106,7 @@ where
 impl<K, V> StoreMut<K, V> for Slab<(K, V)>
 where
     K: Key,
+    V: Value,
 {
     /// Inserts the value identified by the key.
     ///
@@ -119,58 +120,18 @@ where
     /// let mut store = Slab::new();
     ///
     /// // Insert value
-    /// StoreMut::insert(&mut store, "key", 42);
+    /// let value = StoreMut::insert(&mut store, "key", 42);
+    /// assert_eq!(value, None);
     /// ```
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
-        for (_, (check, prior)) in self.iter_mut() {
-            if check == &key {
-                return Some(mem::replace(prior, value));
-            }
+        let opt = Slab::iter_mut(self).find(|(_, (check, _))| check == &key);
+        if let Some((_, (_, prior))) = opt {
+            (prior != &value).then(|| mem::replace(prior, value))
+        } else {
+            self.insert((key, value));
+            None
         }
-
-        // Insert new entry
-        self.insert((key, value));
-        None
-    }
-
-    /// Inserts the value identified by the key if it changed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use slab::Slab;
-    /// use zrx_store::StoreMut;
-    ///
-    /// // Create store
-    /// let mut store = Slab::new();
-    ///
-    /// // Insert value
-    /// let check = StoreMut::insert_if_changed(&mut store, &"key", &42);
-    /// assert_eq!(check, true);
-    ///
-    /// // Ignore unchanged value
-    /// let check = StoreMut::insert_if_changed(&mut store, &"key", &42);
-    /// assert_eq!(check, false);
-    ///
-    /// // Update value
-    /// let check = StoreMut::insert_if_changed(&mut store, &"key", &84);
-    /// assert_eq!(check, true);
-    /// ```
-    #[inline]
-    fn insert_if_changed(&mut self, key: &K, value: &V) -> bool
-    where
-        V: Clone + Eq,
-    {
-        for (_, (check, prior)) in self.iter_mut() {
-            if check == key {
-                return update_if_changed(prior, value);
-            }
-        }
-
-        // Insert new entry
-        self.insert((key.clone(), value.clone()));
-        true
     }
 
     /// Removes the value identified by the key.
@@ -305,23 +266,5 @@ where
 
         // Return mutable reference
         &mut self[index].1
-    }
-}
-
-// ----------------------------------------------------------------------------
-// Functions
-// ----------------------------------------------------------------------------
-
-/// Updates the prior value if it has changed.
-#[inline]
-fn update_if_changed<V>(prior: &mut V, value: &V) -> bool
-where
-    V: Clone + Eq,
-{
-    if prior == value {
-        false
-    } else {
-        *prior = value.clone();
-        true
     }
 }

@@ -71,11 +71,6 @@ pub trait Collection<K, V>: Any + Debug {
     /// Inserts the value identified by the key.
     fn insert(&mut self, key: K, value: V) -> Option<V>;
 
-    /// Inserts the value identified by the key if it changed.
-    fn insert_if_changed(&mut self, key: &K, value: &V) -> bool
-    where
-        V: Clone + Eq;
-
     /// Removes the value identified by the key.
     fn remove(&mut self, key: &K) -> Option<V>;
 
@@ -183,15 +178,6 @@ where
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
         StoreMut::insert(self, key, value)
-    }
-
-    /// Inserts the value identified by the key if it changed.
-    #[inline]
-    fn insert_if_changed(&mut self, key: &K, value: &V) -> bool
-    where
-        V: Clone + Eq,
-    {
-        StoreMut::insert_if_changed(self, key, value)
     }
 
     /// Removes the value identified by the key.

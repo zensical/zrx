@@ -140,16 +140,6 @@ where
     /// Inserts the value identified by the key.
     fn insert(&mut self, key: K, value: V) -> Option<V>;
 
-    /// Inserts the value identified by the key if it changed.
-    fn insert_if_changed(&mut self, key: &K, value: &V) -> bool
-    where
-        V: Clone + Eq,
-    {
-        (self.get(key) != Some(value))
-            .then(|| self.insert(key.clone(), value.clone()))
-            .is_some()
-    }
-
     /// Removes the value identified by the key.
     fn remove<Q>(&mut self, key: &Q) -> Option<V>
     where
@@ -182,7 +172,7 @@ where
 /// store.insert("key", 42);
 ///
 /// // Obtain mutable reference to value
-/// let mut value = store.get_mut(&"key");
+/// let value = store.get_mut(&"key");
 /// assert_eq!(value, Some(&mut 42));
 /// ```
 pub trait StoreMutRef<K, V>: Store<K, V>
