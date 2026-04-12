@@ -57,9 +57,9 @@ impl Iterator for Drain<'_> {
             let block = self.data[self.index];
             if block != 0 {
                 let num = block.trailing_zeros() as usize;
-                self.data[self.index] = block & (block - 1);
 
                 // Clear the lowest bit and return it
+                self.data[self.index] = block & (block - 1);
                 return Some(self.index << 6 | num);
             }
 
