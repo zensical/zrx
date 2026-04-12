@@ -194,3 +194,22 @@ impl<I, C> Tag<I, C> for Timer<I, C> {
         }
     }
 }
+
+// ----------------------------------------------------------------------------
+
+impl<I, C> PartialEq for Timer<I, C> {
+    /// Compares two timers for equality.
+    ///
+    /// Note that timers never compare equal, even if all their fields are the
+    /// same, as they are used to trigger side effects, and thus should always
+    /// be considered different. This implementation is primarily required in
+    /// order to satisfy the [`Eq`] trait bounds for [`Queue`][].
+    ///
+    /// [`Queue`]: zrx_store::Queue
+    #[inline]
+    fn eq(&self, _: &Self) -> bool {
+        false
+    }
+}
+
+impl<I, C> Eq for Timer<I, C> {}
