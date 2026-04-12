@@ -43,6 +43,7 @@ use super::Queue;
 // ----------------------------------------------------------------------------
 
 /// Iterator over the items of a [`Queue`].
+#[derive(Debug)]
 pub struct Iter<'a, K, V>
 where
     K: Key,

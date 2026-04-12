@@ -32,6 +32,7 @@ use super::Items;
 // ----------------------------------------------------------------------------
 
 /// Iterator for [`Items`].
+#[derive(Debug)]
 pub struct Iter<'a> {
     /// Blocks of bits.
     data: &'a [u64],

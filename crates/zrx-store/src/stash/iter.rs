@@ -36,12 +36,14 @@ use super::Stash;
 // ----------------------------------------------------------------------------
 
 /// Iterator over the slots of a [`Stash`].
+#[derive(Debug)]
 pub struct Slots<'a, K, V> {
     /// Inner iterator.
     inner: slab::Iter<'a, (K, V)>,
 }
 
 /// Mutable iterator over the slots of a [`Stash`].
+#[derive(Debug)]
 pub struct SlotsMut<'a, K, V> {
     /// Inner iterator.
     inner: slab::IterMut<'a, (K, V)>,
