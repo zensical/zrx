@@ -32,6 +32,7 @@ use super::Matches;
 // ----------------------------------------------------------------------------
 
 /// Consuming iterator for [`Matches`].
+#[derive(Debug)]
 pub struct IntoIter {
     /// Blocks of bits.
     data: Vec<u64>,
