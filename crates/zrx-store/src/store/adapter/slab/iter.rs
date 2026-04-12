@@ -35,24 +35,28 @@ use crate::store::{StoreIterable, StoreIterableMut, StoreKeys, StoreValues};
 // ----------------------------------------------------------------------------
 
 /// Iterator over the items of a [`Slab`].
+#[derive(Debug)]
 pub struct Iter<'a, K, V> {
     /// Inner iterator.
     inner: slab::Iter<'a, (K, V)>,
 }
 
 /// Mutable iterator over the items of a [`Slab`].
+#[derive(Debug)]
 pub struct IterMut<'a, K, V> {
     /// Inner iterator.
     inner: slab::IterMut<'a, (K, V)>,
 }
 
 /// Iterator over the keys of a [`Slab`].
+#[derive(Debug)]
 pub struct Keys<'a, K, V> {
     /// Inner iterator.
     inner: slab::Iter<'a, (K, V)>,
 }
 
 /// Iterator over the values of a [`Slab`].
+#[derive(Debug)]
 pub struct Values<'a, K, V> {
     /// Inner iterator.
     inner: slab::Iter<'a, (K, V)>,

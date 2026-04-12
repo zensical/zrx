@@ -26,10 +26,11 @@
 //! Store implementations for collections.
 
 use std::borrow::Borrow;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::btree_map::{self, BTreeMap};
+use std::collections::hash_map::{self, HashMap};
 use std::hash::BuildHasher;
 
-use crate::store::item::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreMut, StoreMutRef};
 
 mod iter;
@@ -103,6 +104,7 @@ where
 impl<K, V, S> StoreMut<K, V> for HashMap<K, V, S>
 where
     K: Key,
+    V: Value,
     S: BuildHasher,
 {
     /// Inserts the value identified by the key.
@@ -117,47 +119,24 @@ where
     /// let mut store = HashMap::new();
     ///
     /// // Insert value
-    /// store.insert("key", 42);
+    /// let value = store.insert("key", 42);
+    /// assert_eq!(value, None);
     /// ```
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
-        HashMap::insert(self, key, value)
-    }
-
-    /// Inserts the value identified by the key if it changed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use std::collections::HashMap;
-    /// use zrx_store::StoreMut;
-    ///
-    /// // Create store
-    /// let mut store = HashMap::new();
-    ///
-    /// // Insert value
-    /// let check = store.insert_if_changed(&"key", &42);
-    /// assert_eq!(check, true);
-    ///
-    /// // Ignore unchanged value
-    /// let check = store.insert_if_changed(&"key", &42);
-    /// assert_eq!(check, false);
-    ///
-    /// // Update value
-    /// let check = store.insert_if_changed(&"key", &84);
-    /// assert_eq!(check, true);
-    /// ```
-    #[inline]
-    fn insert_if_changed(&mut self, key: &K, value: &V) -> bool
-    where
-        V: Clone + Eq,
-    {
-        HashMap::get_mut(self, key)
-            .map(|prior| update_if_changed(prior, value))
-            .unwrap_or_else(|| {
-                HashMap::insert(self, key.clone(), value.clone());
-                true
-            })
+        match HashMap::entry(self, key) {
+            hash_map::Entry::Vacant(entry) => {
+                entry.insert(value);
+                None
+            }
+            hash_map::Entry::Occupied(mut entry) => {
+                if entry.get() == &value {
+                    None
+                } else {
+                    Some(entry.insert(value))
+                }
+            }
+        }
     }
 
     /// Removes the value identified by the key.
@@ -250,7 +229,7 @@ where
     /// store.insert("key", 42);
     ///
     /// // Obtain mutable reference to value
-    /// let mut value = store.get_mut(&"key");
+    /// let value = store.get_mut(&"key");
     /// assert_eq!(value, Some(&mut 42));
     /// ```
     #[inline]
@@ -353,6 +332,7 @@ where
 impl<K, V> StoreMut<K, V> for BTreeMap<K, V>
 where
     K: Key,
+    V: Value,
 {
     /// Inserts the value identified by the key.
     ///
@@ -366,47 +346,24 @@ where
     /// let mut store = BTreeMap::new();
     ///
     /// // Insert value
-    /// store.insert("key", 42);
+    /// let value = store.insert("key", 42);
+    /// assert_eq!(value, None);
     /// ```
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
-        BTreeMap::insert(self, key, value)
-    }
-
-    /// Inserts the value identified by the key if it changed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use std::collections::BTreeMap;
-    /// use zrx_store::StoreMut;
-    ///
-    /// // Create store
-    /// let mut store = BTreeMap::new();
-    ///
-    /// // Insert value
-    /// let check = store.insert_if_changed(&"key", &42);
-    /// assert_eq!(check, true);
-    ///
-    /// // Ignore unchanged value
-    /// let check = store.insert_if_changed(&"key", &42);
-    /// assert_eq!(check, false);
-    ///
-    /// // Update value
-    /// let check = store.insert_if_changed(&"key", &84);
-    /// assert_eq!(check, true);
-    /// ```
-    #[inline]
-    fn insert_if_changed(&mut self, key: &K, value: &V) -> bool
-    where
-        V: Clone + Eq,
-    {
-        BTreeMap::get_mut(self, key)
-            .map(|prior| update_if_changed(prior, value))
-            .unwrap_or_else(|| {
-                BTreeMap::insert(self, key.clone(), value.clone());
-                true
-            })
+        match BTreeMap::entry(self, key) {
+            btree_map::Entry::Vacant(entry) => {
+                entry.insert(value);
+                None
+            }
+            btree_map::Entry::Occupied(mut entry) => {
+                if entry.get() == &value {
+                    None
+                } else {
+                    Some(entry.insert(value))
+                }
+            }
+        }
     }
 
     /// Removes the value identified by the key.
@@ -498,7 +455,7 @@ where
     /// store.insert("key", 42);
     ///
     /// // Obtain mutable reference to value
-    /// let mut value = store.get_mut(&"key");
+    /// let value = store.get_mut(&"key");
     /// assert_eq!(value, Some(&mut 42));
     /// ```
     #[inline]
@@ -532,23 +489,5 @@ where
         V: Default,
     {
         BTreeMap::entry(self, key.clone()).or_default()
-    }
-}
-
-// ----------------------------------------------------------------------------
-// Functions
-// ----------------------------------------------------------------------------
-
-/// Updates the prior value if it has changed.
-#[inline]
-fn update_if_changed<V>(prior: &mut V, value: &V) -> bool
-where
-    V: Clone + Eq,
-{
-    if prior == value {
-        false
-    } else {
-        *prior = value.clone();
-        true
     }
 }

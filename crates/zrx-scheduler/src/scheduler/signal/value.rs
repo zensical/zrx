@@ -46,15 +46,15 @@ use std::fmt::Debug;
 /// and requiring simple types to be wrapped in newtypes, we can ensure that
 /// all interactions between modules are intentional and well-defined.
 ///
-/// Implementors must implement the [`Any`], [`Clone`], [`Debug`], [`Send`] and
-/// [`Sync`] traits, so all values can be shared across threads and printed for
-/// debugging. [`Clone`] is required for distributing values to the subscribers
-/// of an action, which also makes [`Value`] not dyn-compatible. However, this
-/// is not a problem and actually a good thing, since single values should not
-/// be downcast, rather the stores and receivers that contain them.
+/// Implementors must implement [`Any`], [`Clone`], [`Debug`], [`Eq`], as well
+/// as [`Send`] and [`Sync`], so all values can be shared across threads and
+/// printed for debugging. [`Clone`] is required for distributing values to the
+/// subscribers of an action, which also renders [`Value`] not dyn-compatible.
+/// However, this is not a problem and actually a good thing, as values should
+/// not be downcast, rather the stores and receivers that manage them.
 ///
 /// [`Action`]: crate::scheduler::action::Action
-pub trait Value: Any + Clone + Debug + Send + Sync {}
+pub trait Value: Any + Clone + Debug + Eq + Send + Sync {}
 
 // ----------------------------------------------------------------------------
 // Trait implementations

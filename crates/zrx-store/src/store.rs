@@ -51,13 +51,19 @@ use item::{Key, Value};
 /// There are several of those traits, all of which can be composed in trait
 /// bounds to require specific store capabilities. These are:
 ///
-/// - [`StoreMut`]: Mutable store
-/// - [`StoreMutRef`]: Mutable store that can return mutable references
-/// - [`StoreIterable`]: Immutable store that is iterable
-/// - [`StoreIterableMut`]: Mutable store that is iterable
-/// - [`StoreKeys`]: Immutable store that is iterable over its keys
-/// - [`StoreValues`]: Immutable store that is iterable over its values
-/// - [`StoreRange`]: Immutable store that is iterable over a range
+/// - [`StoreMut`]: Mutable store.
+/// - [`StoreMutRef`]: Mutable store that can return mutable references.
+/// - [`StoreIterable`]: Immutable store that is iterable.
+/// - [`StoreIterableMut`]: Mutable store that is iterable.
+/// - [`StoreKeys`]: Immutable store that is iterable over its keys.
+/// - [`StoreValues`]: Immutable store that is iterable over its values.
+/// - [`StoreRange`]: Immutable store that is iterable over a range.
+///
+/// For insertion and removal semantics, it's important to understand that
+/// stores compare each value with the prior value before mutation:
+///
+/// - [`StoreMut::insert`] returns the prior value if existent and different.
+/// - [`StoreMut::remove`] returns the prior value if existent.
 ///
 /// This trait is implemented for [`HashMap`][] and [`BTreeMap`][], as well as
 /// all of the store [`decorators`][] that allow to wrap stores with additional
@@ -88,10 +94,7 @@ use item::{Key, Value};
 /// let value = store.get(&"key");
 /// assert_eq!(value, Some(&42));
 /// ```
-pub trait Store<K, V>
-where
-    K: Key,
-{
+pub trait Store<K, V> {
     /// Returns a reference to the value identified by the key.
     fn get<Q>(&self, key: &Q) -> Option<&V>
     where
@@ -133,22 +136,9 @@ where
 /// let value = store.remove(&"key");
 /// assert_eq!(value, Some(42));
 /// ```
-pub trait StoreMut<K, V>: Store<K, V>
-where
-    K: Key,
-{
+pub trait StoreMut<K, V>: Store<K, V> {
     /// Inserts the value identified by the key.
     fn insert(&mut self, key: K, value: V) -> Option<V>;
-
-    /// Inserts the value identified by the key if it changed.
-    fn insert_if_changed(&mut self, key: &K, value: &V) -> bool
-    where
-        V: Clone + Eq,
-    {
-        (self.get(key) != Some(value))
-            .then(|| self.insert(key.clone(), value.clone()))
-            .is_some()
-    }
 
     /// Removes the value identified by the key.
     fn remove<Q>(&mut self, key: &Q) -> Option<V>
@@ -182,13 +172,10 @@ where
 /// store.insert("key", 42);
 ///
 /// // Obtain mutable reference to value
-/// let mut value = store.get_mut(&"key");
+/// let value = store.get_mut(&"key");
 /// assert_eq!(value, Some(&mut 42));
 /// ```
-pub trait StoreMutRef<K, V>: Store<K, V>
-where
-    K: Key,
-{
+pub trait StoreMutRef<K, V>: Store<K, V> {
     /// Returns a mutable reference to the value identified by the key.
     fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
     where
@@ -392,7 +379,6 @@ where
 /// ```
 pub trait StoreWithComparator<K, V, C>: Store<K, V>
 where
-    K: Key,
     C: Comparator<V>,
 {
     /// Creates a store with the given comparator.

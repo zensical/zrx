@@ -101,20 +101,18 @@ impl Matches {
     ///
     /// // Create match set
     /// let matches = Matches::from_iter([1]);
+    ///
+    /// // Ensure presence of matches
     /// assert_eq!(matches.contains(0), false);
     /// assert_eq!(matches.contains(1), true);
     /// ```
     #[inline]
     #[must_use]
     pub fn contains(&self, index: usize) -> bool {
-        (self.data[index >> 6] & 1 << (index & 63)) != 0
+        (self.data[index >> 6] & mask(index)) != 0
     }
 
-    /// Inserts a match into the match set.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is out of bounds.
+    /// Adds a match to the match set.
     ///
     /// # Examples
     ///
@@ -124,13 +122,13 @@ impl Matches {
     /// // Create match set
     /// let mut matches = Matches::new();
     ///
-    /// // Insert match
-    /// matches.insert(0);
+    /// // Add match to set
+    /// matches.add(0);
     /// ```
     #[inline]
-    pub fn insert(&mut self, index: usize) {
+    pub fn add(&mut self, index: usize) {
         let block = self.resolve(index);
-        self.data[block] |= 1 << (index & 63);
+        self.data[block] |= mask(index);
     }
 
     /// Clears all matches in the match set.
@@ -159,7 +157,7 @@ impl Matches {
     /// ```
     /// use zrx_id::Matches;
     ///
-    /// // Create two match set
+    /// // Create two match sets
     /// let mut a = Matches::from_iter([0, 1]);
     /// let mut b = Matches::from_iter([1, 2]);
     ///
@@ -180,7 +178,7 @@ impl Matches {
     /// ```
     /// use zrx_id::Matches;
     ///
-    /// // Create two match set
+    /// // Create two match sets
     /// let mut a = Matches::from_iter([0, 1]);
     /// let mut b = Matches::from_iter([1, 2]);
     ///
@@ -194,19 +192,19 @@ impl Matches {
         }
     }
 
-    /// Returns whether both match sets have any matches in common.
+    /// Returns whether any of the given matches is present.
     ///
     /// # Examples
     ///
     /// ```
     /// use zrx_id::Matches;
     ///
-    /// // Create two match set
+    /// // Create two match sets
     /// let mut a = Matches::from_iter([0, 1]);
     /// let mut b = Matches::from_iter([1, 2]);
     ///
-    /// // Ensure match sets have any matches in common
-    /// assert!(a.has_any(&b));
+    /// // Ensure presence of matches
+    /// assert!(b.has_any(&a));
     /// ```
     #[inline]
     #[must_use]
@@ -215,25 +213,25 @@ impl Matches {
         iter.any(|(a, b)| (*a & *b) != 0)
     }
 
-    /// Returns whether both match sets have all matches in common.
+    /// Returns whether the given matches are all present.
     ///
     /// # Examples
     ///
     /// ```
     /// use zrx_id::Matches;
     ///
-    /// // Create two match set
+    /// // Create two match sets
     /// let mut a = Matches::from_iter([0, 1]);
     /// let mut b = Matches::from_iter([0, 1, 2]);
     ///
-    /// // Ensure match sets have all matches in common
-    /// assert!(a.has_all(&b));
+    /// // Ensure presence of matches
+    /// assert!(b.has_all(&a));
     /// ```
     #[inline]
     #[must_use]
     pub fn has_all(&self, other: &Self) -> bool {
         let mut iter = self.data.iter().zip(&other.data);
-        iter.all(|(a, b)| (*a & *b) == *a)
+        iter.all(|(a, b)| (*a & *b) == *b)
     }
 
     /// Resolve the block for the given match.
@@ -288,7 +286,7 @@ impl FromIterator<usize> for Matches {
     {
         let mut matches = Matches::new();
         for index in iter {
-            matches.insert(index);
+            matches.add(index);
         }
         matches
     }
@@ -310,4 +308,14 @@ impl Default for Matches {
     fn default() -> Self {
         Self::new()
     }
+}
+
+// ----------------------------------------------------------------------------
+// Functions
+// ----------------------------------------------------------------------------
+
+/// Returns the mask for the given index.
+#[inline]
+const fn mask(index: usize) -> u64 {
+    1 << (index & 63)
 }

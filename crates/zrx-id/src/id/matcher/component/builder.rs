@@ -72,7 +72,7 @@ impl Builder {
             self.globset.add(pattern);
             self.mapping.push(self.total);
         } else {
-            self.matches.insert(self.total);
+            self.matches.add(self.total);
         }
         self.total += 1;
     }

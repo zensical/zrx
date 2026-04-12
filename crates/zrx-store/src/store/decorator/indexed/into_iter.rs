@@ -67,7 +67,6 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();

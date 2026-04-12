@@ -25,14 +25,9 @@
 
 //! Iterator implementations for [`Stash`].
 
-use slab::Slab;
-use std::ops::RangeBounds;
-use std::ptr;
-
+use crate::store::adapter::slab::{Iter, IterMut, Keys, Values};
 use crate::store::item::{Key, Value};
-use crate::store::{
-    StoreIterable, StoreIterableMut, StoreKeys, StoreRange, StoreValues,
-};
+use crate::store::{StoreIterable, StoreIterableMut, StoreKeys, StoreValues};
 
 use super::Stash;
 
@@ -40,62 +35,68 @@ use super::Stash;
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Iterator over the items of a [`Stash`].
-pub struct Iter<'a, K, V, S>
-where
-    K: Key,
-    S: StoreIterable<K, usize> + 'a,
-{
+/// Iterator over the slots of a [`Stash`].
+#[derive(Debug)]
+pub struct Slots<'a, K, V> {
     /// Inner iterator.
-    inner: S::Iter<'a>,
-    /// Stash items.
-    items: &'a Slab<(K, V)>,
+    inner: slab::Iter<'a, (K, V)>,
 }
 
-/// Mutable iterator over the items of a [`Stash`].
-pub struct IterMut<'a, K, V, S>
-where
-    K: Key,
-    S: StoreIterableMut<K, usize> + 'a,
-{
+/// Mutable iterator over the slots of a [`Stash`].
+#[derive(Debug)]
+pub struct SlotsMut<'a, K, V> {
     /// Inner iterator.
-    inner: S::IterMut<'a>,
-    /// Stash items.
-    items: &'a mut Slab<(K, V)>,
+    inner: slab::IterMut<'a, (K, V)>,
 }
 
-/// Iterator over the keys of a [`Stash`].
-pub struct Keys<'a, K, S>
-where
-    K: Key,
-    S: StoreKeys<K, usize> + 'a,
-{
-    /// Inner iterator.
-    inner: S::Keys<'a>,
-}
+// ----------------------------------------------------------------------------
+// Implementations
+// ----------------------------------------------------------------------------
 
-/// Iterator over the values of a [`Stash`].
-pub struct Values<'a, K, V, S>
-where
-    K: Key,
-    S: StoreValues<K, usize> + 'a,
-{
-    /// Inner iterator.
-    inner: S::Values<'a>,
-    /// Stash items.
-    items: &'a Slab<(K, V)>,
-}
+impl<K, V, S> Stash<K, V, S> {
+    /// Creates an iterator over the slots of the stash.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_store::Stash;
+    ///
+    /// // Create stash and initial state
+    /// let mut stash = Stash::default();
+    /// stash.insert("key", 42);
+    ///
+    /// // Create iterator over the stash
+    /// for (index, (key, value)) in stash.slots() {
+    ///     println!("[{index}] {key}: {value}");
+    /// }
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn slots(&self) -> Slots<'_, K, V> {
+        Slots { inner: self.items.iter() }
+    }
 
-/// Iterator over a range of items of a [`Stash`].
-pub struct Range<'a, K, V, S>
-where
-    K: Key,
-    S: StoreRange<K, usize> + 'a,
-{
-    /// Inner iterator.
-    inner: S::Range<'a>,
-    /// Stash items.
-    items: &'a Slab<(K, V)>,
+    /// Creates a mutable iterator over the slots of the stash.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_store::Stash;
+    ///
+    /// // Create stash and initial state
+    /// let mut stash = Stash::default();
+    /// stash.insert("key", 42);
+    ///
+    /// // Create iterator over the stash
+    /// for (index, (key, value)) in stash.slots_mut() {
+    ///     println!("[{index}] {key}: {value}");
+    /// }
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn slots_mut(&mut self) -> SlotsMut<'_, K, V> {
+        SlotsMut { inner: self.items.iter_mut() }
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -108,7 +109,7 @@ where
     V: Value,
     S: StoreIterable<K, usize>,
 {
-    type Iter<'a> = Iter<'a, K, V, S>
+    type Iter<'a> = Iter<'a, K, V>
     where
         Self: 'a;
 
@@ -117,7 +118,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreIterable, StoreMut};
+    /// use zrx_store::{Stash, StoreIterable};
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -130,10 +131,7 @@ where
     /// ```
     #[inline]
     fn iter(&self) -> Self::Iter<'_> {
-        Iter {
-            inner: self.store.iter(),
-            items: &self.items,
-        }
+        StoreIterable::iter(&self.items)
     }
 }
 
@@ -143,7 +141,7 @@ where
     V: Value,
     S: StoreIterableMut<K, usize>,
 {
-    type IterMut<'a> = IterMut<'a, K, V, S>
+    type IterMut<'a> = IterMut<'a, K, V>
     where
         Self: 'a;
 
@@ -152,7 +150,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreIterableMut, StoreMut};
+    /// use zrx_store::{Stash, StoreIterableMut};
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -165,10 +163,7 @@ where
     /// ```
     #[inline]
     fn iter_mut(&mut self) -> Self::IterMut<'_> {
-        IterMut {
-            inner: self.store.iter_mut(),
-            items: &mut self.items,
-        }
+        StoreIterableMut::iter_mut(&mut self.items)
     }
 }
 
@@ -177,7 +172,7 @@ where
     K: Key,
     S: StoreKeys<K, usize>,
 {
-    type Keys<'a> = Keys<'a, K, S>
+    type Keys<'a> = Keys<'a, K, V>
     where
         Self: 'a;
 
@@ -186,7 +181,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreKeys, StoreMut};
+    /// use zrx_store::{Stash, StoreKeys};
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -199,7 +194,7 @@ where
     /// ```
     #[inline]
     fn keys(&self) -> Self::Keys<'_> {
-        Keys { inner: self.store.keys() }
+        StoreKeys::keys(&self.items)
     }
 }
 
@@ -209,7 +204,7 @@ where
     V: Value,
     S: StoreValues<K, usize>,
 {
-    type Values<'a> = Values<'a, K, V, S>
+    type Values<'a> = Values<'a, K, V>
     where
         Self: 'a;
 
@@ -218,7 +213,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreMut, StoreValues};
+    /// use zrx_store::{Stash, StoreValues};
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -231,67 +226,20 @@ where
     /// ```
     #[inline]
     fn values(&self) -> Self::Values<'_> {
-        Values {
-            inner: self.store.values(),
-            items: &self.items,
-        }
-    }
-}
-
-impl<K, V, S> StoreRange<K, V> for Stash<K, V, S>
-where
-    K: Key,
-    V: Value,
-    S: StoreRange<K, usize>,
-{
-    type Range<'a> = Range<'a, K, V, S>
-    where
-        Self: 'a;
-
-    /// Creates an iterator over a range of items of the stash.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use std::collections::BTreeMap;
-    /// use zrx_store::{Stash, StoreMut, StoreRange};
-    ///
-    /// // Create stash and initial state
-    /// let mut stash = Stash::<_, _, BTreeMap<_, _>>::new();
-    /// stash.insert("a", 42);
-    /// stash.insert("b", 84);
-    ///
-    /// // Create iterator over the stash
-    /// for (key, value) in stash.range("b"..) {
-    ///     println!("{key}: {value}");
-    /// }
-    /// ```
-    #[inline]
-    fn range<R>(&self, range: R) -> Self::Range<'_>
-    where
-        R: RangeBounds<K>,
-    {
-        Range {
-            inner: self.store.range(range),
-            items: &self.items,
-        }
+        StoreValues::values(&self.items)
     }
 }
 
 // ----------------------------------------------------------------------------
 
-impl<'a, K, V, S> Iterator for Iter<'a, K, V, S>
-where
-    K: Key,
-    S: StoreIterable<K, usize>,
-{
-    type Item = (&'a K, &'a V);
+impl<'a, K, V> Iterator for Slots<'a, K, V> {
+    type Item = (usize, (&'a K, &'a V));
 
     /// Returns the next item.
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let opt = self.inner.next();
-        opt.map(|(key, &index)| (key, &self.items[index].1))
+        opt.map(|(index, (key, value))| (index, (key, value)))
     }
 
     /// Returns the bounds on the remaining length of the iterator.
@@ -301,12 +249,7 @@ where
     }
 }
 
-impl<'a, K, V, S> ExactSizeIterator for Iter<'a, K, V, S>
-where
-    K: Key,
-    S: StoreIterable<K, usize>,
-    S::Iter<'a>: ExactSizeIterator,
-{
+impl<K, V> ExactSizeIterator for Slots<'_, K, V> {
     /// Returns the exact remaining length of the iterator.
     #[inline]
     fn len(&self) -> usize {
@@ -316,23 +259,14 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl<'a, K, V, S> Iterator for IterMut<'a, K, V, S>
-where
-    K: Key,
-    S: StoreIterableMut<K, usize>,
-{
-    type Item = (&'a K, &'a mut V);
+impl<'a, K, V> Iterator for SlotsMut<'a, K, V> {
+    type Item = (usize, (&'a K, &'a mut V));
 
     /// Returns the next item.
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let opt = self.inner.next();
-        opt.map(|(key, &mut index)| {
-            let items = ptr::addr_of_mut!(self.items);
-            // SAFETY: Since both data structures are synchronized with each
-            // other, and we have a mutable reference to the store, it's safe
-            (key, unsafe { &mut (&mut *items)[index].1 })
-        })
+        opt.map(|(index, (key, value))| (index, (&*key, value)))
     }
 
     /// Returns the bounds on the remaining length of the iterator.
@@ -342,119 +276,7 @@ where
     }
 }
 
-impl<'a, K, V, S> ExactSizeIterator for IterMut<'a, K, V, S>
-where
-    K: Key,
-    S: StoreIterableMut<K, usize>,
-    S::IterMut<'a>: ExactSizeIterator,
-{
-    /// Returns the exact remaining length of the iterator.
-    #[inline]
-    fn len(&self) -> usize {
-        self.inner.len()
-    }
-}
-
-// ----------------------------------------------------------------------------
-
-impl<'a, K, S> Iterator for Keys<'a, K, S>
-where
-    K: Key,
-    S: StoreKeys<K, usize>,
-{
-    type Item = &'a K;
-
-    /// Returns the next item.
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
-    }
-
-    /// Returns the bounds on the remaining length of the iterator.
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.inner.size_hint()
-    }
-}
-
-impl<'a, K, S> ExactSizeIterator for Keys<'a, K, S>
-where
-    K: Key,
-    S: StoreKeys<K, usize>,
-    S::Keys<'a>: ExactSizeIterator,
-{
-    /// Returns the exact remaining length of the iterator.
-    #[inline]
-    fn len(&self) -> usize {
-        self.inner.len()
-    }
-}
-
-// ----------------------------------------------------------------------------
-
-impl<'a, K, V, S> Iterator for Values<'a, K, V, S>
-where
-    K: Key,
-    S: StoreValues<K, usize>,
-{
-    type Item = &'a V;
-
-    /// Returns the next item.
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        let opt = self.inner.next();
-        opt.map(|&index| &self.items[index].1)
-    }
-
-    /// Returns the bounds on the remaining length of the iterator.
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.inner.size_hint()
-    }
-}
-
-impl<'a, K, V, S> ExactSizeIterator for Values<'a, K, V, S>
-where
-    K: Key,
-    S: StoreValues<K, usize>,
-    S::Values<'a>: ExactSizeIterator,
-{
-    /// Returns the exact remaining length of the iterator.
-    #[inline]
-    fn len(&self) -> usize {
-        self.inner.len()
-    }
-}
-
-// ----------------------------------------------------------------------------
-
-impl<'a, K, V, S> Iterator for Range<'a, K, V, S>
-where
-    K: Key,
-    S: StoreRange<K, usize>,
-{
-    type Item = (&'a K, &'a V);
-
-    /// Returns the next item.
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        let opt = self.inner.next();
-        opt.map(|(key, &index)| (key, &self.items[index].1))
-    }
-
-    /// Returns the bounds on the remaining length of the iterator.
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.inner.size_hint()
-    }
-}
-
-impl<'a, K, V, S> ExactSizeIterator for Range<'a, K, V, S>
-where
-    K: Key,
-    S: StoreRange<K, usize>,
-    S::Range<'a>: ExactSizeIterator,
-{
+impl<K, V> ExactSizeIterator for SlotsMut<'_, K, V> {
     /// Returns the exact remaining length of the iterator.
     #[inline]
     fn len(&self) -> usize {

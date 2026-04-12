@@ -33,14 +33,17 @@ use std::marker::PhantomData;
 use std::mem;
 use std::ops::{Index, IndexMut};
 
+use crate::store::adapter::slab::{Iter, IterMut};
 use crate::store::item::{Key, Value};
-use crate::store::{Store, StoreIterable, StoreMut, StoreMutRef};
+use crate::store::{
+    Store, StoreIterable, StoreIterableMut, StoreMut, StoreMutRef,
+};
 
 pub mod items;
 mod iter;
 
 pub use items::Items;
-pub use iter::{Iter, IterMut, Keys, Values};
+pub use iter::{Slots, SlotsMut};
 
 // ----------------------------------------------------------------------------
 // Implementations
@@ -53,10 +56,14 @@ pub use iter::{Iter, IterMut, Keys, Values};
 /// on a [`Slab`], together with a [`Store`] that provides the underlying item
 /// storage. Stashes offer optimal performance for temporary storage.
 ///
-/// The underlying store implementation allows to customize ordering during
-/// iteration. Sensible choices are of course [`HashMap`] and [`BTreeMap`][],
-///
-/// [`BTreeMap`]: std::collections::BTreeMap
+/// Iteration happens on the underlying [`Slab`], which means that the order of
+/// items is stable, but not sorted by key. This ensures, that iteration is not
+/// affected by insertions and removals, and cache efficient, since no lookups
+/// need to be performed on the underlying [`Store`] to obtain the items. Note
+/// that the store iterator traits don't allow to return indices for the items,
+/// only references to keys and values. In case indices are required, the stash
+/// can be iterated with [`Stash::slots`] or [`Stash::slots_mut`], since those
+/// return both, indices and references to keys and values.
 ///
 /// # Examples
 ///
@@ -72,11 +79,8 @@ pub use iter::{Iter, IterMut, Keys, Values};
 ///     println!("{key}: {value}");
 /// }
 /// ```
-pub struct Stash<K, V, S = HashMap<K, usize>>
-where
-    K: Key,
-    S: Store<K, usize>,
-{
+#[derive(Clone)]
+pub struct Stash<K, V, S = HashMap<K, usize>> {
     /// Underlying store.
     store: S,
     /// Stash items.
@@ -100,7 +104,7 @@ where
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash
     /// let mut stash = Stash::<_, _, HashMap<_, _>>::new();
@@ -123,7 +127,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, Store, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -142,31 +146,24 @@ where
         self.store.get(key).copied()
     }
 
-    /// Returns a reference to the slots of the stash.
-    ///
-    /// This method allows to inspect the mappings between keys and slots, as
-    /// is sometimes necessary in order to provide performant implementations.
-    /// Only an immutable reference to the slots can ever be returned, so the
-    /// invariants of the stash are guaranteed to hold.
+    /// Returns a reference to the key at the index.
     ///
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
-    /// stash.insert("a", 1);
-    /// stash.insert("b", 2);
+    /// stash.insert("key", 42);
     ///
-    /// // Create iterator over the slots
-    /// for (key, n) in stash.slots() {
-    ///     println!("{key}: {n}");
-    /// }
+    /// // Obtain key at index
+    /// let key = stash.key(0);
+    /// assert_eq!(key, Some(&"key"));
     /// ```
     #[inline]
-    pub fn slots(&self) -> &S {
-        &self.store
+    pub fn key(&self, index: usize) -> Option<&K> {
+        self.items.get(index).map(|(key, _)| key)
     }
 }
 
@@ -183,7 +180,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash
     /// let mut stash = Stash::default();
@@ -209,7 +206,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -243,7 +240,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, Store, StoreMut};
+    /// use zrx_store::{Stash, Store};
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -270,7 +267,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, Store, StoreMut};
+    /// use zrx_store::{Stash, Store};
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -299,6 +296,7 @@ where
 impl<K, V, S> StoreMut<K, V> for Stash<K, V, S>
 where
     K: Key,
+    V: Value,
     S: StoreMut<K, usize>,
 {
     /// Inserts the value identified by the key.
@@ -312,55 +310,19 @@ where
     /// let mut stash = Stash::default();
     ///
     /// // Insert value
-    /// stash.insert("key", 42);
+    /// let value = StoreMut::insert(&mut stash, "key", 42);
+    /// assert_eq!(value, None);
     /// ```
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
         if let Some(&index) = self.store.get(&key) {
-            Some(mem::replace(&mut self.items[index].1, value))
+            let prior = &mut self.items[index].1;
+            (prior != &value).then(|| mem::replace(prior, value))
         } else {
             let index = self.items.insert((key.clone(), value));
             self.store.insert(key, index);
             None
         }
-    }
-
-    /// Inserts the value identified by the key if it changed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_store::{Stash, StoreMut};
-    ///
-    /// // Create stash
-    /// let mut stash = Stash::default();
-    ///
-    /// // Insert value
-    /// let check = stash.insert_if_changed(&"key", &42);
-    /// assert_eq!(check, true);
-    ///
-    /// // Ignore unchanged value
-    /// let check = stash.insert_if_changed(&"key", &42);
-    /// assert_eq!(check, false);
-    ///
-    /// // Update value
-    /// let check = stash.insert_if_changed(&"key", &84);
-    /// assert_eq!(check, true);
-    /// ```
-    #[allow(clippy::map_unwrap_or)]
-    #[inline]
-    fn insert_if_changed(&mut self, key: &K, value: &V) -> bool
-    where
-        V: Clone + Eq,
-    {
-        self.store
-            .get(key)
-            .map(|&index| update_if_changed(&mut self.items[index].1, value))
-            .unwrap_or_else(|| {
-                let index = self.items.insert((key.clone(), value.clone()));
-                self.store.insert(key.clone(), index);
-                true
-            })
     }
 
     /// Removes the value identified by the key.
@@ -504,9 +466,9 @@ where
     K: Key,
     S: Store<K, usize>,
 {
-    type Output = (K, V);
+    type Output = V;
 
-    /// Returns a reference to the entry at the index.
+    /// Returns a reference to the value at the index.
     ///
     /// # Panics
     ///
@@ -515,20 +477,20 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreIterable, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
     /// stash.insert("a", 42);
     /// stash.insert("b", 84);
     ///
-    /// // Obtain reference to entry
-    /// let entry = &stash[1];
-    /// assert_eq!(entry, &("b", 84));
+    /// // Obtain reference to value
+    /// let value = &stash[1];
+    /// assert_eq!(value, &84);
     /// ```
     #[inline]
     fn index(&self, index: usize) -> &Self::Output {
-        &self.items[index]
+        &self.items[index].1
     }
 }
 
@@ -537,7 +499,7 @@ where
     K: Key,
     S: Store<K, usize>,
 {
-    /// Returns a mutable reference to the entry at the index.
+    /// Returns a mutable reference to the value at the index.
     ///
     /// # Panics
     ///
@@ -546,20 +508,20 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreIterable, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
     /// stash.insert("a", 42);
     /// stash.insert("b", 84);
     ///
-    /// // Obtain mutable reference to entry
-    /// let entry = &mut stash[1];
-    /// assert_eq!(entry, &mut ("b", 84));
+    /// // Obtain mutable reference to value
+    /// let value = &mut stash[1];
+    /// assert_eq!(value, &mut 84);
     /// ```
     #[inline]
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.items[index]
+        &mut self.items[index].1
     }
 }
 
@@ -576,7 +538,7 @@ where
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create a vector of key-value pairs
     /// let items = vec![
@@ -616,16 +578,14 @@ where
     S: StoreIterable<K, usize>,
 {
     type Item = (&'a K, &'a V);
-    type IntoIter = Iter<'a, K, V, S>;
+    type IntoIter = Iter<'a, K, V>;
 
     /// Creates an iterator over the stash.
-    ///
-    /// The returned iterator is not ordered
     ///
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -638,7 +598,39 @@ where
     /// ```
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        self.iter()
+        StoreIterable::iter(&self.items)
+    }
+}
+
+#[allow(clippy::into_iter_without_iter)]
+impl<'a, K, V, S> IntoIterator for &'a mut Stash<K, V, S>
+where
+    K: Key,
+    V: Value,
+    S: StoreIterableMut<K, usize>,
+{
+    type Item = (&'a K, &'a mut V);
+    type IntoIter = IterMut<'a, K, V>;
+
+    /// Creates a mutable iterator over the stash.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_store::Stash;
+    ///
+    /// // Create stash and initial state
+    /// let mut stash = Stash::default();
+    /// stash.insert("key", 42);
+    ///
+    /// // Create iterator over the stash
+    /// for (key, value) in &mut stash {
+    ///     println!("{key}: {value}");
+    /// }
+    /// ```
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        StoreIterableMut::iter_mut(&mut self.items)
     }
 }
 
@@ -659,7 +651,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::{Stash, StoreMut};
+    /// use zrx_store::Stash;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
@@ -675,9 +667,9 @@ where
 
 impl<K, V, S> Debug for Stash<K, V, S>
 where
-    K: Debug + Key,
+    K: Debug,
     V: Debug,
-    S: Debug + Store<K, usize>,
+    S: Debug,
 {
     /// Formats the stash for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -685,23 +677,5 @@ where
             .field("store", &self.store)
             .field("items", &self.items)
             .finish()
-    }
-}
-
-// ----------------------------------------------------------------------------
-// Functions
-// ----------------------------------------------------------------------------
-
-/// Updates the prior value if it has changed.
-#[inline]
-fn update_if_changed<V>(prior: &mut V, value: &V) -> bool
-where
-    V: Clone + Eq,
-{
-    if prior == value {
-        false
-    } else {
-        *prior = value.clone();
-        true
     }
 }

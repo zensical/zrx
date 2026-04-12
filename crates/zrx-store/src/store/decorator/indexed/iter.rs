@@ -40,6 +40,7 @@ use super::Indexed;
 // ----------------------------------------------------------------------------
 
 /// Iterator over the items of an [`Indexed`] store.
+#[derive(Debug)]
 pub struct Iter<'a, K, V, S = HashMap<K, V>> {
     /// Underlying store.
     store: &'a S,
@@ -50,6 +51,7 @@ pub struct Iter<'a, K, V, S = HashMap<K, V>> {
 }
 
 /// Iterator over the values of an [`Indexed`] store.
+#[derive(Debug)]
 pub struct Values<'a, K, V, S = HashMap<K, V>> {
     /// Underlying store.
     store: &'a S,
@@ -63,12 +65,7 @@ pub struct Values<'a, K, V, S = HashMap<K, V>> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<K, V, S, C> Indexed<K, V, S, C>
-where
-    K: Key,
-    V: Ord,
-    S: Store<K, V>,
-{
+impl<K, V, S, C> Indexed<K, V, S, C> {
     /// Creates an iterator over a range of items of the store.
     ///
     /// This method is not implemented as part of [`StoreRange`][], because it
@@ -84,7 +81,6 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -148,7 +144,7 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{StoreIterable, StoreMut};
+    /// use zrx_store::StoreIterable;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -184,7 +180,7 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{StoreKeys, StoreMut};
+    /// use zrx_store::StoreKeys;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -217,7 +213,7 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{StoreMut, StoreValues};
+    /// use zrx_store::StoreValues;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();

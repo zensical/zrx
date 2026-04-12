@@ -31,6 +31,7 @@ use std::time::Instant;
 use zrx_store::{Queue, Store, StoreMut, StoreMutRef};
 
 use crate::scheduler::engine::{AsReceiver, TokenFull};
+use crate::scheduler::signal::Id;
 use crate::scheduler::step::effect::Timer;
 use crate::scheduler::step::Steps;
 
@@ -61,7 +62,10 @@ pub struct Timers<I> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<I> Timers<I> {
+impl<I> Timers<I>
+where
+    I: Id,
+{
     /// Creates a timer queue.
     #[must_use]
     pub fn new() -> Self {
@@ -157,7 +161,10 @@ impl<I> Timers<I> {
 }
 
 #[allow(clippy::must_use_candidate)]
-impl<I> Timers<I> {
+impl<I> Timers<I>
+where
+    I: Id,
+{
     /// Returns the number of timers.
     #[inline]
     pub fn len(&self) -> usize {
@@ -196,7 +203,10 @@ impl<I> AsReceiver<I> for Timers<I> {
 
 // ----------------------------------------------------------------------------
 
-impl<I> Default for Timers<I> {
+impl<I> Default for Timers<I>
+where
+    I: Id,
+{
     /// Creates a timer queue.
     #[inline]
     fn default() -> Self {

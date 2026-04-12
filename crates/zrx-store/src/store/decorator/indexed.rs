@@ -100,11 +100,7 @@ pub use iter::{Iter, Keys, Values};
 /// }
 /// ```
 #[derive(Clone, PartialEq, Eq)]
-pub struct Indexed<K, V, S = HashMap<K, V>, C = Ascending>
-where
-    K: Key,
-    S: Store<K, V>,
-{
+pub struct Indexed<K, V, S = HashMap<K, V>, C = Ascending> {
     /// Underlying store.
     store: S,
     /// Ordering of values.
@@ -132,7 +128,6 @@ where
     /// ```
     /// use std::collections::HashMap;
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store
     /// let mut store = Indexed::<_, _, HashMap<_, _>>::new();
@@ -227,61 +222,18 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store
     /// let mut store = Indexed::default();
     ///
     /// // Insert value
     /// let range = store.insert("key", 42);
-    /// assert_eq!(range, 0..1);
-    /// ```
-    #[inline]
-    pub fn insert(&mut self, key: K, value: V) -> Range<usize> {
-        let range = self
-            .update_position(&key, &value)
-            .unwrap_or_else(|range| range);
-        self.store.insert(key, value);
-        range
-    }
-
-    /// Inserts the value identified by the key if it changed.
-    ///
-    /// This method returns the affected [`Range`], which is essential for some
-    /// operators to determine what state need to be updated. While for inserts,
-    /// the range will always have a length of 1, updates can impact the entire
-    /// index, e.g. when the last values is changed to sort to the front.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
-    ///
-    /// // Create store
-    /// let mut store = Indexed::default();
-    ///
-    /// // Insert value
-    /// let range = store.insert_if_changed(&"key", &42);
-    /// assert_eq!(range, Some(0..1));
-    ///
-    /// // Ignore unchanged value
-    /// let range = store.insert_if_changed(&"key", &42);
-    /// assert_eq!(range, None);
-    ///
-    /// // Update value
-    /// let range = store.insert_if_changed(&"key", &84);
     /// assert_eq!(range, Some(0..1));
     /// ```
     #[inline]
-    pub fn insert_if_changed(
-        &mut self, key: &K, value: &V,
-    ) -> Option<Range<usize>>
-    where
-        V: Clone + Eq,
-    {
-        self.update_position(key, value).err().inspect(|_| {
-            self.store.insert(key.clone(), value.clone());
+    pub fn insert(&mut self, key: K, value: V) -> Option<Range<usize>> {
+        self.update_position(&key, &value).err().inspect(|_| {
+            self.store.insert(key, value);
         })
     }
 
@@ -294,7 +246,6 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -339,7 +290,7 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{Store, StoreMut};
+    /// use zrx_store::Store;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -364,7 +315,7 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{Store, StoreMut};
+    /// use zrx_store::Store;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -409,46 +360,16 @@ where
     /// let mut store = Indexed::default();
     ///
     /// // Insert value
-    /// store.insert("key", 42);
+    /// let value = StoreMut::insert(&mut store, "key", 42);
+    /// assert_eq!(value, None);
     /// ```
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
-        let _ = self.update_position(&key, &value);
-        self.store.insert(key, value)
-    }
-
-    /// Inserts the value identified by the key if it changed.
-    ///
-    /// This method needs to be implemented to satisfy the [`StoreMut`] trait,
-    /// but usually, [`Indexed::insert_if_changed`] should be used instead.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
-    ///
-    /// // Create store
-    /// let mut store = Indexed::default();
-    ///
-    /// // Insert value
-    /// let check = StoreMut::insert_if_changed(&mut store, &"key", &42);
-    /// assert_eq!(check, true);
-    ///
-    /// // Ignore unchanged value
-    /// let check = StoreMut::insert_if_changed(&mut store, &"key", &42);
-    /// assert_eq!(check, false);
-    ///
-    /// // Update value
-    /// let check = StoreMut::insert_if_changed(&mut store, &"key", &84);
-    /// assert_eq!(check, true);
-    /// ```
-    #[inline]
-    fn insert_if_changed(&mut self, key: &K, value: &V) -> bool
-    where
-        V: Clone + Eq,
-    {
-        self.insert_if_changed(key, value).is_some()
+        if self.update_position(&key, &value).is_err() {
+            self.store.insert(key, value)
+        } else {
+            None
+        }
     }
 
     /// Removes the value identified by the key.
@@ -553,7 +474,7 @@ where
     /// use std::collections::HashMap;
     /// use zrx_store::comparator::Descending;
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{StoreMut, StoreWithComparator};
+    /// use zrx_store::StoreWithComparator;
     ///
     /// // Create store
     /// let mut store: Indexed::<_, _, HashMap<_, _>, _> =
@@ -599,7 +520,6 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -631,7 +551,6 @@ where
     /// ```
     /// use std::collections::HashMap;
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create a vector of key-value pairs
     /// let items = vec![
@@ -679,7 +598,6 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::{StoreIterable, StoreMut};
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -715,7 +633,6 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreMut;
     ///
     /// // Create store
     /// let mut store = Indexed::default();
@@ -733,8 +650,8 @@ where
 
 impl<K, V, S, C> Debug for Indexed<K, V, S, C>
 where
-    K: Debug + Key,
-    S: Debug + Store<K, V>,
+    K: Debug,
+    S: Debug,
     C: Debug,
 {
     /// Formats the indexing decorator for debugging.

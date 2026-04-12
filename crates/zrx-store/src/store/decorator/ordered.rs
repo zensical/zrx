@@ -79,11 +79,7 @@ pub use iter::{Iter, Keys, Values};
 /// }
 /// ```
 #[derive(Clone, PartialEq, Eq)]
-pub struct Ordered<K, V, S = HashMap<K, V>, C = Ascending>
-where
-    K: Key,
-    S: Store<K, V>,
-{
+pub struct Ordered<K, V, S = HashMap<K, V>, C = Ascending> {
     /// Underlying store.
     store: S,
     /// Ordering of values.
@@ -238,19 +234,22 @@ where
     /// let mut store = Ordered::default();
     ///
     /// // Insert value
-    /// store.insert("key", 42);
+    /// let value = store.insert("key", 42);
+    /// assert_eq!(value, None);
     /// ```
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
+        let exists = self.store.contains_key(&key);
         if let Some(prior) = self.store.insert(key.clone(), value.clone()) {
-            self.remove_ordering(key, prior).map(|(key, prior)| {
+            return self.remove_ordering(key, prior).map(|(key, prior)| {
                 self.insert_ordering(key, value);
                 prior
-            })
-        } else {
-            self.insert_ordering(key, value);
-            None
+            });
         }
+        if !exists {
+            self.insert_ordering(key, value);
+        }
+        None
     }
 
     /// Removes the value identified by the key.
@@ -276,7 +275,6 @@ where
         Q: Key,
     {
         self.store.remove_entry(key).and_then(|(key, value)| {
-            // Remove entry from ordering and return value
             self.remove_ordering(key, value).map(|(_, value)| value)
         })
     }
@@ -304,8 +302,7 @@ where
         Q: Key,
     {
         self.store.remove_entry(key).and_then(|(key, value)| {
-            // Remove entry from ordering and return entry
-            self.remove_ordering(key, value)
+            self.remove_ordering(key, value) // fmt
         })
     }
 
@@ -429,7 +426,7 @@ where
     ///
     /// ```
     /// use zrx_store::decorator::Ordered;
-    /// use zrx_store::{StoreIterable, StoreMut};
+    /// use zrx_store::StoreMut;
     ///
     /// // Create store and initial state
     /// let mut store = Ordered::default();
@@ -483,9 +480,9 @@ where
 
 impl<K, V, S, C> Debug for Ordered<K, V, S, C>
 where
-    K: Debug + Key,
+    K: Debug,
     V: Debug,
-    S: Debug + Store<K, V>,
+    S: Debug,
 {
     /// Formats the ordering decorator for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

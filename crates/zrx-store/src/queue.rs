@@ -34,13 +34,15 @@ use std::time::Instant;
 
 use crate::store::decorator::Ordered;
 use crate::store::item::{Key, Value};
-use crate::store::{Store, StoreIterable, StoreMut, StoreMutRef};
+use crate::store::{
+    Store, StoreIterable, StoreIterableMut, StoreMut, StoreMutRef,
+};
 
 mod item;
 mod iter;
 
 pub use item::Item;
-pub use iter::{Iter, Keys, Values};
+pub use iter::{Iter, IterMut, Keys, Values};
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -81,11 +83,7 @@ pub use iter::{Iter, Keys, Values};
 /// }
 /// ```
 #[derive(Clone)]
-pub struct Queue<K, V, S = HashMap<K, Item>>
-where
-    K: Key,
-    S: Store<K, Item>,
-{
+pub struct Queue<K, V, S = HashMap<K, Item>> {
     /// Underlying store.
     store: Ordered<K, Item, S>,
     /// Queue items.
@@ -182,6 +180,7 @@ where
 impl<K, V, S> Queue<K, V, S>
 where
     K: Key,
+    V: Value,
     S: StoreMut<K, Item> + StoreIterable<K, Item>,
 {
     /// Returns the minimum deadline of all items.
@@ -319,16 +318,13 @@ where
 impl<K, V, S> StoreMut<K, V> for Queue<K, V, S>
 where
     K: Key,
+    V: Value,
     S: StoreMut<K, Item>,
 {
     /// Inserts the value identified by the key.
     ///
     /// This method only updates the data of the [`Item`], but does not change
-    /// the values of [`Item::deadline`] in case the item already exists. The
-    /// caller might use [`Queue::insert_if_changed`][] to check, if any of
-    /// those values should be changed deliberately.
-    ///
-    /// [`Queue::insert_if_changed`]: crate::store::StoreMut::insert_if_changed
+    /// the values of [`Item::deadline`] in case the item already exists.
     ///
     /// # Examples
     ///
@@ -339,13 +335,14 @@ where
     /// let mut queue = Queue::default();
     ///
     /// // Insert value
-    /// queue.insert("key", 42);
+    /// let value = queue.insert("key", 42);
+    /// assert_eq!(value, None);
     /// ```
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
         if let Some(item) = self.store.get(&key) {
-            let index = *item.data();
-            Some(mem::replace(&mut self.items[index], value))
+            let prior = &mut self.items[*item.data()];
+            (prior != &value).then(|| mem::replace(prior, value))
         } else {
             let index = self.items.insert(value);
             self.store.insert(key, Item::new(index));
@@ -502,8 +499,6 @@ where
 
     /// Creates an iterator over the queue.
     ///
-    /// The returned iterator is not ordered
-    ///
     /// # Examples
     ///
     /// ```
@@ -521,6 +516,38 @@ where
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
+    }
+}
+
+#[allow(clippy::into_iter_without_iter)]
+impl<'a, K, V, S> IntoIterator for &'a mut Queue<K, V, S>
+where
+    K: Key,
+    V: Value,
+    S: StoreMut<K, Item> + StoreIterable<K, Item>,
+{
+    type Item = (&'a K, &'a mut V);
+    type IntoIter = IterMut<'a, K, V>;
+
+    /// Creates a mutable iterator over the queue.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_store::{Queue, StoreMut};
+    ///
+    /// // Create queue and initial state
+    /// let mut queue = Queue::default();
+    /// queue.insert("key", 42);
+    ///
+    /// // Create iterator over the queue
+    /// for (key, value) in &mut queue {
+    ///     println!("{key}: {value}");
+    /// }
+    /// ```
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
     }
 }
 
@@ -559,9 +586,9 @@ where
 
 impl<K, V, S> Debug for Queue<K, V, S>
 where
-    K: Debug + Key,
+    K: Debug,
     V: Debug,
-    S: Debug + Store<K, Item>,
+    S: Debug,
 {
     /// Formats the queue for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

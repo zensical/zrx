@@ -35,8 +35,8 @@ use std::hash::Hash;
 /// Store key.
 ///
 /// This trait defines the basic requirements for a key used in a [`Store`][].
-/// We can't use specific traits, e.g., [`Eq`][] + [`Hash`][] for hash maps or
-/// [`Ord`][] for ordered keys, since we would lose the ability to allow for
+/// We can't use specific traits bounds, e.g., [`Eq`] + [`Hash`] for hash maps
+/// and [`Ord`] for ordered keys, since we would lose the ability to allow for
 /// using [`Borrow`][] to generalize the key type.
 ///
 /// Keys must implement [`Clone`], [`Debug`], [`Eq`], [`Hash`] and [`Ord`], all
@@ -53,13 +53,19 @@ pub trait Key: Clone + Debug + Eq + Hash + Ord + 'static {}
 
 /// Store value.
 ///
+/// This trait defines the basic requirements for a value used in a [`Store`][].
+/// Values must implement [`Debug`] and [`Eq`], where the latter is required to
+/// allow for equality checks when inserting values with [`StoreMut::insert`][],
+/// returning the prior value only if it's different.
+///
 /// __Warning__: The `'static` lifetime which is required by this trait is a
 /// deliberate design choice to simplify trait bounds across the code base. If
 /// we would not require the lifetime, we would need to add a lifetime parameter
 /// to almost all types using this trait, which makes it cumbersome to use.
 ///
 /// [`Store`]: crate::store::Store
-pub trait Value: Debug + 'static {}
+/// [`StoreMut::insert`]: crate::store::StoreMut::insert
+pub trait Value: Debug + Eq + 'static {}
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
@@ -67,4 +73,4 @@ pub trait Value: Debug + 'static {}
 
 impl<T> Key for T where T: Clone + Debug + Eq + Hash + Ord + 'static {}
 
-impl<T> Value for T where T: Debug + 'static {}
+impl<T> Value for T where T: Debug + Eq + 'static {}

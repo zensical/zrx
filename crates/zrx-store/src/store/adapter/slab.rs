@@ -29,7 +29,7 @@ use slab::Slab;
 use std::borrow::Borrow;
 use std::mem;
 
-use crate::store::item::Key;
+use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreMut, StoreMutRef};
 
 mod iter;
@@ -40,10 +40,7 @@ pub use iter::{Iter, IterMut, Keys, Values};
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<K, V> Store<K, V> for Slab<(K, V)>
-where
-    K: Key,
-{
+impl<K, V> Store<K, V> for Slab<(K, V)> {
     /// Returns a reference to the value identified by the key.
     ///
     /// # Examples
@@ -106,6 +103,7 @@ where
 impl<K, V> StoreMut<K, V> for Slab<(K, V)>
 where
     K: Key,
+    V: Value,
 {
     /// Inserts the value identified by the key.
     ///
@@ -119,19 +117,18 @@ where
     /// let mut store = Slab::new();
     ///
     /// // Insert value
-    /// StoreMut::insert(&mut store, "key", 42);
+    /// let value = StoreMut::insert(&mut store, "key", 42);
+    /// assert_eq!(value, None);
     /// ```
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
-        for (_, (check, prior)) in self.iter_mut() {
-            if check == &key {
-                return Some(mem::replace(prior, value));
-            }
+        let opt = Slab::iter_mut(self).find(|(_, (check, _))| check == &key);
+        if let Some((_, (_, prior))) = opt {
+            (prior != &value).then(|| mem::replace(prior, value))
+        } else {
+            self.insert((key, value));
+            None
         }
-
-        // Insert new entry
-        self.insert((key, value));
-        None
     }
 
     /// Removes the value identified by the key.
@@ -234,8 +231,8 @@ where
         K: Borrow<Q>,
         Q: Key,
     {
-        Slab::iter_mut(self).find_map(|(_, entry)| {
-            (entry.0.borrow() == key).then_some(&mut entry.1)
+        Slab::iter_mut(self).find_map(|(_, (check, value))| {
+            ((*check).borrow() == key).then_some(value)
         })
     }
 
@@ -261,7 +258,7 @@ where
         V: Default,
     {
         let index = Slab::iter(self)
-            .position(|(_, (check, _))| check.borrow() == key)
+            .position(|(_, (check, _))| check == key)
             .unwrap_or_else(|| Slab::insert(self, (key.clone(), V::default())));
 
         // Return mutable reference

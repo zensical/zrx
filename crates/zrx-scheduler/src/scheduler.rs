@@ -327,6 +327,7 @@ where
 #[allow(clippy::must_use_candidate)]
 impl<I, S> Scheduler<I, S>
 where
+    I: Id,
     S: Strategy,
 {
     /// Returns the number of work to be done.

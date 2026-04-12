@@ -25,9 +25,13 @@
 
 //! Item set.
 
+mod drain;
 mod into_iter;
+mod iter;
 
+pub use drain::Drain;
 pub use into_iter::IntoIter;
+pub use iter::Iter;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -101,20 +105,18 @@ impl Items {
     ///
     /// // Create item set
     /// let items = Items::from_iter([1]);
+    ///
+    /// // Ensure presence of items
     /// assert_eq!(items.contains(0), false);
     /// assert_eq!(items.contains(1), true);
     /// ```
     #[inline]
     #[must_use]
     pub fn contains(&self, index: usize) -> bool {
-        (self.data[index >> 6] & 1 << (index & 63)) != 0
+        (self.data[index >> 6] & mask(index)) != 0
     }
 
     /// Inserts an item into the item set.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is out of bounds.
     ///
     /// # Examples
     ///
@@ -125,19 +127,21 @@ impl Items {
     /// let mut items = Items::new();
     ///
     /// // Insert item
-    /// items.insert(0);
+    /// assert_eq!(items.insert(0), true);
+    /// assert_eq!(items.insert(0), false);
     /// ```
     #[inline]
-    pub fn insert(&mut self, index: usize) {
+    pub fn insert(&mut self, index: usize) -> bool {
         let block = self.resolve(index);
-        self.data[block] |= 1 << (index & 63);
+        if (self.data[block] & mask(index)) == 0 {
+            self.data[block] |= mask(index);
+            true
+        } else {
+            false
+        }
     }
 
     /// Removes an item from the item set.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is out of bounds.
     ///
     /// # Examples
     ///
@@ -148,12 +152,18 @@ impl Items {
     /// let mut items = Items::from_iter([0, 1]);
     ///
     /// // Remove item
-    /// items.remove(0);
+    /// assert_eq!(items.remove(0), true);
+    /// assert_eq!(items.remove(0), false);
     /// ```
     #[inline]
-    pub fn remove(&mut self, index: usize) {
+    pub fn remove(&mut self, index: usize) -> bool {
         let block = self.resolve(index);
-        self.data[block] &= !(1 << (index & 63));
+        if (self.data[block] & mask(index)) != 0 {
+            self.data[block] &= !mask(index);
+            true
+        } else {
+            false
+        }
     }
 
     /// Clears all items in the item set.
@@ -217,7 +227,7 @@ impl Items {
         }
     }
 
-    /// Returns whether both item sets have any items in common.
+    /// Returns whether any of the given items is present.
     ///
     /// # Examples
     ///
@@ -228,8 +238,8 @@ impl Items {
     /// let mut a = Items::from_iter([0, 1]);
     /// let mut b = Items::from_iter([1, 2]);
     ///
-    /// // Ensure item sets have any items in common
-    /// assert!(a.has_any(&b));
+    /// // Ensure presence of items
+    /// assert!(b.has_any(&a));
     /// ```
     #[inline]
     #[must_use]
@@ -238,7 +248,7 @@ impl Items {
         iter.any(|(a, b)| (*a & *b) != 0)
     }
 
-    /// Returns whether both item sets have all items in common.
+    /// Returns whether the given items are all present.
     ///
     /// # Examples
     ///
@@ -249,14 +259,14 @@ impl Items {
     /// let mut a = Items::from_iter([0, 1]);
     /// let mut b = Items::from_iter([0, 1, 2]);
     ///
-    /// // Ensure item sets have all items in common
-    /// assert!(a.has_all(&b));
+    /// // Ensure presence of items
+    /// assert!(b.has_all(&a));
     /// ```
     #[inline]
     #[must_use]
     pub fn has_all(&self, other: &Self) -> bool {
         let mut iter = self.data.iter().zip(&other.data);
-        iter.all(|(a, b)| (*a & *b) == *a)
+        iter.all(|(a, b)| (*a & *b) == *b)
     }
 
     /// Resolve the block for the given item.
@@ -333,4 +343,14 @@ impl Default for Items {
     fn default() -> Self {
         Self::new()
     }
+}
+
+// ----------------------------------------------------------------------------
+// Functions
+// ----------------------------------------------------------------------------
+
+/// Returns the mask for the given index.
+#[inline]
+const fn mask(index: usize) -> u64 {
+    1 << (index & 63)
 }

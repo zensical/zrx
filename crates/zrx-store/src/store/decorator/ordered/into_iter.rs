@@ -28,8 +28,6 @@
 use std::collections::btree_set;
 
 use crate::store::comparator::{Ascending, Comparable};
-use crate::store::item::Key;
-use crate::store::Store;
 
 use super::Ordered;
 
@@ -48,12 +46,7 @@ pub struct IntoIter<K, V, C = Ascending> {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<K, V, S, C> IntoIterator for Ordered<K, V, S, C>
-where
-    K: Key,
-    V: Clone,
-    S: Store<K, V>,
-{
+impl<K, V, S, C> IntoIterator for Ordered<K, V, S, C> {
     type Item = (K, V);
     type IntoIter = IntoIter<K, V, C>;
 
@@ -84,11 +77,7 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl<K, V, C> Iterator for IntoIter<K, V, C>
-where
-    K: Key,
-    V: Clone,
-{
+impl<K, V, C> Iterator for IntoIter<K, V, C> {
     type Item = (K, V);
 
     /// Returns the next item.
@@ -105,11 +94,7 @@ where
     }
 }
 
-impl<K, V, C> ExactSizeIterator for IntoIter<K, V, C>
-where
-    K: Key,
-    V: Clone,
-{
+impl<K, V, C> ExactSizeIterator for IntoIter<K, V, C> {
     /// Returns the exact remaining length of the iterator.
     #[inline]
     fn len(&self) -> usize {
