@@ -51,13 +51,19 @@ use item::{Key, Value};
 /// There are several of those traits, all of which can be composed in trait
 /// bounds to require specific store capabilities. These are:
 ///
-/// - [`StoreMut`]: Mutable store
-/// - [`StoreMutRef`]: Mutable store that can return mutable references
-/// - [`StoreIterable`]: Immutable store that is iterable
-/// - [`StoreIterableMut`]: Mutable store that is iterable
-/// - [`StoreKeys`]: Immutable store that is iterable over its keys
-/// - [`StoreValues`]: Immutable store that is iterable over its values
-/// - [`StoreRange`]: Immutable store that is iterable over a range
+/// - [`StoreMut`]: Mutable store.
+/// - [`StoreMutRef`]: Mutable store that can return mutable references.
+/// - [`StoreIterable`]: Immutable store that is iterable.
+/// - [`StoreIterableMut`]: Mutable store that is iterable.
+/// - [`StoreKeys`]: Immutable store that is iterable over its keys.
+/// - [`StoreValues`]: Immutable store that is iterable over its values.
+/// - [`StoreRange`]: Immutable store that is iterable over a range.
+///
+/// For insertion and removal semantics, it's important to understand that
+/// stores compare each value with the prior value before mutation:
+///
+/// - [`StoreMut::insert`] returns the prior value if existent and different.
+/// - [`StoreMut::remove`] returns the prior value if existent.
 ///
 /// This trait is implemented for [`HashMap`][] and [`BTreeMap`][], as well as
 /// all of the store [`decorators`][] that allow to wrap stores with additional
