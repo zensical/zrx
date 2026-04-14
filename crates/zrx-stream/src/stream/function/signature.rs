@@ -25,6 +25,8 @@
 
 //! Function signatures.
 
+#![cfg_attr(not(feature = "tracing"), allow(unused_variables))]
+
 mod filter;
 mod filter_map;
 mod inspect;
