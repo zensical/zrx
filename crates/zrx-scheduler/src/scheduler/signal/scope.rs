@@ -76,6 +76,27 @@ impl<I> Scope<I>
 where
     I: Id,
 {
+    /// Returns the identifier, if scope has length 1.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Empty`] if the scope is empty, and [`Error::Depth`] if
+    /// the scope is deeper than one level, containing multiple identifiers.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // @todo
+    /// ```
+    #[inline]
+    pub fn try_as_id(&self) -> Result<&I> {
+        match &*self.path {
+            [id] => Ok(id),
+            [] => Err(Error::Empty),
+            _ => Err(Error::Depth),
+        }
+    }
+
     /// Concatenates the scope with another scope.
     ///
     /// # Examples
