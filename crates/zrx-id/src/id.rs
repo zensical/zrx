@@ -34,6 +34,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use zrx_path::PathExt;
+use zrx_scheduler::Value;
 
 mod builder;
 mod convert;
@@ -261,6 +262,10 @@ impl Id {
 
 // ----------------------------------------------------------------------------
 // Trait implementations
+// ----------------------------------------------------------------------------
+
+impl Value for Id {}
+
 // ----------------------------------------------------------------------------
 
 impl AsRef<Format<7>> for Id {

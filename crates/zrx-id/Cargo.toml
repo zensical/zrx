@@ -38,6 +38,7 @@ workspace = true
 
 [dependencies]
 zrx-path.workspace = true
+zrx-scheduler.workspace = true
 
 ahash.workspace = true
 globset.workspace = true
