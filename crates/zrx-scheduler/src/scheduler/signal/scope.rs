@@ -31,6 +31,7 @@ use std::hash::{Hash, Hasher};
 use std::ops::Index;
 use std::sync::Arc;
 
+use super::value::Value;
 use super::Id;
 
 mod error;
@@ -214,6 +215,10 @@ where
 
 // ----------------------------------------------------------------------------
 // Trait implementations
+// ----------------------------------------------------------------------------
+
+impl<I> Value for Scope<I> where I: Value {}
+
 // ----------------------------------------------------------------------------
 
 impl<I> From<I> for Scope<I>

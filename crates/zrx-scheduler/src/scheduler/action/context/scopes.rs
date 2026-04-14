@@ -25,7 +25,9 @@
 
 //! Scope set.
 
-use crate::scheduler::step::{IntoSteps, Result, Scoped, Steps};
+use std::vec::IntoIter;
+
+use crate::scheduler::step::Scoped;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -36,21 +38,6 @@ use crate::scheduler::step::{IntoSteps, Result, Scoped, Steps};
 pub struct Scopes<I> {
     /// Inner set of scopes.
     inner: Vec<Scoped<I>>,
-}
-
-// ----------------------------------------------------------------------------
-// Implementations
-// ----------------------------------------------------------------------------
-
-impl<I> Scopes<I> {
-    /// Maps a function over the scopes in the set.
-    #[inline]
-    pub fn map<F, T>(self, f: F) -> impl IntoSteps<I, T>
-    where
-        F: FnMut(Scoped<I>) -> Result<Steps<I, T>>,
-    {
-        self.inner.into_iter().map(f)
-    }
 }
 
 // ----------------------------------------------------------------------------
@@ -69,5 +56,16 @@ where
     {
         let iter = iter.into_iter().map(Into::into);
         Self { inner: iter.collect() }
+    }
+}
+
+impl<I> IntoIterator for Scopes<I> {
+    type Item = Scoped<I>;
+    type IntoIter = IntoIter<Self::Item>;
+
+    /// Converts the scope set into an iterator.
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.into_iter()
     }
 }
