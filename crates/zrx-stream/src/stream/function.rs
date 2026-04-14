@@ -33,7 +33,7 @@ pub mod arguments;
 mod signature;
 
 pub use arguments::Arguments;
-pub use signature::{FilterFn, FilterMapFn, InspectFn, MapFn};
+pub use signature::{DefaultFn, FilterFn, FilterMapFn, InspectFn, MapFn};
 
 // ----------------------------------------------------------------------------
 // Functions
