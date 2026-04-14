@@ -30,11 +30,13 @@
 mod default;
 mod filter;
 mod filter_map;
+mod flat_map;
 mod inspect;
 mod map;
 
 pub use default::DefaultFn;
 pub use filter::FilterFn;
 pub use filter_map::FilterMapFn;
+pub use flat_map::FlatMapFn;
 pub use inspect::InspectFn;
 pub use map::MapFn;
