@@ -28,7 +28,6 @@
 use ahash::AHasher;
 use std::borrow::Cow;
 use std::hash::{Hash, Hasher};
-use std::sync::Arc;
 
 use crate::id::format::{self, Format};
 use crate::id::Result;
@@ -261,7 +260,7 @@ impl<'a> Builder<'a> {
         };
 
         // No errors occurred
-        Ok(Selector { format: Arc::new(format), hash })
+        Ok(Selector { format, hash })
     }
 }
 

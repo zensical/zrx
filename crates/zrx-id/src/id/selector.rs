@@ -31,7 +31,6 @@ use std::cmp::Ordering;
 use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
-use std::sync::Arc;
 
 use super::expression::Term;
 use super::format::Format;
@@ -108,7 +107,7 @@ pub use convert::TryToSelector;
 #[derive(Clone)]
 pub struct Selector {
     /// Formatted string.
-    format: Arc<Format<7>>,
+    format: Format<7>,
     /// Precomputed hash.
     hash: u64,
 }
@@ -196,7 +195,7 @@ impl AsRef<Format<7>> for Selector {
     /// [`Specificity`]: crate::id::specificity::Specificity
     #[inline]
     fn as_ref(&self) -> &Format<7> {
-        self.format.as_ref()
+        &self.format
     }
 }
 
@@ -249,7 +248,7 @@ impl FromStr for Selector {
         };
 
         // No errors occurred
-        Ok(Self { format: Arc::new(format), hash })
+        Ok(Self { format, hash })
     }
 }
 
@@ -290,7 +289,7 @@ impl TryFrom<Id> for Selector {
         };
 
         // No errors occurred
-        Ok(Self { format: Arc::new(format), hash })
+        Ok(Self { format, hash })
     }
 }
 

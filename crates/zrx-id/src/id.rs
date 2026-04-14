@@ -32,7 +32,6 @@ use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::Arc;
 
 use zrx_path::PathExt;
 
@@ -123,7 +122,7 @@ use uri::Uri;
 #[derive(Clone)]
 pub struct Id {
     /// Formatted string.
-    format: Arc<Format<7>>,
+    format: Format<7>,
     /// Precomputed hash.
     hash: u64,
 }
@@ -275,7 +274,7 @@ impl AsRef<Format<7>> for Id {
     /// [`Specificity`]: crate::id::specificity::Specificity
     #[inline]
     fn as_ref(&self) -> &Format<7> {
-        self.format.as_ref()
+        &self.format
     }
 }
 
@@ -344,7 +343,7 @@ impl FromStr for Id {
         };
 
         // No errors occurred
-        Ok(Self { format: Arc::new(format), hash })
+        Ok(Self { format, hash })
     }
 }
 
