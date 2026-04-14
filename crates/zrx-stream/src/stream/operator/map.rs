@@ -32,7 +32,7 @@ use zrx_scheduler::action::{Action, Context};
 use zrx_scheduler::step::IntoSteps;
 use zrx_scheduler::{Id, Value};
 
-use crate::stream::function::MapFn;
+use crate::stream::function::{Arguments, MapFn};
 use crate::stream::Stream;
 
 use super::Operator;
@@ -42,11 +42,11 @@ use super::Operator;
 // ----------------------------------------------------------------------------
 
 /// Map operator.
-pub struct Map<T, F, U> {
+pub struct Map<T, F, A, U> {
     /// Operator function.
     function: F,
     /// Capture types.
-    marker: PhantomData<(T, U)>,
+    marker: PhantomData<(T, A, U)>,
 }
 
 // ----------------------------------------------------------------------------
@@ -61,9 +61,10 @@ where
     /// Maps the stream using the provided function.
     #[inline]
     #[must_use]
-    pub fn map<F, U>(&self, f: F) -> Stream<I, U>
+    pub fn map<F, A, U>(&self, f: F) -> Stream<I, U>
     where
-        F: MapFn<I, T, U> + Clone,
+        F: MapFn<A, I, T, U> + Clone,
+        A: Arguments,
         U: Value,
     {
         self.subscribe(Map {
@@ -77,11 +78,12 @@ where
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I, T, F, U> Action<I> for Map<T, F, U>
+impl<I, T, F, A, U> Action<I> for Map<T, F, A, U>
 where
     I: Id,
     T: Value,
-    F: MapFn<I, T, U> + Clone,
+    F: MapFn<A, I, T, U> + Clone,
+    A: Arguments,
     U: Value,
 {
     type Inputs = (T,);
@@ -90,7 +92,7 @@ where
     /// Executes the operator.
     fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {
         let Binding { scopes, inputs, mut output, .. } = ctx.bind();
-        scopes.map(move |scope| {
+        scopes.into_iter().map(move |scope| {
             let Some(value) = inputs.get(&scope).cloned() else {
                 output.remove(&scope);
                 return scope.done();
@@ -98,7 +100,7 @@ where
             scope.task().build({
                 let function = self.function.clone();
                 move || {
-                    let value = function.execute(&scope, &value)?;
+                    let value = function.execute(&scope, value)?;
                     scope.then().build(move |mut ctx| {
                         let mut output = ctx.output().expect("invariant");
                         output.insert((*scope).clone(), value);

@@ -25,6 +25,43 @@
 
 //! Function arguments.
 
-mod splat;
+// ----------------------------------------------------------------------------
+// Traits
+// ----------------------------------------------------------------------------
 
-pub use splat::Splat;
+/// Function arguments.
+pub trait Arguments: Send + Sync + 'static {}
+
+// ----------------------------------------------------------------------------
+// Structs
+// ----------------------------------------------------------------------------
+
+/// Marker for identifier arguments.
+pub struct ForScope;
+
+/// Marker for identifier arguments.
+pub struct ForId;
+
+/// Marker for value arguments.
+pub struct ForValue;
+
+/// Marker for splat arguments.
+pub struct ForSplat;
+
+/// Marker for scope and value arguments.
+pub struct ForScopeValue;
+
+/// Marker for scope and splat arguments.
+pub struct ForScopeSplat;
+
+/// Marker for identifier and value arguments.
+pub struct ForIdValue;
+
+/// Marker for identifier and splat arguments.
+pub struct ForIdSplat;
+
+// ----------------------------------------------------------------------------
+// Blanket implementations
+// ----------------------------------------------------------------------------
+
+impl<T> Arguments for T where T: Send + Sync + 'static {}

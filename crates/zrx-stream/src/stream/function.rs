@@ -29,13 +29,11 @@ use std::panic::{self, AssertUnwindSafe};
 
 use zrx_scheduler::step::Error;
 
-mod adapter;
-mod argument;
-mod traits;
+pub mod arguments;
+mod signature;
 
-pub use adapter::with_splat;
-pub use argument::Splat;
-pub use traits::*;
+pub use arguments::Arguments;
+pub use signature::{FilterFn, FilterMapFn, InspectFn, MapFn};
 
 // ----------------------------------------------------------------------------
 // Functions

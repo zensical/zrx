@@ -32,7 +32,7 @@ use zrx_scheduler::action::{Action, Context};
 use zrx_scheduler::step::IntoSteps;
 use zrx_scheduler::{Id, Value};
 
-use crate::stream::function::FilterFn;
+use crate::stream::function::{Arguments, FilterFn};
 use crate::stream::Stream;
 
 use super::Operator;
@@ -42,11 +42,11 @@ use super::Operator;
 // ----------------------------------------------------------------------------
 
 /// Filter operator.
-pub struct Filter<T, F> {
+pub struct Filter<T, F, A> {
     /// Operator function.
     function: F,
     /// Capture types.
-    marker: PhantomData<T>,
+    marker: PhantomData<(T, A)>,
 }
 
 // ----------------------------------------------------------------------------
@@ -61,9 +61,10 @@ where
     /// Filters the stream using the provided function.
     #[inline]
     #[must_use]
-    pub fn filter<F>(&self, f: F) -> Stream<I, T>
+    pub fn filter<F, A>(&self, f: F) -> Stream<I, T>
     where
-        F: FilterFn<I, T> + Clone,
+        F: FilterFn<A, I, T> + Clone,
+        A: Arguments,
     {
         self.subscribe(Filter {
             function: f,
@@ -76,11 +77,12 @@ where
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I, T, F> Action<I> for Filter<T, F>
+impl<I, T, F, A> Action<I> for Filter<T, F, A>
 where
     I: Id,
     T: Value,
-    F: FilterFn<I, T> + Clone,
+    F: FilterFn<A, I, T> + Clone,
+    A: Arguments,
 {
     type Inputs = (T,);
     type Output<'a> = T;
@@ -88,26 +90,17 @@ where
     /// Executes the operator.
     fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {
         let Binding { scopes, inputs, mut output, .. } = ctx.bind();
-        scopes.map(move |scope| {
+        scopes.into_iter().map(move |scope| {
             let Some(value) = inputs.get(&scope).cloned() else {
                 output.remove(&scope);
                 return scope.done();
             };
-            scope.task().build({
-                let function = self.function.clone();
-                move || {
-                    let predicate = function.execute(&scope, &value)?;
-                    scope.then().build(move |mut ctx| {
-                        let mut output = ctx.output().expect("invariant");
-                        if predicate {
-                            output.insert((*scope).clone(), value);
-                        } else {
-                            output.remove(&scope);
-                        }
-                        scope.done()
-                    })
-                }
-            })
+            if self.function.execute(&scope, &value)? {
+                output.insert((*scope).clone(), value);
+            } else {
+                output.remove(&scope);
+            }
+            scope.done()
         })
     }
 }

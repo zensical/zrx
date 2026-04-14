@@ -23,8 +23,14 @@
 
 // ----------------------------------------------------------------------------
 
-//! Function adapters.
+//! Function signatures.
 
-mod splat;
+mod filter;
+mod filter_map;
+mod inspect;
+mod map;
 
-pub use splat::{with_splat, WithSplat};
+pub use filter::FilterFn;
+pub use filter_map::FilterMapFn;
+pub use inspect::InspectFn;
+pub use map::MapFn;
