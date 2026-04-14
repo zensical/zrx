@@ -144,7 +144,8 @@ where
 /// Implements flat map function trait for splat arguments.
 macro_rules! impl_flat_map_fn_for_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ U, R> FlatMapFn<ForSplat, I, ($($T,)+), U, R> for F
+        impl<F, I, $($T,)+ U, R> FlatMapFn<ForSplat, I, ($($T,)+), U, R>
+            for F
         where
             F: Fn($($T),+) -> Result<R> + Send + 'static,
             R: IntoIterator<Item = (I, U)>,
@@ -199,7 +200,8 @@ macro_rules! impl_flat_map_fn_for_scope_splat {
 /// Implements flat map function trait for identifier and splat arguments.
 macro_rules! impl_flat_map_fn_for_id_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ U, R> FlatMapFn<ForIdSplat, I, ($($T,)+), U, R> for F
+        impl<F, I, $($T,)+ U, R> FlatMapFn<ForIdSplat, I, ($($T,)+), U, R>
+            for F
         where
             F: Fn(&I, $($T),+) -> Result<R> + Send + 'static,
             R: IntoIterator<Item = (I, U)>,
