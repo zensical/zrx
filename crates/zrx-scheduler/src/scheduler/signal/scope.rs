@@ -133,7 +133,6 @@ where
     ///     Scope::from_iter([3, 2, 1])
     /// );
     /// ```
-    #[inline]
     #[must_use]
     pub fn reverse(&self) -> Self {
         let mut path = self.path.to_vec();
@@ -162,7 +161,6 @@ where
     ///     Scope::from_iter([2, 3, 1])
     /// );
     /// ```
-    #[inline]
     #[must_use]
     pub fn rotate_left(&self, n: usize) -> Self {
         let mut path = self.path.to_vec();
@@ -191,7 +189,6 @@ where
     ///     Scope::from_iter([3, 1, 2])
     /// );
     /// ```
-    #[inline]
     #[must_use]
     pub fn rotate_right(&self, n: usize) -> Self {
         let mut path = self.path.to_vec();
@@ -244,7 +241,6 @@ where
     /// // Create scope from iterator
     /// let scope = Scope::from_iter([1, 2, 3]);
     /// ```
-    #[inline]
     fn from_iter<T>(iter: T) -> Self
     where
         T: IntoIterator<Item = I>,
@@ -264,6 +260,7 @@ impl<I> Index<usize> for Scope<I> {
     /// # Panics
     ///
     /// Panics if the index is out of bounds.
+    #[inline]
     fn index(&self, index: usize) -> &Self::Output {
         &self.path[index]
     }
