@@ -55,6 +55,7 @@ where
     I: Id,
 {
     /// Creates a continuation builder.
+    #[must_use]
     pub fn then<C>(&self) -> Builder<I, C> {
         Builder {
             scope: self.clone(),

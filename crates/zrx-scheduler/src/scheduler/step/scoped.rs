@@ -54,6 +54,7 @@ where
     I: Id,
 {
     /// Creates a scoped value from the given scope.
+    #[must_use]
     pub fn new(scope: Scope<I>, id: usize) -> Self {
         Self { scope, id: Some(id) }
     }

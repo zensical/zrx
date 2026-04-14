@@ -54,6 +54,7 @@ where
     I: Id,
 {
     /// Creates a task builder.
+    #[must_use]
     pub fn task<C>(&self) -> Builder<I, C> {
         Builder {
             scope: self.clone(),

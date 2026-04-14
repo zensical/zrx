@@ -51,6 +51,7 @@ where
     I: Id,
 {
     /// Creates a timer builder.
+    #[must_use]
     pub fn timer<C>(&self) -> Builder<I, C> {
         Builder {
             scope: self.clone(),
