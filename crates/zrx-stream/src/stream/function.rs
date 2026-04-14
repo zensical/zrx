@@ -34,7 +34,7 @@ mod signature;
 
 pub use arguments::Arguments;
 pub use signature::{
-    DefaultFn, FilterFn, FilterMapFn, FlatMapFn, InspectFn, MapFn,
+    DefaultFn, FilterFn, FilterMapFn, FlatMapFn, InspectFn, KeyFn, MapFn,
 };
 
 // ----------------------------------------------------------------------------

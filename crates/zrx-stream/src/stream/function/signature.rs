@@ -32,6 +32,7 @@ mod filter;
 mod filter_map;
 mod flat_map;
 mod inspect;
+mod key;
 mod map;
 
 pub use default::DefaultFn;
@@ -39,4 +40,5 @@ pub use filter::FilterFn;
 pub use filter_map::FilterMapFn;
 pub use flat_map::FlatMapFn;
 pub use inspect::InspectFn;
+pub use key::KeyFn;
 pub use map::MapFn;
