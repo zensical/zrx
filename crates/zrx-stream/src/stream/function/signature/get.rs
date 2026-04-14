@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Key function.
+//! Get function.
 
 use std::fmt::Display;
 
@@ -40,23 +40,23 @@ use crate::stream::function::catch;
 // Traits
 // ----------------------------------------------------------------------------
 
-/// Key function.
-pub trait KeyFn<A, I, T, S>: Send + 'static {
-    /// Executes the key function.
+/// Get function.
+pub trait GetFn<A, I, T, U>: Send + 'static {
+    /// Executes the get function.
     ///
     /// # Errors
     ///
     /// This method returns an error if the function fails to execute.
-    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<S>;
+    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<U>;
 }
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<F, I, T, S> KeyFn<ForScope, I, T, S> for F
+impl<F, I, T, U> GetFn<ForScope, I, T, U> for F
 where
-    F: Fn(&Scope<I>) -> Result<S> + Send + 'static,
+    F: Fn(&Scope<I>) -> Result<U> + Send + 'static,
     I: Display,
 {
     #[cfg_attr(
@@ -64,14 +64,14 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, _: &T) -> Result<S> {
+    fn execute(&self, scope: &Scope<I>, _: &T) -> Result<U> {
         catch(|| self(scope))
     }
 }
 
-impl<F, I, T, S> KeyFn<ForId, I, T, S> for F
+impl<F, I, T, U> GetFn<ForId, I, T, U> for F
 where
-    F: Fn(&I) -> Result<S> + Send + 'static,
+    F: Fn(&I) -> Result<U> + Send + 'static,
     I: Display,
 {
     #[cfg_attr(
@@ -79,14 +79,14 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, _: &T) -> Result<S> {
+    fn execute(&self, scope: &Scope<I>, _: &T) -> Result<U> {
         catch(|| self(scope.try_as_id()?))
     }
 }
 
-impl<F, I, T, S> KeyFn<ForValue, I, T, S> for F
+impl<F, I, T, U> GetFn<ForValue, I, T, U> for F
 where
-    F: Fn(&T) -> Result<S> + Send + 'static,
+    F: Fn(&T) -> Result<U> + Send + 'static,
     I: Display,
 {
     #[cfg_attr(
@@ -94,14 +94,14 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<S> {
+    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<U> {
         catch(|| self(value))
     }
 }
 
-impl<F, I, T, S> KeyFn<ForScopeValue, I, T, S> for F
+impl<F, I, T, U> GetFn<ForScopeValue, I, T, U> for F
 where
-    F: Fn(&Scope<I>, &T) -> Result<S> + Send + 'static,
+    F: Fn(&Scope<I>, &T) -> Result<U> + Send + 'static,
     I: Display,
 {
     #[cfg_attr(
@@ -109,14 +109,14 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<S> {
+    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<U> {
         catch(|| self(scope, value))
     }
 }
 
-impl<F, I, T, S> KeyFn<ForIdValue, I, T, S> for F
+impl<F, I, T, U> GetFn<ForIdValue, I, T, U> for F
 where
-    F: Fn(&I, &T) -> Result<S> + Send + 'static,
+    F: Fn(&I, &T) -> Result<U> + Send + 'static,
     I: Display,
 {
     #[cfg_attr(
@@ -124,7 +124,7 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<S> {
+    fn execute(&self, scope: &Scope<I>, value: &T) -> Result<U> {
         catch(|| self(scope.try_as_id()?, value))
     }
 }
@@ -133,12 +133,12 @@ where
 // Macros
 // ----------------------------------------------------------------------------
 
-/// Implements key function trait for splat arguments.
-macro_rules! impl_key_fn_for_splat {
+/// Implements get function trait for splat arguments.
+macro_rules! impl_get_fn_for_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ S> KeyFn<ForSplat, I, ($($T,)+), S> for F
+        impl<F, I, $($T,)+ U> GetFn<ForSplat, I, ($($T,)+), U> for F
         where
-            F: Fn($(&$T),+) -> Result<S> + Send + 'static,
+            F: Fn($(&$T),+) -> Result<U> + Send + 'static,
             I: Display,
         {
             #[cfg_attr(
@@ -150,7 +150,7 @@ macro_rules! impl_key_fn_for_splat {
             #[inline]
             fn execute(
                 &self, scope: &Scope<I>, value: &($($T,)+)
-            ) -> Result<S> {
+            ) -> Result<U> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
                 catch(|| self($($T),+))
@@ -159,12 +159,12 @@ macro_rules! impl_key_fn_for_splat {
     };
 }
 
-/// Implements key function trait for scope and splat arguments.
-macro_rules! impl_key_fn_for_scope_splat {
+/// Implements get function trait for scope and splat arguments.
+macro_rules! impl_get_fn_for_scope_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ S> KeyFn<ForScopeSplat, I, ($($T,)+), S> for F
+        impl<F, I, $($T,)+ U> GetFn<ForScopeSplat, I, ($($T,)+), U> for F
         where
-            F: Fn(&Scope<I>, $(&$T),+) -> Result<S> + Send + 'static,
+            F: Fn(&Scope<I>, $(&$T),+) -> Result<U> + Send + 'static,
             I: Display,
         {
             #[cfg_attr(
@@ -176,7 +176,7 @@ macro_rules! impl_key_fn_for_scope_splat {
             #[inline]
             fn execute(
                 &self, scope: &Scope<I>, value: &($($T,)+)
-            ) -> Result<S> {
+            ) -> Result<U> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
                 catch(|| self(scope, $($T),+))
@@ -185,12 +185,12 @@ macro_rules! impl_key_fn_for_scope_splat {
     };
 }
 
-/// Implements key function trait for identifier and splat arguments.
-macro_rules! impl_key_fn_for_id_splat {
+/// Implements get function trait for identifier and splat arguments.
+macro_rules! impl_get_fn_for_id_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ S> KeyFn<ForIdSplat, I, ($($T,)+), S> for F
+        impl<F, I, $($T,)+ U> GetFn<ForIdSplat, I, ($($T,)+), U> for F
         where
-            F: Fn(&I, $(&$T),+) -> Result<S> + Send + 'static,
+            F: Fn(&I, $(&$T),+) -> Result<U> + Send + 'static,
             I: Display,
         {
             #[cfg_attr(
@@ -202,7 +202,7 @@ macro_rules! impl_key_fn_for_id_splat {
             #[inline]
             fn execute(
                 &self, scope: &Scope<I>, value: &($($T,)+)
-            ) -> Result<S> {
+            ) -> Result<U> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
                 catch(|| self(scope.try_as_id()?, $($T),+))
@@ -211,22 +211,22 @@ macro_rules! impl_key_fn_for_id_splat {
     };
 }
 
-/// Implements key function traits.
-macro_rules! impl_key_fn {
+/// Implements get function traits.
+macro_rules! impl_get_fn {
     ($($T:ident),+) => {
-        impl_key_fn_for_splat!($($T),+);
-        impl_key_fn_for_scope_splat!($($T),+);
-        impl_key_fn_for_id_splat!($($T),+);
+        impl_get_fn_for_splat!($($T),+);
+        impl_get_fn_for_scope_splat!($($T),+);
+        impl_get_fn_for_id_splat!($($T),+);
     };
 }
 
 // ----------------------------------------------------------------------------
 
-impl_key_fn!(T1);
-impl_key_fn!(T1, T2);
-impl_key_fn!(T1, T2, T3);
-impl_key_fn!(T1, T2, T3, T4);
-impl_key_fn!(T1, T2, T3, T4, T5);
-impl_key_fn!(T1, T2, T3, T4, T5, T6);
-impl_key_fn!(T1, T2, T3, T4, T5, T6, T7);
-impl_key_fn!(T1, T2, T3, T4, T5, T6, T7, T8);
+impl_get_fn!(T1);
+impl_get_fn!(T1, T2);
+impl_get_fn!(T1, T2, T3);
+impl_get_fn!(T1, T2, T3, T4);
+impl_get_fn!(T1, T2, T3, T4, T5);
+impl_get_fn!(T1, T2, T3, T4, T5, T6);
+impl_get_fn!(T1, T2, T3, T4, T5, T6, T7);
+impl_get_fn!(T1, T2, T3, T4, T5, T6, T7, T8);
