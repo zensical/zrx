@@ -72,10 +72,7 @@ pub struct Scope<I> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<I> Scope<I>
-where
-    I: Id,
-{
+impl<I> Scope<I> {
     /// Returns the identifier, if scope has length 1.
     ///
     /// # Errors
@@ -86,7 +83,17 @@ where
     /// # Examples
     ///
     /// ```
-    /// // @todo
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_scheduler::Scope;
+    ///
+    /// // Create scope
+    /// let scope = Scope::from(42);
+    ///
+    /// // Obtain identifier
+    /// assert_eq!(scope.try_as_id()?, &42);
+    /// # Ok(())
+    /// # }
     /// ```
     #[inline]
     pub fn try_as_id(&self) -> Result<&I> {
@@ -96,7 +103,12 @@ where
             _ => Err(Error::Depth),
         }
     }
+}
 
+impl<I> Scope<I>
+where
+    I: Id,
+{
     /// Concatenates the scope with another scope.
     ///
     /// # Examples
