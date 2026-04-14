@@ -40,10 +40,10 @@ use crate::store::{
 };
 
 pub mod items;
-mod iter;
+mod slots;
 
 pub use items::Items;
-pub use iter::{Slots, SlotsMut};
+pub use slots::{Slots, SlotsMut};
 
 // ----------------------------------------------------------------------------
 // Implementations
