@@ -1,7 +1,7 @@
 // Copyright (c) 2025-2026 Zensical and contributors
 
 // SPDX-License-Identifier: MIT
-// Third-party contributions licensed under DCO
+// All contributions are certified under the DCO
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -23,45 +23,67 @@
 
 // ----------------------------------------------------------------------------
 
-//! Stream.
+//! Barrier advancement.
 
-use std::marker::PhantomData;
+use zrx_scheduler::{Id, Scope};
+use zrx_store::stash::Items;
+use zrx_store::Stash;
 
-pub mod barrier;
-pub mod combinator;
-pub mod function;
-pub mod operator;
-pub mod workflow;
+mod iter;
 
-use workflow::Builder;
+pub use iter::Iter;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Stream.
-#[derive(Debug)]
-pub struct Stream<I, T> {
-    /// Identifier.
-    id: usize,
-    /// Workflow builder.
-    workflow: Builder<I>,
-    /// Capture types.
-    marker: PhantomData<T>,
+/// Barrier advancement.
+pub struct Advance<'a, I> {
+    /// Barrier scope for identification.
+    key: &'a Scope<I>,
+    /// Contained scopes.
+    items: &'a Items,
+    /// All known scopes.
+    scopes: &'a Stash<Scope<I>, Items>,
+}
+
+// ----------------------------------------------------------------------------
+// Implementations
+// ----------------------------------------------------------------------------
+
+impl<'a, I> Advance<'a, I> {
+    /// Converts the barrier advancement into an event.
+    #[must_use]
+    pub fn new(
+        key: &'a Scope<I>, items: &'a Items, scopes: &'a Stash<Scope<I>, Items>,
+    ) -> Self {
+        Self { key, items, scopes }
+    }
+}
+
+#[allow(clippy::must_use_candidate)]
+impl<I> Advance<'_, I> {
+    /// Returns a reference to the scope.
+    #[inline]
+    pub fn scope(&self) -> &Scope<I> {
+        self.key
+    }
 }
 
 // ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I, T> Clone for Stream<I, T> {
-    /// Clones the stream.
+impl<'a, I> IntoIterator for &'a Advance<'a, I>
+where
+    I: Id,
+{
+    type Item = &'a Scope<I>;
+    type IntoIter = Iter<'a, I>;
+
+    /// Creates a consuming iterator over the barrier advancement.
     #[inline]
-    fn clone(&self) -> Self {
-        Self {
-            id: self.id,
-            workflow: self.workflow.clone(),
-            marker: self.marker,
-        }
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }

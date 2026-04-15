@@ -23,19 +23,58 @@
 
 // ----------------------------------------------------------------------------
 
-//! tbd.
+//! Iterator implementation for [`Advance`].
 
-mod stream;
+use zrx_scheduler::{Id, Scope};
+use zrx_store::stash::{items, Items};
+use zrx_store::Stash;
 
-pub use stream::barrier::{self, Barrier};
-pub use stream::combinator::StreamTupleExt;
-pub use stream::function;
-pub use stream::operator;
-pub use stream::workflow::{self, Workflow};
-pub use stream::Stream;
+use super::Advance;
 
 // ----------------------------------------------------------------------------
-// Re-exports
+// Structs
 // ----------------------------------------------------------------------------
 
-pub use zrx_scheduler::Value;
+/// Iterator for [`Advance`].
+pub struct Iter<'a, I> {
+    /// Inner iterator.
+    inner: items::Iter<'a>,
+    /// All known scopes.
+    stash: &'a Stash<Scope<I>, Items>,
+}
+
+// ----------------------------------------------------------------------------
+// Implementations
+// ----------------------------------------------------------------------------
+
+impl<'a, I> Advance<'a, I>
+where
+    I: Id,
+{
+    /// Creates an iterator over the barrier advancement.
+    #[inline]
+    #[must_use]
+    pub fn iter(&self) -> Iter<'a, I> {
+        Iter {
+            inner: self.items.iter(),
+            stash: self.scopes,
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Trait implementations
+// ----------------------------------------------------------------------------
+
+impl<'a, I> Iterator for Iter<'a, I>
+where
+    I: Id,
+{
+    type Item = &'a Scope<I>;
+
+    /// Returns the next scope.
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().and_then(|index| self.stash.key(index))
+    }
+}
