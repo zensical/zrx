@@ -39,11 +39,13 @@ mod filter;
 mod filter_map;
 mod join;
 mod map;
+mod product;
 
 pub use filter::Filter;
 pub use filter_map::FilterMap;
 pub use join::Join;
 pub use map::Map;
+pub use product::Product;
 
 // ----------------------------------------------------------------------------
 // Traits
