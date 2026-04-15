@@ -240,11 +240,15 @@ impl Strategy for WorkSharing {
         // by a worker before the running count can be incremented.
         self.pending.fetch_add(1, Ordering::Release);
 
-        // Submit the task to the sender
-        match self.sender.as_ref() {
-            Some(sender) => Ok(sender.try_send(task)?),
-            None => unreachable!(),
-        }
+        // Submit the task to the sender - in case the channel is at capacity,
+        // we need to decrement the pending count again, since the task was not
+        // accepted. Otherwise, we'll end up with incorrect counts for pending
+        // and thus subsequently running tasks.
+        let sender = self.sender.as_ref().expect("invariant");
+        sender.try_send(task).map_err(|err| {
+            self.pending.fetch_sub(1, Ordering::Relaxed);
+            err.into()
+        })
     }
 
     /// Returns the number of workers.
