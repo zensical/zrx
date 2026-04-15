@@ -104,7 +104,13 @@ where
     /// Ensure a frontier exists for the given token and scoped value.
     pub fn ensure(&mut self, token: Token, scoped: &Scoped<I>) -> Scoped<I> {
         let schedule = &mut self.schedules[token.module];
-        Scoped::new((**scoped).clone(), schedule.submit(token.node, scoped))
+        match scoped.id() {
+            Some(_) => scoped.clone(),
+            None => Scoped::new(
+                (**scoped).clone(),
+                schedule.submit(token.node, scoped),
+            ),
+        }
     }
 
     /// Resumes a schedule with the given token and continuation.

@@ -29,6 +29,7 @@ use std::collections::VecDeque;
 
 use zrx_storage::Storages;
 
+use crate::action::options::{Event, Interest};
 use crate::scheduler::action::graph::{self, Graph};
 use crate::scheduler::action::{context, Context, Result};
 use crate::scheduler::signal::{Id, Scope};
@@ -75,6 +76,24 @@ where
         // Create and insert frontier
         let frontier = Frontier::new(scope.clone(), traversal);
         let f = self.frontiers.insert(frontier).expect("invariant");
+
+        // Notify interested nodes about new frontier
+        for n in &self.graph {
+            let options = self.graph[n].options();
+            if options.interests.contains(&Interest::Enter) {
+                let (action, adj) = self.graph.adjacent_mut(n);
+                let (inputs, output) = self.storages.views(adj.incoming, n);
+                let ctx = Context::builder()
+                    .inputs(inputs)
+                    .output(output)
+                    .events(vec![Event::Insert(scope.clone())])
+                    .build([])
+                    .expect("invariant");
+                // Hand events to action - later, we should enqueue events, and
+                // invoke actions along the way together with all queued events
+                action.execute(ctx);
+            }
+        }
 
         // Consume current node, and return frontier identifier
         let frontier = &mut self.frontiers[f];

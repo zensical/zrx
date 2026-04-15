@@ -23,16 +23,16 @@
 
 // ----------------------------------------------------------------------------
 
-//! Filter map operator.
+//! Product operator.
 
 use std::marker::PhantomData;
 
 use zrx_scheduler::action::context::Binding;
 use zrx_scheduler::action::{Action, Context};
-use zrx_scheduler::step::IntoSteps;
+use zrx_scheduler::step::{IntoSteps, Scoped};
 use zrx_scheduler::{Id, Value};
 
-use crate::stream::function::{Arguments, FilterMapFn};
+use crate::stream::combinator::convert::IntoStreamTupleCons;
 use crate::stream::Stream;
 
 use super::Operator;
@@ -41,12 +41,10 @@ use super::Operator;
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Filter map operator.
-pub struct FilterMap<T, F, A, U> {
-    /// Operator function.
-    function: F,
+/// Product operator.
+pub struct Product<T, U> {
     /// Capture types.
-    marker: PhantomData<(T, A, U)>,
+    marker: PhantomData<(T, U)>,
 }
 
 // ----------------------------------------------------------------------------
@@ -61,16 +59,13 @@ where
     /// Maps the stream using the provided function.
     #[inline]
     #[must_use]
-    pub fn filter_map<F, A, U>(&self, f: F) -> Stream<I, U>
+    pub fn product<U>(&self, stream: &Stream<I, U>) -> Stream<I, (T, U)>
     where
-        F: FilterMapFn<A, I, T, U> + Clone,
-        A: Arguments,
         U: Value,
     {
-        self.subscribe(FilterMap {
-            function: f,
-            marker: PhantomData,
-        })
+        stream
+            .into_stream_tuple_cons(self.clone())
+            .subscribe(Product { marker: PhantomData })
     }
 }
 
@@ -78,40 +73,61 @@ where
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I, T, F, A, U> Action<I> for FilterMap<T, F, A, U>
+impl<I, T, U> Action<I> for Product<T, U>
 where
     I: Id,
     T: Value,
-    F: FilterMapFn<A, I, T, U> + Clone,
-    A: Arguments,
     U: Value,
 {
-    type Inputs = (T,);
-    type Output<'a> = U;
+    type Inputs = (T, U);
+    type Output<'a> = (T, U);
 
     /// Executes the operator.
     fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {
         let Binding { scopes, inputs, mut output, .. } = ctx.bind();
-        scopes.into_iter().map(move |scope| {
-            let Some(value) = inputs.get(&scope).cloned() else {
-                output.remove(&scope);
-                return scope.done();
-            };
-            scope.task().build({
-                let function = self.function.clone();
-                move || {
-                    let opt = function.execute(&scope, value)?;
-                    scope.then().build(move |mut ctx| {
-                        let mut output = ctx.output().expect("invariant");
-                        if let Some(value) = opt {
-                            output.insert((*scope).clone(), value);
-                        } else {
-                            output.remove(&scope);
-                        }
-                        scope.done()
-                    })
+        scopes.into_iter().flat_map(move |scope| {
+            let (left, right) = *inputs;
+            let mut scoped = vec![];
+
+            // If the key exists in the left scope,
+            if let Some(l_value) = left.get(&scope) {
+                for (r_scope, r_value) in right.iter() {
+                    let combined = scope.concat(r_scope);
+                    output.insert(
+                        combined.clone(),
+                        (l_value.clone(), r_value.clone()),
+                    );
+                    scoped.push(Scoped::from(combined).done());
                 }
-            })
+            } else {
+                for r_scope in right.keys() {
+                    let combined = scope.concat(r_scope);
+                    output.remove(&combined);
+                    scoped.push(Scoped::from(combined).done());
+                }
+            }
+
+            // If the key exists in the left scope,
+            if let Some(r_value) = right.get(&scope) {
+                // omit double-emit
+                for (l_scope, l_value) in
+                    left.iter().filter(|(k, _)| *k != &*scope)
+                {
+                    let combined = scope.concat(l_scope);
+                    output.insert(
+                        combined.clone(),
+                        (l_value.clone(), r_value.clone()),
+                    );
+                    scoped.push(Scoped::from(combined).done());
+                }
+            } else {
+                for l_scope in left.keys() {
+                    let combined = l_scope.concat(&scope);
+                    output.remove(&combined);
+                    scoped.push(Scoped::from(combined).done());
+                }
+            }
+            scoped
         })
     }
 }

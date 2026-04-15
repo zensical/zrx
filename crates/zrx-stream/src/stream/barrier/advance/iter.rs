@@ -23,62 +23,58 @@
 
 // ----------------------------------------------------------------------------
 
-//! Function adapter to splat the function's arguments.
+//! Iterator implementation for [`Advance`].
 
-use std::ops::Deref;
+use zrx_scheduler::{Id, Scope};
+use zrx_store::stash::{items, Items};
+use zrx_store::Stash;
+
+use super::Advance;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Function adapter to splat the function's arguments.
-///
-/// This adapter is just a wrapper around a function and acts as a marker to
-/// omit conflicting implementations of function traits with more specialized
-/// implementations. This implementation passes the arguments as a [`Splat`][]
-/// to the function, allowing to conveniently work with multiple arguments.
-///
-/// Use the [`with_splat`] function to wrap a function with this adapter, since
-/// this type is not part of the streaming API, as it's only necessary for the
-/// implementation of the function traits themselves. See the documentation of
-/// [`with_splat`] for more information.
-///
-/// [`Splat`]: crate::stream::function::Splat
-#[derive(Clone, Debug)]
-#[repr(transparent)]
-pub struct WithSplat<F> {
-    /// Function.
-    function: F,
+/// Iterator for [`Advance`].
+pub struct Iter<'a, I> {
+    /// Inner iterator.
+    inner: items::Iter<'a>,
+    /// All known scopes.
+    stash: &'a Stash<Scope<I>, Items>,
+}
+
+// ----------------------------------------------------------------------------
+// Implementations
+// ----------------------------------------------------------------------------
+
+impl<'a, I> Advance<'a, I>
+where
+    I: Id,
+{
+    /// Creates an iterator over the barrier advancement.
+    #[inline]
+    #[must_use]
+    pub fn iter(&self) -> Iter<'a, I> {
+        Iter {
+            inner: self.items.iter(),
+            stash: self.scopes,
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<F> Deref for WithSplat<F> {
-    type Target = F;
+impl<'a, I> Iterator for Iter<'a, I>
+where
+    I: Id,
+{
+    type Item = &'a Scope<I>;
 
-    /// Dereferences to the wrapped function.
+    /// Returns the next scope.
     #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.function
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().and_then(|index| self.stash.key(index))
     }
-}
-
-// ----------------------------------------------------------------------------
-// Functions
-// ----------------------------------------------------------------------------
-
-/// Splats the function's arguments.
-///
-/// Function traits that implement this trait allow to pass a function that
-/// receives a splat argument instead of a single tuple argument.
-///
-/// Note that there are no trait bounds, since [`WithSplat`] is merely a marker
-/// struct that is used to differentiate between function implementations. This
-/// is also why the returned type implements [`Deref`], so that it behaves like
-/// the underlying function.
-#[inline]
-pub fn with_splat<F>(f: F) -> WithSplat<F> {
-    WithSplat { function: f }
 }

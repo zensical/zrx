@@ -23,8 +23,28 @@
 
 // ----------------------------------------------------------------------------
 
-//! Function adapters.
+//! Action interest.
 
-mod splat;
+use crate::scheduler::signal::Scope;
 
-pub use splat::{with_splat, WithSplat};
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+/// Action interest.
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+pub enum Interest {
+    /// Action is interested in scope entry.
+    Enter,
+    /// Action is interested in scope exit.
+    Leave,
+}
+
+/// Action event. -
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum Event<I> {
+    /// Scope insertion.
+    Insert(Scope<I>),
+    /// Scope removal.
+    Remove(Scope<I>),
+}

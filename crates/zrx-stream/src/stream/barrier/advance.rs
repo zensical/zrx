@@ -23,49 +23,67 @@
 
 // ----------------------------------------------------------------------------
 
-//! Scope set.
+//! Barrier advancement.
 
-use std::vec::IntoIter;
+use zrx_scheduler::{Id, Scope};
+use zrx_store::stash::Items;
+use zrx_store::Stash;
 
-use crate::scheduler::step::Scoped;
+mod iter;
+
+pub use iter::Iter;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Scope set.
-#[derive(Debug)]
-pub struct Scopes<I> {
-    /// Inner set of scopes.
-    inner: Vec<Scoped<I>>,
+/// Barrier advancement.
+pub struct Advance<'a, I> {
+    /// Barrier scope for identification.
+    key: &'a Scope<I>,
+    /// Contained scopes.
+    items: &'a Items,
+    /// All known scopes.
+    scopes: &'a Stash<Scope<I>, Items>,
+}
+
+// ----------------------------------------------------------------------------
+// Implementations
+// ----------------------------------------------------------------------------
+
+impl<'a, I> Advance<'a, I> {
+    /// Converts the barrier advancement into an event.
+    #[must_use]
+    pub fn new(
+        key: &'a Scope<I>, items: &'a Items, scopes: &'a Stash<Scope<I>, Items>,
+    ) -> Self {
+        Self { key, items, scopes }
+    }
+}
+
+#[allow(clippy::must_use_candidate)]
+impl<I> Advance<'_, I> {
+    /// Returns a reference to the scope.
+    #[inline]
+    pub fn scope(&self) -> &Scope<I> {
+        self.key
+    }
 }
 
 // ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<S, I> FromIterator<S> for Scopes<I>
+impl<'a, I> IntoIterator for &'a Advance<'a, I>
 where
-    S: Into<Scoped<I>>,
+    I: Id,
 {
-    /// Creates a scope set from an iterator.
-    #[inline]
-    fn from_iter<T>(iter: T) -> Self
-    where
-        T: IntoIterator<Item = S>,
-    {
-        let iter = iter.into_iter().map(Into::into);
-        Self { inner: iter.collect() }
-    }
-}
+    type Item = &'a Scope<I>;
+    type IntoIter = Iter<'a, I>;
 
-impl<I> IntoIterator for Scopes<I> {
-    type Item = Scoped<I>;
-    type IntoIter = IntoIter<Self::Item>;
-
-    /// Converts the scope set into an iterator.
+    /// Creates a consuming iterator over the barrier advancement.
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        self.inner.into_iter()
+        self.iter()
     }
 }

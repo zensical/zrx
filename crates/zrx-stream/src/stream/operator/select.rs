@@ -23,16 +23,18 @@
 
 // ----------------------------------------------------------------------------
 
-//! Filter map operator.
+//! Select operator.
 
 use std::marker::PhantomData;
 
 use zrx_scheduler::action::context::Binding;
-use zrx_scheduler::action::{Action, Context};
-use zrx_scheduler::step::IntoSteps;
-use zrx_scheduler::{Id, Value};
+use zrx_scheduler::action::options::Interest;
+use zrx_scheduler::action::{Action, Context, Options};
+use zrx_scheduler::schedule::Subscriber;
+use zrx_scheduler::step::{IntoSteps, Scoped};
+use zrx_scheduler::{Id, Scope, Value};
 
-use crate::stream::function::{Arguments, FilterMapFn};
+use crate::stream::barrier::{Barrier, Barriers};
 use crate::stream::Stream;
 
 use super::Operator;
@@ -41,12 +43,13 @@ use super::Operator;
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Filter map operator.
-pub struct FilterMap<T, F, A, U> {
-    /// Operator function.
-    function: F,
+/// Select operator.
+#[derive(Debug)]
+pub struct Select<I, T> {
+    /// Barrier set.
+    barriers: Barriers<I>,
     /// Capture types.
-    marker: PhantomData<(T, A, U)>,
+    marker: PhantomData<T>,
 }
 
 // ----------------------------------------------------------------------------
@@ -55,22 +58,22 @@ pub struct FilterMap<T, F, A, U> {
 
 impl<I, T> Stream<I, T>
 where
-    I: Id,
+    I: Id + Value,
     T: Value,
 {
-    /// Maps the stream using the provided function.
+    /// Selects scopes from the stream using the provided barriers.
     #[inline]
     #[must_use]
-    pub fn filter_map<F, A, U>(&self, f: F) -> Stream<I, U>
+    pub fn select<B>(&self, iter: B) -> Stream<I, Vec<Scope<I>>>
     where
-        F: FilterMapFn<A, I, T, U> + Clone,
-        A: Arguments,
-        U: Value,
+        B: IntoIterator<Item = (Scope<I>, Barrier<I>)>,
     {
-        self.subscribe(FilterMap {
-            function: f,
-            marker: PhantomData,
-        })
+        let options = Options::default().interest(Interest::Enter);
+        let barriers = Barriers::from_iter(iter);
+        self.subscribe(
+            Subscriber::new(Select { barriers, marker: PhantomData })
+                .with_options(options),
+        )
     }
 }
 
@@ -78,40 +81,34 @@ where
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I, T, F, A, U> Action<I> for FilterMap<T, F, A, U>
+impl<I, T> Action<I> for Select<I, T>
 where
-    I: Id,
+    I: Id + Value,
     T: Value,
-    F: FilterMapFn<A, I, T, U> + Clone,
-    A: Arguments,
-    U: Value,
 {
     type Inputs = (T,);
-    type Output<'a> = U;
+    type Output<'a> = Vec<Scope<I>>;
 
     /// Executes the operator.
     fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {
-        let Binding { scopes, inputs, mut output, .. } = ctx.bind();
-        scopes.into_iter().map(move |scope| {
-            let Some(value) = inputs.get(&scope).cloned() else {
-                output.remove(&scope);
-                return scope.done();
-            };
-            scope.task().build({
-                let function = self.function.clone();
-                move || {
-                    let opt = function.execute(&scope, value)?;
-                    scope.then().build(move |mut ctx| {
-                        let mut output = ctx.output().expect("invariant");
-                        if let Some(value) = opt {
-                            output.insert((*scope).clone(), value);
-                        } else {
-                            output.remove(&scope);
-                        }
-                        scope.done()
-                    })
-                }
-            })
+        let Binding { events, scopes, mut output, .. } = ctx.bind();
+
+        // Drive all lifecycle events and notifications into the barrier set.
+        for event in events {
+            self.barriers.handle(&event);
+        }
+        for scope in scopes {
+            self.barriers.notify(&scope);
+        }
+
+        // Drain all fulfilled barriers in a single pass.
+        self.barriers.drain().map(move |advance| {
+            let new_scope = advance.scope().clone();
+            output.insert(
+                new_scope.clone(),
+                advance.into_iter().cloned().collect(),
+            );
+            Scoped::from(new_scope).done()
         })
     }
 }

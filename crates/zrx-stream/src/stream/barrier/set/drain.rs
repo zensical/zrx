@@ -23,49 +23,72 @@
 
 // ----------------------------------------------------------------------------
 
-//! Scope set.
+//! Drain iterator implementation for [`Barriers`].
 
-use std::vec::IntoIter;
+use zrx_scheduler::{Id, Scope};
+use zrx_store::stash::{items, Items};
+use zrx_store::Stash;
 
-use crate::scheduler::step::Scoped;
+use crate::Barrier;
+
+use super::{Advance, Barriers};
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Scope set.
-#[derive(Debug)]
-pub struct Scopes<I> {
-    /// Inner set of scopes.
-    inner: Vec<Scoped<I>>,
+/// Drain iterator for [`Barriers`].
+pub struct Drain<'a, I> {
+    /// Inner set of barriers.
+    inner: &'a Stash<Scope<I>, Barrier<I>>,
+    /// All known scopes.
+    scopes: &'a Stash<Scope<I>, Items>,
+    /// Drain iterator over fulfilled barriers.
+    items: items::Drain<'a>,
+}
+
+// ----------------------------------------------------------------------------
+// Implementations
+// ----------------------------------------------------------------------------
+
+impl<I> Barriers<I>
+where
+    I: Id,
+{
+    /// Creates a drain iterator over the barrier set.
+    ///
+    /// Returns all pending advances, consuming only those that are still
+    /// fulfilled at the time of collection. Barriers that were fulfilled but
+    /// subsequently invalidated by a new scope insertion are excluded and
+    /// removed from the pending set.
+    #[must_use]
+    pub fn drain(&mut self) -> Drain<'_, I> {
+        Drain {
+            inner: &self.inner,
+            scopes: &self.scopes,
+            items: self.fulfilled.drain(),
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<S, I> FromIterator<S> for Scopes<I>
+impl<'a, I> Iterator for Drain<'a, I>
 where
-    S: Into<Scoped<I>>,
+    I: Id,
 {
-    /// Creates a scope set from an iterator.
-    #[inline]
-    fn from_iter<T>(iter: T) -> Self
-    where
-        T: IntoIterator<Item = S>,
-    {
-        let iter = iter.into_iter().map(Into::into);
-        Self { inner: iter.collect() }
-    }
-}
+    type Item = Advance<'a, I>;
 
-impl<I> IntoIterator for Scopes<I> {
-    type Item = Scoped<I>;
-    type IntoIter = IntoIter<Self::Item>;
-
-    /// Converts the scope set into an iterator.
-    #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        self.inner.into_iter()
+    /// Returns the next barrier advancement.
+    fn next(&mut self) -> Option<Self::Item> {
+        let index = self.items.next()?;
+        let barrier = &self.inner[index];
+        Some(Advance::new(
+            self.inner.key(index).expect("invariant"),
+            barrier.items(),
+            self.scopes,
+        ))
     }
 }

@@ -28,7 +28,6 @@
 use ahash::AHasher;
 use std::borrow::Cow;
 use std::hash::{Hash, Hasher};
-use std::sync::Arc;
 
 use super::error::{Error, Result};
 use super::format::{self, Format};
@@ -275,7 +274,7 @@ impl<'a> Builder<'a> {
         };
 
         // No errors occurred
-        Ok(Id { format: Arc::new(format), hash })
+        Ok(Id { format, hash })
     }
 }
 

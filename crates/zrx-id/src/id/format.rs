@@ -56,8 +56,8 @@ use path::validate;
 ///
 /// Formatted strings are optimized for very fast conversion with [`FromStr`]
 /// or gradual construction through [`Format::builder`], which both produce an
-/// immutable instance. Note that encapsulating types like [`Selector`][] and
-/// [`Id`][] wrap the formatted string in an [`Arc`][] to provide fast cloning.
+/// immutable instance. To make sure cloning is fast, it's recommended to wrap
+/// the encapsulating type, [`Selector`][] or [`Id`][], in an [`Arc`][].
 ///
 /// This implementation is currently limited to 64 spans, which should probably
 /// be sufficient for all use cases that can ever happen. For our means, an `u8`

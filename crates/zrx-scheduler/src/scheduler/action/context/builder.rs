@@ -32,7 +32,7 @@ use zrx_storage::set::{View, ViewMut};
 use crate::scheduler::signal::Id;
 use crate::scheduler::step::Scoped;
 
-use super::Context;
+use super::{Context, Event};
 
 mod error;
 
@@ -45,6 +45,8 @@ pub use error::{Error, Result};
 /// Context builder.
 #[derive(Debug)]
 pub struct Builder<'a, I> {
+    /// Events.
+    events: Vec<Event<I>>,
     /// Input storages.
     inputs: Option<View<'a>>,
     /// Output storage.
@@ -72,6 +74,13 @@ impl<'a, I> Builder<'a, I>
 where
     I: Id,
 {
+    /// Sets the events.
+    #[must_use]
+    pub fn events(mut self, events: Vec<Event<I>>) -> Self {
+        self.events = events;
+        self
+    }
+
     /// Sets the view to obtain the input storages.
     #[must_use]
     pub fn inputs(mut self, view: View<'a>) -> Self {
@@ -91,12 +100,13 @@ where
     /// # Errors
     ///
     /// Returns an error if the input or output view is not set.
-    pub fn build<T, C>(self, traces: T) -> Result<Context<'a, I, C>>
+    pub fn build<T, C>(self, scopes: T) -> Result<Context<'a, I, C>>
     where
         T: IntoIterator<Item = Scoped<I>>,
     {
         Ok(Context {
-            scopes: traces.into_iter().collect(),
+            events: self.events,
+            scopes: scopes.into_iter().collect(),
             inputs: self.inputs.ok_or(Error::Inputs)?,
             output: self.output.ok_or(Error::Output)?,
             marker: PhantomData,
@@ -113,6 +123,7 @@ impl<I> Default for Builder<'_, I> {
     #[inline]
     fn default() -> Self {
         Self {
+            events: Vec::default(),
             inputs: None,
             output: None,
             marker: PhantomData,

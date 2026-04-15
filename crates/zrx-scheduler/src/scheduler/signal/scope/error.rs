@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Identifier error.
+//! Scope error.
 
 use std::result;
 use thiserror::Error;
@@ -32,20 +32,20 @@ use thiserror::Error;
 // Enums
 // ----------------------------------------------------------------------------
 
-/// Identifier error.
+/// Scope error.
 #[derive(Debug, Error)]
 pub enum Error {
     /// Scope is empty.
     #[error("scope is empty")]
     Empty,
-    /// Scope is a chain.
-    #[error("scope is a chain")]
-    Chain,
+    /// Scope is deeper than one level.
+    #[error("scope is deeper than one level")]
+    Depth,
 }
 
 // ----------------------------------------------------------------------------
 // Type aliases
 // ----------------------------------------------------------------------------
 
-/// Identifier result.
+/// Scope result.
 pub type Result<T = ()> = result::Result<T, Error>;

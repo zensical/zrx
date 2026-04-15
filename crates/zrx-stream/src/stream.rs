@@ -27,6 +27,7 @@
 
 use std::marker::PhantomData;
 
+pub mod barrier;
 pub mod combinator;
 pub mod function;
 pub mod operator;

@@ -23,49 +23,75 @@
 
 // ----------------------------------------------------------------------------
 
-//! Scope set.
+//! Filter map function.
 
-use std::vec::IntoIter;
+use std::fmt::Display;
 
-use crate::scheduler::step::Scoped;
+use zrx_scheduler::step::Result;
+use zrx_scheduler::Scope;
+
+use crate::stream::function::arguments::{ForId, ForScope, ForValue};
+use crate::stream::function::catch;
 
 // ----------------------------------------------------------------------------
-// Structs
+// Traits
 // ----------------------------------------------------------------------------
 
-/// Scope set.
-#[derive(Debug)]
-pub struct Scopes<I> {
-    /// Inner set of scopes.
-    inner: Vec<Scoped<I>>,
+/// Default function.
+pub trait DefaultFn<A, I, T>: Send + 'static {
+    /// Executes the map function.
+    ///
+    /// # Errors
+    ///
+    /// This method returns an error if the function fails to execute.
+    fn execute(&self, scope: &Scope<I>) -> Result<Option<T>>;
 }
 
 // ----------------------------------------------------------------------------
-// Trait implementations
+// Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<S, I> FromIterator<S> for Scopes<I>
+impl<F, I, T> DefaultFn<ForScope, I, T> for F
 where
-    S: Into<Scoped<I>>,
+    F: Fn(&Scope<I>) -> Result<Option<T>> + Send + 'static,
+    I: Display,
 {
-    /// Creates a scope set from an iterator.
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+    )]
     #[inline]
-    fn from_iter<T>(iter: T) -> Self
-    where
-        T: IntoIterator<Item = S>,
-    {
-        let iter = iter.into_iter().map(Into::into);
-        Self { inner: iter.collect() }
+    fn execute(&self, scope: &Scope<I>) -> Result<Option<T>> {
+        catch(|| self(scope))
     }
 }
 
-impl<I> IntoIterator for Scopes<I> {
-    type Item = Scoped<I>;
-    type IntoIter = IntoIter<Self::Item>;
-
-    /// Converts the scope set into an iterator.
+impl<F, I, T> DefaultFn<ForId, I, T> for F
+where
+    F: Fn(&I) -> Result<Option<T>> + Send + 'static,
+    I: Display,
+{
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+    )]
     #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        self.inner.into_iter()
+    fn execute(&self, scope: &Scope<I>) -> Result<Option<T>> {
+        catch(|| self(scope.try_as_id()?))
+    }
+}
+
+impl<F, I, T> DefaultFn<ForValue, I, T> for F
+where
+    F: Fn() -> Result<Option<T>> + Send + 'static,
+    I: Display,
+{
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+    )]
+    #[inline]
+    fn execute(&self, scope: &Scope<I>) -> Result<Option<T>> {
+        catch(self)
     }
 }

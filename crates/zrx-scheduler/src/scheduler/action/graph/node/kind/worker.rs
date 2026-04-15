@@ -25,7 +25,7 @@
 
 //! Worker.
 
-use crate::action::Context;
+use crate::scheduler::action::{Context, Options};
 
 use super::{Handler, Iter};
 
@@ -54,5 +54,14 @@ impl<I> Worker<I> {
     /// Executes the worker handler.
     pub fn execute(&mut self, ctx: Context<I>) -> Iter<'_, I> {
         self.handler.execute(ctx)
+    }
+}
+
+#[allow(clippy::must_use_candidate)]
+impl<I> Worker<I> {
+    /// Returns the handler options.
+    #[inline]
+    pub fn options(&self) -> &Options {
+        self.handler.options()
     }
 }

@@ -27,6 +27,7 @@
 
 mod stream;
 
+pub use stream::barrier::{self, Barrier};
 pub use stream::combinator::StreamTupleExt;
 pub use stream::function;
 pub use stream::operator;

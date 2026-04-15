@@ -23,45 +23,62 @@
 
 // ----------------------------------------------------------------------------
 
-//! Scope path.
+//! Barrier lifecycle.
 
-use std::hash::Hash;
-use std::sync::Arc;
+use zrx_store::stash::Items;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Scope path.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Path<I> {
-    /// Value.
-    Value(I),
-    /// Chain of values.
-    Chain(Arc<[I]>),
+/// Barrier lifecycle
+///
+/// Tracks which scopes are currently submitted and which have completed,
+/// and encapsulates all lifecycle transitions and their idempotency guards.
+#[derive(Clone, Debug, Default)]
+pub struct Lifecycle {
+    /// Submitted scopes.
+    submitted: Items,
+    /// Completed scopes.
+    completed: Items,
 }
 
 // ----------------------------------------------------------------------------
-// Trait implementations
+// Implementations
 // ----------------------------------------------------------------------------
 
-impl<I> From<I> for Path<I> {
-    /// Creates a scope path from an identifier.
-    #[inline]
-    fn from(id: I) -> Self {
-        Self::Value(id)
+impl Lifecycle {
+    /// Submits a scope index.
+    ///
+    /// Returns `false` if the scope was already submitted (idempotency guard).
+    pub fn submit(&mut self, index: usize) -> bool {
+        self.submitted.insert(index)
     }
-}
 
-// ----------------------------------------------------------------------------
+    /// Withdraws a submitted scope index (e.g. cancelled or removed).
+    ///
+    /// Returns `false` if the scope was not submitted.
+    pub fn withdraw(&mut self, index: usize) -> bool {
+        if !self.submitted.remove(index) {
+            return false;
+        }
+        self.completed.remove(index);
+        true
+    }
 
-impl<I> FromIterator<I> for Path<I> {
-    /// Creates a scope path from an iterator.
-    #[inline]
-    fn from_iter<T>(iter: T) -> Self
-    where
-        T: IntoIterator<Item = I>,
-    {
-        Self::Chain(iter.into_iter().collect())
+    /// Completes a scope index, moving it from submitted to completed.
+    ///
+    /// Returns `false` if the scope was already completed (idempotency guard).
+    pub fn complete(&mut self, index: usize) -> bool {
+        self.submitted.remove(index);
+        self.completed.insert(index)
+    }
+
+    /// Returns `true` if a barrier with the given item set is fulfilled.
+    ///
+    /// Fulfilled means no matching scopes are still submitted, and at least
+    /// one is completed.
+    pub fn is_complete(&self, items: &Items) -> bool {
+        !items.has_any(&self.submitted) && items.has_any(&self.completed)
     }
 }

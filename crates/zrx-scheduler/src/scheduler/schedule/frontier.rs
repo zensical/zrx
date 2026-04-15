@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Frontier set.
+//! Frontier.
 
 use zrx_graph::traversal::Result;
 use zrx_graph::Traversal;
@@ -43,8 +43,10 @@ pub use set::Frontiers;
 pub struct Frontier<I> {
     /// Frontier scope.
     scope: Scope<I>,
-    /// Traversal.
+    /// Topological traversal.
     traversal: Traversal,
+    /// Number of pending nodes.
+    pending: Vec<usize>,
 }
 
 // ----------------------------------------------------------------------------
@@ -55,19 +57,29 @@ impl<I> Frontier<I> {
     /// Creates a frontier.
     #[must_use]
     pub fn new(scope: Scope<I>, traversal: Traversal) -> Self {
-        Self { scope, traversal }
+        Self {
+            scope,
+            traversal,
+            pending: Vec::new(),
+        }
     }
 
     /// Returns the next visitable node.
     #[inline]
     pub fn take(&mut self) -> Option<usize> {
-        self.traversal.take()
+        self.traversal
+            .take()
+            .inspect(|&node| self.pending.push(node))
     }
 
     /// Marks the given node as visited.
     #[inline]
     pub fn complete(&mut self, node: usize) -> Result {
-        self.traversal.complete(node)
+        self.traversal.complete(node).inspect(|()| {
+            if let Some(index) = self.pending.iter().position(|&n| n == node) {
+                self.pending.swap_remove(index);
+            }
+        })
     }
 }
 
@@ -85,12 +97,12 @@ where
     // /// Returns the number of visitable nodes.
     // #[inline]
     // pub fn len(&self) -> usize {
-    //     self.traversal.len()
+    //     self.pending + self.traversal.len()
     // }
 
     /// Returns whether there are any visitable nodes.
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.traversal.is_empty()
+        self.traversal.is_empty() && self.pending.is_empty()
     }
 }

@@ -39,8 +39,8 @@ workspace = true
 [dependencies]
 zrx-scheduler.workspace = true
 zrx-storage.workspace = true
+zrx-store.workspace = true
 
-ahash.workspace = true
 thiserror.workspace = true
 tracing = { workspace = true, optional = true }
 

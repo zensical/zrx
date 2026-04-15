@@ -29,14 +29,14 @@ use ahash::AHasher;
 use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::ops::Index;
+use std::sync::Arc;
 
+use super::value::Value;
 use super::Id;
 
 mod error;
-mod path;
 
 pub use error::{Error, Result};
-use path::Path;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -64,7 +64,7 @@ use path::Path;
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Scope<I> {
     /// Path.
-    path: Path<I>,
+    path: Arc<[I]>,
     /// Precomputed hash.
     hash: u64,
 }
@@ -72,6 +72,39 @@ pub struct Scope<I> {
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
+
+impl<I> Scope<I> {
+    /// Returns the identifier, if scope has length 1.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Empty`] if the scope is empty, and [`Error::Depth`] if
+    /// the scope is deeper than one level, containing multiple identifiers.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_scheduler::Scope;
+    ///
+    /// // Create scope
+    /// let scope = Scope::from(42);
+    ///
+    /// // Obtain identifier
+    /// assert_eq!(scope.try_as_id()?, &42);
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    pub fn try_as_id(&self) -> Result<&I> {
+        match &*self.path {
+            [id] => Ok(id),
+            [] => Err(Error::Empty),
+            _ => Err(Error::Depth),
+        }
+    }
+}
 
 impl<I> Scope<I>
 where
@@ -94,19 +127,8 @@ where
     /// ```
     #[must_use]
     pub fn concat(&self, other: &Self) -> Self {
-        let mut path = match &self.path {
-            Path::Value(head) => Vec::from([head.clone()]),
-            Path::Chain(head) => head.to_vec(),
-        };
-
-        // Extend current path with other path
-        match &other.path {
-            Path::Value(tail) => path.push(tail.clone()),
-            Path::Chain(tail) => path.extend_from_slice(tail),
-        }
-
-        // Create scope with concatenated path
-        let path = Path::Chain(path.into());
+        let iter = self.path.iter().chain(other.path.iter());
+        let path = iter.cloned().collect();
         Self { hash: hash(&path), path }
     }
 
@@ -124,10 +146,14 @@ where
     ///     Scope::from_iter([3, 2, 1])
     /// );
     /// ```
-    #[inline]
     #[must_use]
     pub fn reverse(&self) -> Self {
-        self.with_path(|path| path.reverse())
+        let mut path = self.path.to_vec();
+        path.reverse();
+        Self {
+            hash: hash(&path),
+            path: Arc::from(path),
+        }
     }
 
     /// Rotates the scope left by `n` positions.
@@ -148,10 +174,14 @@ where
     ///     Scope::from_iter([2, 3, 1])
     /// );
     /// ```
-    #[inline]
     #[must_use]
     pub fn rotate_left(&self, n: usize) -> Self {
-        self.with_path(|path| path.rotate_left(n))
+        let mut path = self.path.to_vec();
+        path.rotate_left(n);
+        Self {
+            hash: hash(&path),
+            path: Arc::from(path),
+        }
     }
 
     /// Rotates the scope right by `n` positions.
@@ -172,42 +202,23 @@ where
     ///     Scope::from_iter([3, 1, 2])
     /// );
     /// ```
-    #[inline]
     #[must_use]
     pub fn rotate_right(&self, n: usize) -> Self {
-        self.with_path(|path| path.rotate_right(n))
-    }
-
-    /// Applies a transformation to the scope, if it's a chain of values.
-    fn with_path<F>(&self, f: F) -> Self
-    where
-        F: FnOnce(&mut Vec<I>),
-    {
-        match &self.path {
-            Path::Value(_) => self.clone(),
-            Path::Chain(path) => {
-                let mut path = path.to_vec();
-                f(&mut path);
-
-                //
-                let path = Path::Chain(path.into());
-                Self { hash: hash(&path), path }
-            }
-        }
-    }
-
-    /// Return identifier if scope is a single value.
-    #[deprecated(note = "temporary")]
-    pub fn as_id(&self) -> Option<&I> {
-        match &self.path {
-            Path::Value(id) => Some(id),
-            Path::Chain(path) => path.first(),
+        let mut path = self.path.to_vec();
+        path.rotate_right(n);
+        Self {
+            hash: hash(&path),
+            path: Arc::from(path),
         }
     }
 }
 
 // ----------------------------------------------------------------------------
 // Trait implementations
+// ----------------------------------------------------------------------------
+
+impl<I> Value for Scope<I> where I: Value {}
+
 // ----------------------------------------------------------------------------
 
 impl<I> From<I> for Scope<I>
@@ -226,7 +237,7 @@ where
     /// ```
     #[inline]
     fn from(id: I) -> Self {
-        let path = id.into();
+        let path = Arc::from([id]);
         Self { hash: hash(&path), path }
     }
 }
@@ -247,7 +258,6 @@ where
     /// // Create scope from iterator
     /// let scope = Scope::from_iter([1, 2, 3]);
     /// ```
-    #[inline]
     fn from_iter<T>(iter: T) -> Self
     where
         T: IntoIterator<Item = I>,
@@ -267,11 +277,9 @@ impl<I> Index<usize> for Scope<I> {
     /// # Panics
     ///
     /// Panics if the index is out of bounds.
+    #[inline]
     fn index(&self, index: usize) -> &Self::Output {
-        match &self.path {
-            Path::Value(path) => path,
-            Path::Chain(path) => &path[index],
-        }
+        &self.path[index]
     }
 }
 
@@ -301,22 +309,17 @@ where
 {
     /// Formats the scope for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match &self.path {
-            Path::Value(path) => Display::fmt(path, f),
-            Path::Chain(path) => {
-                for (i, item) in path.iter().enumerate() {
-                    Display::fmt(item, f)?;
+        for (i, item) in self.path.iter().enumerate() {
+            Display::fmt(item, f)?;
 
-                    // Write slash if not last
-                    if i < path.len() - 1 {
-                        f.write_str(" / ")?;
-                    }
-                }
-
-                // No errors occurred
-                Ok(())
+            // Write slash if not last
+            if i < self.path.len() - 1 {
+                f.write_str(" / ")?;
             }
         }
+
+        // No errors occurred
+        Ok(())
     }
 }
 
@@ -337,9 +340,9 @@ where
 /// Precomputes the hash for the given path - this is used for fast hashing of
 /// scopes, since scope paths are immutable, meaning hashes can be precomputed.
 #[inline]
-fn hash<I>(path: &Path<I>) -> u64
+fn hash<P>(path: &P) -> u64
 where
-    I: Hash,
+    P: Hash,
 {
     let mut hasher = AHasher::default();
     path.hash(&mut hasher);

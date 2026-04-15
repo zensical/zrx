@@ -25,7 +25,7 @@
 
 //! Action graph node.
 
-use crate::scheduler::action::Context;
+use crate::scheduler::action::{Context, Options};
 use crate::scheduler::signal::Id;
 
 use super::descriptor::Descriptor;
@@ -82,6 +82,14 @@ impl<I> Node<I> {
     #[inline]
     pub fn descriptor(&self) -> &Descriptor {
         &self.descriptor
+    }
+
+    /// Returns the handler options.
+    pub fn options(&self) -> &Options {
+        match &self.kind {
+            Kind::Source(source) => source.options(),
+            Kind::Worker(worker) => worker.options(),
+        }
     }
 
     /// Returns the source if this is a source node.

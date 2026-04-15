@@ -388,6 +388,7 @@ dependencies = [
  "slab",
  "thiserror",
  "zrx-path",
+ "zrx-scheduler",
 ]
 
 [[package]]
@@ -441,9 +442,9 @@ dependencies = [
 name = "zrx-stream"
 version = "0.0.16"
 dependencies = [
- "ahash",
  "thiserror",
  "tracing",
  "zrx-scheduler",
  "zrx-storage",
+ "zrx-store",
 ]
