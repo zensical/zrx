@@ -32,6 +32,7 @@ use zrx_storage::set::{View, ViewMut};
 
 use crate::scheduler::engine::Tag;
 
+use super::options::Event;
 use super::Action;
 
 mod builder;
@@ -62,6 +63,8 @@ use scopes::Scopes;
 /// When registering actions, the scheduler will erase the type information, as
 /// it's only necessary during compile time, not during execution.
 pub struct Context<'a, I, C = ()> {
+    /// Events.
+    events: Vec<Event<I>>,
     /// Scopes.
     scopes: Scopes<I>,
     /// Input storages.
@@ -95,6 +98,8 @@ pub struct Binding<'a, I, C>
 where
     C: Action<I>,
 {
+    /// Events.
+    pub events: Vec<Event<I>>,
     /// Scopes.
     pub scopes: Scopes<I>,
     /// Input storages.
@@ -126,6 +131,7 @@ where
         // Note that we're panicking here, since this signals an error in the
         // operator implementation, which is not a user error.
         Binding {
+            events: self.events,
             scopes: self.scopes,
             inputs: Inputs::new(self.inputs).expect("invariant"),
             output: Output::new(self.output.into_inner()).expect("invariant"),
@@ -135,6 +141,12 @@ where
 
 #[allow(clippy::must_use_candidate)]
 impl<I, C> Context<'_, I, C> {
+    /// Returns the events.
+    #[inline]
+    pub fn events(&self) -> &[Event<I>] {
+        &self.events
+    }
+
     /// Returns the scopes.
     #[inline]
     pub fn scopes(&self) -> &Scopes<I> {
@@ -153,6 +165,7 @@ impl<'a, I, C> Tag<I, C> for Context<'a, I, C> {
     #[inline]
     fn tag<T>(self) -> Self::Target<T> {
         Context {
+            events: self.events,
             scopes: self.scopes,
             inputs: self.inputs,
             output: self.output,
@@ -170,7 +183,8 @@ where
     /// Formats the context for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Context")
-            .field("traces", &self.scopes)
+            .field("events", &self.events)
+            .field("scopes", &self.scopes)
             .field("inputs", &self.inputs)
             .field("output", &self.output)
             .field("marker", &self.marker)

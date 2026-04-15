@@ -23,45 +23,28 @@
 
 // ----------------------------------------------------------------------------
 
-//! Worker.
+//! Action interest.
 
-use crate::scheduler::action::{Context, Options};
-
-use super::{Handler, Iter};
+use crate::scheduler::signal::Scope;
 
 // ----------------------------------------------------------------------------
-// Structs
+// Enums
 // ----------------------------------------------------------------------------
 
-/// Worker.
-#[derive(Debug)]
-pub struct Worker<I> {
-    /// Worker handler.
-    handler: Handler<I>,
+/// Action interest.
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+pub enum Interest {
+    /// Action is interested in scope entry.
+    Enter,
+    /// Action is interested in scope exit.
+    Leave,
 }
 
-// ----------------------------------------------------------------------------
-// Implementations
-// ----------------------------------------------------------------------------
-
-impl<I> Worker<I> {
-    /// Creates a worker.
-    #[must_use]
-    pub fn new(handler: Handler<I>) -> Self {
-        Self { handler }
-    }
-
-    /// Executes the worker handler.
-    pub fn execute(&mut self, ctx: Context<I>) -> Iter<'_, I> {
-        self.handler.execute(ctx)
-    }
-}
-
-#[allow(clippy::must_use_candidate)]
-impl<I> Worker<I> {
-    /// Returns the handler options.
-    #[inline]
-    pub fn options(&self) -> &Options {
-        self.handler.options()
-    }
+/// Action event. -
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum Event<I> {
+    /// Scope insertion.
+    Insert(Scope<I>),
+    /// Scope removal.
+    Remove(Scope<I>),
 }

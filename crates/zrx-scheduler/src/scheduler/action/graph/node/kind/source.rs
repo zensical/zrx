@@ -28,7 +28,7 @@
 use crossbeam::channel::Sender;
 
 use crate::scheduler::action::graph::node::handler::{Handler, Iter};
-use crate::scheduler::action::Context;
+use crate::scheduler::action::{Context, Options};
 use crate::scheduler::router::traits::AnySender;
 use crate::scheduler::signal::{Diff, Id, Value};
 
@@ -74,6 +74,12 @@ where
 
 #[allow(clippy::must_use_candidate)]
 impl<I> Source<I> {
+    /// Returns the handler options.
+    #[inline]
+    pub fn options(&self) -> &Options {
+        self.handler.options()
+    }
+
     /// Returns the sender for this source.
     #[inline]
     pub fn sender(&self) -> &dyn AnySender<I> {

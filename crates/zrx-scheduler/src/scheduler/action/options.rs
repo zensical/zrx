@@ -25,6 +25,10 @@
 
 //! Options.
 
+mod interest;
+
+pub use interest::{Event, Interest};
+
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
@@ -34,6 +38,8 @@
 pub struct Options {
     /// Concurrency.
     pub concurrency: Option<usize>,
+    /// Interests.
+    pub interests: Vec<Interest>,
 }
 
 // ----------------------------------------------------------------------------
@@ -55,6 +61,13 @@ impl Options {
     #[must_use]
     pub fn concurrency(mut self, concurrency: usize) -> Self {
         self.concurrency = Some(concurrency);
+        self
+    }
+
+    /// Adds an interest.
+    #[must_use]
+    pub fn interest(mut self, interest: Interest) -> Self {
+        self.interests.push(interest);
         self
     }
 }
