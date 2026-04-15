@@ -58,7 +58,7 @@ where
 {
     /// Inserts a frontier into the set.
     pub fn insert(&mut self, frontier: Frontier<I>) -> Result<usize> {
-        let Frontier { scope, mut traversal } = frontier;
+        let Frontier { scope, mut traversal, .. } = frontier;
 
         // Try to converge with each existing frontier
         if let Some(ids) = self.index.get(&scope) {
@@ -72,10 +72,7 @@ where
         }
 
         // No convergence with any existing frontier, insert new one
-        let id = self.store.insert(Frontier {
-            scope: scope.clone(),
-            traversal,
-        });
+        let id = self.store.insert(Frontier::new(scope.clone(), traversal));
 
         // Update index and return frontier identifier
         self.index.entry(scope).or_default().push(id);
