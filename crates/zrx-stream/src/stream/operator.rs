@@ -25,7 +25,9 @@
 
 //! Stream operators.
 
+#![allow(clippy::must_use_candidate)] // check why we need this
 #![allow(clippy::new_without_default)]
+#![allow(clippy::return_self_not_must_use)]
 
 use std::marker::PhantomData;
 

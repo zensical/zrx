@@ -60,7 +60,6 @@ where
 {
     /// Filters the stream using the provided function.
     #[inline]
-    #[must_use]
     pub fn filter<F, A>(&self, f: F) -> Stream<I, T>
     where
         F: FilterFn<A, I, T> + Clone,
