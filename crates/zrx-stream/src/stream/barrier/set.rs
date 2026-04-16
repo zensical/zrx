@@ -28,7 +28,7 @@
 use zrx_scheduler::action::options::Event;
 use zrx_scheduler::{Id, Scope};
 use zrx_store::stash::Items;
-use zrx_store::Stash;
+use zrx_store::{Stash, Store};
 
 use super::advance::Advance;
 use super::lifecycle::Lifecycle;
@@ -174,6 +174,24 @@ where
                 self.fulfilled.insert(b);
             }
         }
+    }
+}
+
+#[allow(clippy::must_use_candidate)]
+impl<I> Barriers<I>
+where
+    I: Id,
+{
+    /// Returns the number of barriers.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    /// Returns whether there are any barriers.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
     }
 }
 
