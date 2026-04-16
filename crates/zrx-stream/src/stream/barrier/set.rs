@@ -163,9 +163,10 @@ where
         let Some(s) = self.scopes.get(scope) else {
             return;
         };
-        if !self.lifecycle.complete(s) {
-            return;
-        }
+
+        // Always complete - if it was already completed, we need to notify
+        // again, which is exactly the case for rebuilds
+        self.lifecycle.complete(s);
 
         // Use reverse index - only visit barriers watching this scope
         for b in &self.scopes[s] {
