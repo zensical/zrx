@@ -425,8 +425,7 @@ impl Default for WorkStealing {
     fn default() -> Self {
         Self::new(cmp::max(
             thread::available_parallelism()
-                .map(|num| num.get().saturating_sub(1))
-                .unwrap_or(1),
+                .map_or(1, |num| num.get().saturating_sub(1)),
             1,
         ))
     }
