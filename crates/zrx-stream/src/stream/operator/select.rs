@@ -115,10 +115,8 @@ where
                     .into_iter()
                     .cloned()
                     .map(|scope| {
-                        (
-                            scope.clone(),
-                            inputs.get(&scope).expect("invariant").clone(),
-                        )
+                        let value = inputs.get(&scope).expect("invariant");
+                        (scope, value.clone())
                     })
                     .collect(),
             );
