@@ -58,6 +58,8 @@ pub struct Schedule<I> {
     frontiers: Frontiers<I>,
     /// Frontier queues.
     queues: Vec<VecDeque<usize>>,
+    /// Events per node.
+    events: Vec<VecDeque<Event<I>>>,
 }
 
 // ----------------------------------------------------------------------------
@@ -78,20 +80,12 @@ where
         let f = self.frontiers.insert(frontier).expect("invariant");
 
         // Notify interested nodes about new frontier
-        for n in &self.graph {
-            let options = self.graph[n].options();
-            if options.interests.contains(&Interest::Enter) {
-                let (action, adj) = self.graph.adjacent_mut(n);
-                let (inputs, output) = self.storages.views(adj.incoming, n);
-                let ctx = Context::builder()
-                    .inputs(inputs)
-                    .output(output)
-                    .events(vec![Event::Insert(scope.clone())])
-                    .build([])
-                    .expect("invariant");
-                // Hand events to action - later, we should enqueue events, and
-                // invoke actions along the way together with all queued events
-                action.execute(ctx);
+        if self.graph.is_source(node) {
+            for n in &self.graph {
+                let options = self.graph[n].options();
+                if options.interests.contains(&Interest::Enter) {
+                    self.events[n].push_back(Event::Insert(scope.clone()));
+                }
             }
         }
 
@@ -104,6 +98,7 @@ where
     /// Executes the given node with the provided context.
     #[allow(clippy::missing_panics_doc)]
     pub fn take(&mut self, node: usize) -> Vec<Result<Steps<I>>> {
+        let events: Vec<_> = self.events[node].drain(..).collect();
         let scopes: Vec<_> = self.queues[node]
             .drain(..)
             .map(|f| Scoped::new(self.frontiers[f].scope().clone(), f))
@@ -117,6 +112,7 @@ where
         let ctx = Context::builder()
             .inputs(inputs)
             .output(output)
+            .events(events)
             .build(scopes)
             .expect("invariant");
 

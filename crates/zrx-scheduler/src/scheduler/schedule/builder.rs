@@ -93,6 +93,7 @@ impl<I> Builder<I> {
             storages: self.storages,
             frontiers: Frontiers::default(),
             queues: vec![VecDeque::new(); len],
+            events: (0..len).map(|_| VecDeque::new()).collect(),
         }
     }
 }
