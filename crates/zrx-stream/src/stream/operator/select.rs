@@ -103,7 +103,9 @@ where
             self.barriers.handle(&event);
         }
         for scope in scopes {
-            self.barriers.notify(&scope);
+            if inputs.contains_key(&scope) {
+                self.barriers.notify(&scope);
+            }
         }
 
         // Drain all fulfilled barriers in a single pass.

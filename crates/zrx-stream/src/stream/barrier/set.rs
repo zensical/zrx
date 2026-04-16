@@ -103,9 +103,6 @@ where
     pub fn remove(&mut self, scope: &Scope<I>) -> Option<Barrier<I>> {
         let b = self.inner.get(scope)?;
         let (_, mut barrier) = self.inner.remove(b)?;
-        for s in &barrier.items {
-            self.scopes[s].remove(b);
-        }
         barrier.items.clear();
 
         // If this barrier was pending, it no longer exists - remove it
@@ -117,7 +114,11 @@ where
     pub fn handle(&mut self, event: &Event<I>) {
         match event {
             Event::Insert(scope) => {
-                let s = self.scopes.insert(scope.clone(), Items::new());
+                // We need to keep track of all scopes to account for late
+                // barrier registration - but we should not override seen items
+                let s = self.scopes.get(scope).unwrap_or_else(|| {
+                    self.scopes.insert(scope.clone(), Items::new())
+                });
                 if !self.lifecycle.submit(s) {
                     return;
                 }

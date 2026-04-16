@@ -29,7 +29,7 @@ use zrx_scheduler::{Id, Scope};
 use zrx_store::stash::{items, Items};
 use zrx_store::Stash;
 
-use crate::Barrier;
+use crate::stream::barrier::Barrier;
 
 use super::{Advance, Barriers};
 
