@@ -78,11 +78,12 @@ where
     }
 
     /// Inserts a barrier into the barrier set.
-    pub fn insert<B>(&mut self, scope: Scope<I>, barrier: B)
+    pub fn insert<S, B>(&mut self, scope: S, barrier: B)
     where
+        S: Into<Scope<I>>,
         B: Into<Barrier<I>>,
     {
-        let b = self.inner.insert(scope, barrier.into());
+        let b = self.inner.insert(scope.into(), barrier.into());
         let barrier = &mut self.inner[b];
         for (s, (scope, items)) in self.scopes.slots_mut() {
             if barrier.contains(scope) {
