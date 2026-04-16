@@ -23,7 +23,7 @@
 
 [package]
 name = "zrx-module"
-version = "0.0.4"
+version = "0.0.5"
 description = "Module system"
 edition.workspace = true
 rust-version.workspace = true
