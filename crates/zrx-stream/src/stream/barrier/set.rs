@@ -28,7 +28,7 @@
 use zrx_scheduler::action::options::Event;
 use zrx_scheduler::{Id, Scope};
 use zrx_store::stash::Items;
-use zrx_store::Stash;
+use zrx_store::{Stash, Store};
 
 use super::advance::Advance;
 use super::lifecycle::Lifecycle;
@@ -78,11 +78,12 @@ where
     }
 
     /// Inserts a barrier into the barrier set.
-    pub fn insert<B>(&mut self, scope: Scope<I>, barrier: B)
+    pub fn insert<S, B>(&mut self, scope: S, barrier: B)
     where
+        S: Into<Scope<I>>,
         B: Into<Barrier<I>>,
     {
-        let b = self.inner.insert(scope, barrier.into());
+        let b = self.inner.insert(scope.into(), barrier.into());
         let barrier = &mut self.inner[b];
         for (s, (scope, items)) in self.scopes.slots_mut() {
             if barrier.contains(scope) {
@@ -102,9 +103,6 @@ where
     pub fn remove(&mut self, scope: &Scope<I>) -> Option<Barrier<I>> {
         let b = self.inner.get(scope)?;
         let (_, mut barrier) = self.inner.remove(b)?;
-        for s in &barrier.items {
-            self.scopes[s].remove(b);
-        }
         barrier.items.clear();
 
         // If this barrier was pending, it no longer exists - remove it
@@ -116,7 +114,11 @@ where
     pub fn handle(&mut self, event: &Event<I>) {
         match event {
             Event::Insert(scope) => {
-                let s = self.scopes.insert(scope.clone(), Items::new());
+                // We need to keep track of all scopes to account for late
+                // barrier registration - but we should not override seen items
+                let s = self.scopes.get(scope).unwrap_or_else(|| {
+                    self.scopes.insert(scope.clone(), Items::new())
+                });
                 if !self.lifecycle.submit(s) {
                     return;
                 }
@@ -163,9 +165,10 @@ where
         let Some(s) = self.scopes.get(scope) else {
             return;
         };
-        if !self.lifecycle.complete(s) {
-            return;
-        }
+
+        // Always complete - if it was already completed, we need to notify
+        // again, which is exactly the case for rebuilds
+        self.lifecycle.complete(s);
 
         // Use reverse index - only visit barriers watching this scope
         for b in &self.scopes[s] {
@@ -173,6 +176,24 @@ where
                 self.fulfilled.insert(b);
             }
         }
+    }
+}
+
+#[allow(clippy::must_use_candidate)]
+impl<I> Barriers<I>
+where
+    I: Id,
+{
+    /// Returns the number of barriers.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    /// Returns whether there are any barriers.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
     }
 }
 

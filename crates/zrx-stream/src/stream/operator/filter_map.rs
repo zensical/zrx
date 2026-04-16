@@ -60,7 +60,6 @@ where
 {
     /// Maps the stream using the provided function.
     #[inline]
-    #[must_use]
     pub fn filter_map<F, A, U>(&self, f: F) -> Stream<I, U>
     where
         F: FilterMapFn<A, I, T, U> + Clone,

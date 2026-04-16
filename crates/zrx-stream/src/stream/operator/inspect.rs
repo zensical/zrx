@@ -23,51 +23,52 @@
 
 // ----------------------------------------------------------------------------
 
-//! Drain iterator implementation for [`Barriers`].
+//! Inspect operator.
 
-use zrx_scheduler::{Id, Scope};
-use zrx_store::stash::{items, Items};
-use zrx_store::Stash;
+use std::marker::PhantomData;
 
-use crate::stream::barrier::Barrier;
+use zrx_scheduler::action::context::Binding;
+use zrx_scheduler::action::{Action, Context};
+use zrx_scheduler::step::IntoSteps;
+use zrx_scheduler::{Id, Value};
 
-use super::{Advance, Barriers};
+use crate::stream::function::{Arguments, InspectFn};
+use crate::stream::Stream;
+
+use super::Operator;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Drain iterator for [`Barriers`].
-pub struct Drain<'a, I> {
-    /// Inner set of barriers.
-    inner: &'a Stash<Scope<I>, Barrier<I>>,
-    /// All known scopes.
-    scopes: &'a Stash<Scope<I>, Items>,
-    /// Drain iterator over fulfilled barriers.
-    items: items::Drain<'a>,
+/// Inspect operator.
+pub struct Inspect<T, F, A> {
+    /// Operator function.
+    function: F,
+    /// Capture types.
+    marker: PhantomData<(T, A)>,
 }
 
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<I> Barriers<I>
+impl<I, T> Stream<I, T>
 where
     I: Id,
+    T: Value,
 {
-    /// Creates a drain iterator over the barrier set.
-    ///
-    /// Returns all pending advances, consuming only those that are still
-    /// fulfilled at the time of collection. Barriers that were fulfilled but
-    /// subsequently invalidated by a new scope insertion are excluded and
-    /// removed from the pending set.
-    #[must_use]
-    pub fn drain(&mut self) -> Drain<'_, I> {
-        Drain {
-            inner: &self.inner,
-            scopes: &self.scopes,
-            items: self.fulfilled.drain(),
-        }
+    /// Inspects the stream using the provided function.
+    #[inline]
+    pub fn inspect<F, A>(&self, f: F) -> Stream<I, T>
+    where
+        F: InspectFn<A, I, T> + Clone,
+        A: Arguments,
+    {
+        self.subscribe(Inspect {
+            function: f,
+            marker: PhantomData,
+        })
     }
 }
 
@@ -75,20 +76,27 @@ where
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<'a, I> Iterator for Drain<'a, I>
+impl<I, T, F, A> Action<I> for Inspect<T, F, A>
 where
     I: Id,
+    T: Value,
+    F: InspectFn<A, I, T> + Clone,
+    A: Arguments,
 {
-    type Item = Advance<'a, I>;
+    type Inputs = (T,);
+    type Output<'a> = T;
 
-    /// Returns the next barrier advancement.
-    fn next(&mut self) -> Option<Self::Item> {
-        let index = self.items.next()?;
-        let barrier = &self.inner[index];
-        Some(Advance::new(
-            self.inner.key(index).expect("invariant"),
-            barrier.items(),
-            self.scopes,
-        ))
+    /// Executes the operator.
+    fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {
+        let Binding { scopes, inputs, mut output, .. } = ctx.bind();
+        scopes.into_iter().map(move |scope| {
+            let Some(value) = inputs.get(&scope).cloned() else {
+                output.remove(&scope);
+                return scope.done();
+            };
+            self.function.execute(&scope, &value)?;
+            output.insert((*scope).clone(), value.clone());
+            scope.done()
+        })
     }
 }

@@ -170,12 +170,15 @@ where
             // Update dependencies between modules
             let g = &self.schedules[m].graph;
             for n in &modules {
+                if m == n {
+                    continue;
+                }
                 let h = &self.schedules[n].graph;
 
                 // Compute dependencies from new module to existing modules
                 for source in g.sources() {
                     for target in h {
-                        if m == n && source == target || h.is_source(target) {
+                        if source == target || h.is_source(target) {
                             continue;
                         }
 
@@ -197,7 +200,7 @@ where
                 // Compute dependencies from existing modules to new module
                 for source in h.sources() {
                     for target in g {
-                        if m == n && source == target || g.is_source(target) {
+                        if source == target || g.is_source(target) {
                             continue;
                         }
 

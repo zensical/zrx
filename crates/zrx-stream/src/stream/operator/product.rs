@@ -58,7 +58,6 @@ where
 {
     /// Maps the stream using the provided function.
     #[inline]
-    #[must_use]
     pub fn product<U>(&self, stream: &Stream<I, U>) -> Stream<I, (T, U)>
     where
         U: Value,

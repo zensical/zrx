@@ -25,7 +25,9 @@
 
 //! Stream operators.
 
+#![allow(clippy::must_use_candidate)] // check why we need this
 #![allow(clippy::new_without_default)]
+#![allow(clippy::return_self_not_must_use)]
 
 use std::marker::PhantomData;
 
@@ -37,6 +39,7 @@ use super::Stream;
 
 mod filter;
 mod filter_map;
+mod inspect;
 mod join;
 mod map;
 mod product;
@@ -44,6 +47,7 @@ mod select;
 
 pub use filter::Filter;
 pub use filter_map::FilterMap;
+pub use inspect::Inspect;
 pub use join::Join;
 pub use map::Map;
 pub use product::Product;

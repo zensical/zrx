@@ -25,6 +25,7 @@
 
 //! Relay.
 
+use ahash::HashSet;
 use crossbeam::channel::{Receiver, Select, Sender, TryRecvError};
 
 use crate::scheduler::engine::Token;
@@ -67,10 +68,20 @@ impl<T> Relay<T> {
         T: Clone,
     {
         // Errors in case all senders have been dropped - nothing to poll
-        match self.receiver.try_recv() {
-            Ok(value) => Ok(self.senders.send(value)),
-            Err(TryRecvError::Disconnected) => Err(Error::Disconnected)?,
-            Err(TryRecvError::Empty) => Ok(vec![]),
+        let mut tokens = HashSet::default();
+        loop {
+            match self.receiver.try_recv() {
+                Ok(value) => tokens.extend(self.senders.send(value)),
+                Err(TryRecvError::Empty) => {
+                    return Ok(tokens.into_iter().collect())
+                }
+                Err(TryRecvError::Disconnected) if !tokens.is_empty() => {
+                    return Ok(tokens.into_iter().collect())
+                }
+                Err(TryRecvError::Disconnected) => {
+                    return Err(Error::Disconnected)?
+                }
+            }
         }
     }
 }
