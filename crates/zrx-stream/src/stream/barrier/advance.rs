@@ -38,6 +38,7 @@ pub use iter::Iter;
 // ----------------------------------------------------------------------------
 
 /// Barrier advancement.
+#[derive(Debug)]
 pub struct Advance<'a, I> {
     /// Barrier scope for identification.
     key: &'a Scope<I>,
