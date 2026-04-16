@@ -63,8 +63,7 @@ where
 {
     /// Selects scopes from the stream using the provided barriers.
     #[inline]
-    #[must_use]
-    pub fn select<B>(&self, iter: B) -> Stream<I, Vec<Scope<I>>>
+    pub fn select<B>(&self, iter: B) -> Stream<I, Vec<(Scope<I>, T)>>
     where
         B: IntoIterator<Item = (Scope<I>, Barrier<I>)>,
     {
@@ -87,11 +86,17 @@ where
     T: Value,
 {
     type Inputs = (T,);
-    type Output<'a> = Vec<Scope<I>>;
+    type Output<'a> = Vec<(Scope<I>, T)>;
 
     /// Executes the operator.
     fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {
-        let Binding { events, scopes, mut output, .. } = ctx.bind();
+        let Binding {
+            events,
+            scopes,
+            inputs,
+            mut output,
+            ..
+        } = ctx.bind();
 
         // Drive all lifecycle events and notifications into the barrier set.
         for event in events {
@@ -106,7 +111,16 @@ where
             let new_scope = advance.scope().clone();
             output.insert(
                 new_scope.clone(),
-                advance.into_iter().cloned().collect(),
+                advance
+                    .into_iter()
+                    .cloned()
+                    .map(|scope| {
+                        (
+                            scope.clone(),
+                            inputs.get(&scope).expect("invariant").clone(),
+                        )
+                    })
+                    .collect(),
             );
             Scoped::from(new_scope).done()
         })
