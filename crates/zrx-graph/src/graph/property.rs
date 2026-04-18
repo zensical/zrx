@@ -25,6 +25,8 @@
 
 //! Graph properties.
 
+use std::collections::VecDeque;
+
 use super::Graph;
 
 // ----------------------------------------------------------------------------
@@ -270,5 +272,60 @@ impl<T> Graph<T> {
     pub fn is_successor(&self, source: usize, target: usize) -> bool {
         let distance = self.topology.distance();
         distance[target][source] == 1
+    }
+
+    /// Returns whether the graph is acyclic.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_graph::Graph;
+    ///
+    /// // Create graph builder and add nodes
+    /// let mut builder = Graph::builder();
+    /// let a = builder.add_node("a");
+    /// let b = builder.add_node("b");
+    /// let c = builder.add_node("c");
+    ///
+    /// // Create edges between nodes
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
+    ///
+    /// // Create graph from builder
+    /// let graph = builder.build();
+    ///
+    /// // Ensure there are no cycles
+    /// assert_eq!(graph.is_acyclic(), true);
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[must_use]
+    pub fn is_acyclic(&self) -> bool {
+        let incoming = self.topology.incoming();
+        let outgoing = self.topology.outgoing();
+
+        // Initialize in-degrees and seed queue with source nodes
+        let mut degrees = incoming.degrees().to_vec();
+        let mut queue: VecDeque<usize> =
+            self.iter().filter(|&v| degrees[v] == 0).collect();
+
+        // Process nodes using Kahn's algorithm for topological sorting
+        let mut visited = 0;
+        while let Some(v) = queue.pop_front() {
+            visited += 1;
+
+            // Decrement in-degrees of successors, enqueuing new sources
+            for &w in &outgoing[v] {
+                degrees[w] -= 1;
+                if degrees[w] == 0 {
+                    queue.push_back(w);
+                }
+            }
+        }
+
+        // Graph is acyclic if all nodes were visited
+        visited == self.len()
     }
 }
