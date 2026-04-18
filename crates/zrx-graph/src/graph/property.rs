@@ -309,18 +309,18 @@ impl<T> Graph<T> {
         // Initialize in-degrees and seed queue with source nodes
         let mut degrees = incoming.degrees().to_vec();
         let mut queue: VecDeque<usize> =
-            self.iter().filter(|&v| degrees[v] == 0).collect();
+            self.iter().filter(|&node| degrees[node] == 0).collect();
 
         // Process nodes using Kahn's algorithm for topological sorting
         let mut visited = 0;
-        while let Some(v) = queue.pop_front() {
+        while let Some(source) = queue.pop_front() {
             visited += 1;
 
             // Decrement in-degrees of successors, enqueuing new sources
-            for &w in &outgoing[v] {
-                degrees[w] -= 1;
-                if degrees[w] == 0 {
-                    queue.push_back(w);
+            for &target in &outgoing[source] {
+                degrees[target] -= 1;
+                if degrees[target] == 0 {
+                    queue.push_back(target);
                 }
             }
         }
