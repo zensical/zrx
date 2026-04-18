@@ -80,7 +80,7 @@ pub use matches::Matches;
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Matcher {
     /// Component for provider.
     provider: Component,
