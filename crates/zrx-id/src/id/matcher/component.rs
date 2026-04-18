@@ -39,7 +39,7 @@ pub use builder::Builder;
 // ----------------------------------------------------------------------------
 
 /// Component.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Component {
     /// Glob set.
     globset: GlobSet,
