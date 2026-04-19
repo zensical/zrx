@@ -30,9 +30,9 @@ use std::collections::{BTreeMap, VecDeque};
 use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
 
-use zrx_graph::Graph;
 use zrx_store::StoreMutRef;
 
+use crate::scheduler::action::graph::Node;
 use crate::scheduler::action::Result;
 use crate::scheduler::engine::queue::Token;
 use crate::scheduler::schedule::Schedule;
@@ -163,59 +163,54 @@ where
     /// Recompute dependencies between modules.
     fn recompute(&mut self) {
         self.dependencies.clear();
-        let mut modules = Graph::builder();
-        for (m, _) in &self.schedules {
-            modules.add_node(m);
 
-            // Update dependencies between modules
-            let g = &self.schedules[m].graph;
-            for n in &modules {
-                if m == n {
-                    continue;
-                }
-                let h = &self.schedules[n].graph;
+        // Precompute sources and targets for each module
+        let mut sources = vec![BTreeMap::new(); self.schedules.len()];
+        let mut targets = vec![BTreeMap::new(); self.schedules.len()];
 
-                // Compute dependencies from new module to existing modules
-                for source in g.sources() {
-                    for target in h {
-                        if source == target || h.is_source(target) {
-                            continue;
-                        }
+        for (m, schedule) in &self.schedules {
+            targets[m] = schedule.graph.group_sinks(Node::descriptor).collect();
+            sources[m] = schedule.graph.sources().fold(
+                BTreeMap::<_, Vec<usize>>::new(),
+                |mut map, n| {
+                    map.entry(schedule.graph[n].descriptor())
+                        .or_default()
+                        .push(n);
+                    map
+                },
+            );
+        }
 
-                        // Ensure types match, otherwise we have no dependency
-                        if g[source].descriptor() != h[target].descriptor() {
-                            continue;
-                        }
-
-                        // Add dependency
-                        self.dependencies
-                            .get_or_insert_default(&Token {
-                                module: n,
-                                node: target,
-                            })
-                            .push(Token { module: m, node: source });
+        // Wire modules: find all producers for each consumer type
+        for (consumer, _) in &self.schedules {
+            for (descriptor, nodes) in &sources[consumer] {
+                for (producer, _) in &self.schedules {
+                    if producer == consumer {
+                        continue;
                     }
-                }
 
-                // Compute dependencies from existing modules to new module
-                for source in h.sources() {
-                    for target in g {
-                        if source == target || g.is_source(target) {
-                            continue;
+                    // Skip if producer has an external source for this type —
+                    // it inherited the type rather than originating it
+                    if sources[producer].contains_key(descriptor) {
+                        continue;
+                    }
+
+                    // Find target nodes in producer for this type
+                    let Some(exit_nodes) = targets[producer].get(descriptor)
+                    else {
+                        continue;
+                    };
+
+                    // Wire each exit node to each target node
+                    for &exit in exit_nodes {
+                        for &entry in nodes {
+                            self.dependencies
+                                .get_or_insert_default(&Token {
+                                    module: producer,
+                                    node: exit,
+                                })
+                                .push(Token { module: consumer, node: entry });
                         }
-
-                        // Ensure types match, otherwise we have no dependency
-                        if h[source].descriptor() != g[target].descriptor() {
-                            continue;
-                        }
-
-                        // Add dependency
-                        self.dependencies
-                            .get_or_insert_default(&Token {
-                                module: m,
-                                node: target,
-                            })
-                            .push(Token { module: n, node: source });
                     }
                 }
             }
