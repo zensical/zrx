@@ -77,9 +77,9 @@ impl<T> Graph<T> {
     /// # }
     /// ```
     #[must_use]
-    pub fn group_sinks<F, K>(&self, f: F) -> GroupSinks<'_, K>
+    pub fn group_sinks<'a, F, K>(&'a self, f: F) -> GroupSinks<'a, K>
     where
-        F: Fn(&T) -> K,
+        F: Fn(&'a T) -> K,
         K: Ord,
     {
         let mut groups: BTreeMap<K, Vec<usize>> = BTreeMap::new();

@@ -77,9 +77,9 @@ impl<T> Graph<T> {
     /// # }
     /// ```
     #[must_use]
-    pub fn group_sources<F, K>(&self, f: F) -> GroupSources<'_, K>
+    pub fn group_sources<'a, F, K>(&'a self, f: F) -> GroupSources<'a, K>
     where
-        F: Fn(&T) -> K,
+        F: Fn(&'a T) -> K,
         K: Ord,
     {
         let mut groups: BTreeMap<K, Vec<usize>> = BTreeMap::new();
