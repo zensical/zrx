@@ -27,7 +27,6 @@
 
 use std::collections::btree_map::{self, BTreeMap};
 
-use crate::graph::topology::Distance;
 use crate::graph::Graph;
 
 // ----------------------------------------------------------------------------
