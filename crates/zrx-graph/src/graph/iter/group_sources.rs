@@ -69,7 +69,7 @@ impl<T> Graph<T> {
     /// // Create graph from builder
     /// let graph = builder.build();
     ///
-    /// // Create iterator over sources grouped by key
+    /// // Create iterator over sources of key-groups
     /// for node in graph.group_sources(|node| node.len()) {
     ///     println!("{node:?}");
     /// }

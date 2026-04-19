@@ -69,7 +69,7 @@ impl<T> Graph<T> {
     /// // Create graph from builder
     /// let graph = builder.build();
     ///
-    /// // Create iterator over sinks grouped by key
+    /// // Create iterator over sinks of key-groups
     /// for node in graph.group_sinks(|node| node.len()) {
     ///     println!("{node:?}");
     /// }
