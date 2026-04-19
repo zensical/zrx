@@ -67,8 +67,8 @@ impl<T> Graph<T> {
     /// let graph = builder.build();
     ///
     /// // Create iterator over key-groups
-    /// for node in graph.groups(|node| node.len()) {
-    ///     println!("{node:?}");
+    /// for (key, nodes) in graph.groups(|node| node.len()) {
+    ///     println!("{key}: {nodes:?}");
     /// }
     /// # Ok(())
     /// # }
