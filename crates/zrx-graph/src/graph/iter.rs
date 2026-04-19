@@ -33,6 +33,7 @@ mod filter_sinks;
 mod filter_sources;
 mod group_sinks;
 mod group_sources;
+mod groups;
 mod paths;
 mod sinks;
 mod sources;
