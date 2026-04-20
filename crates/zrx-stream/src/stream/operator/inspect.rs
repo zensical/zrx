@@ -62,7 +62,7 @@ where
     #[inline]
     pub fn inspect<F, A>(&self, f: F) -> Stream<I, T>
     where
-        F: InspectFn<A, I, T> + Clone,
+        F: InspectFn<A, I, T>,
         A: Arguments,
     {
         self.subscribe(Inspect {
@@ -80,7 +80,7 @@ impl<I, T, F, A> Action<I> for Inspect<T, F, A>
 where
     I: Id,
     T: Value,
-    F: InspectFn<A, I, T> + Clone,
+    F: InspectFn<A, I, T>,
     A: Arguments,
 {
     type Inputs = (T,);
