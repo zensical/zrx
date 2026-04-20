@@ -61,8 +61,8 @@ pub use convert::IntoError;
 /// the existing variants. In case you think an essential variant is missing,
 /// please report it on our issue tracker.
 ///
-/// [`Module`]: crate::Module
-/// [`Module::setup`]: crate::Module::setup
+/// [`Module`]: crate::module::Module
+/// [`Module::setup`]: crate::module::Module::setup
 #[derive(Debug, Error)]
 pub enum Error {
     /// Identifier error.
@@ -71,9 +71,9 @@ pub enum Error {
     /// Expression error.
     #[error(transparent)]
     Expression(#[from] expression::Error),
-    /// Catch-all errors.
+    /// Other error.
     #[error(transparent)]
-    Other(#[from] Box<dyn error::Error + Send + 'static>),
+    Other(#[from] Box<dyn error::Error + Send>),
 }
 
 // ----------------------------------------------------------------------------

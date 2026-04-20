@@ -55,8 +55,8 @@ where
     /// Converts any error into a module error.
     ///
     /// This implementation attempts to downcast the error into one of the known
-    /// variants, and falls back to the catch-all variant in all other cases. It
-    /// also ensures that the error is not double-boxed, returning all unknown
+    /// variants, and falls back to the [`Error::Other`] variant in other cases.
+    /// It also ensures that the error is not double-boxed, returning unknown
     /// errors captured by the [`Error::Other`] variant unchanged.
     #[inline]
     fn into_error(self) -> Error {
