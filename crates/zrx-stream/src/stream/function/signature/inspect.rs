@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Get function.
+//! Inspect function.
 
 use std::fmt::Display;
 
@@ -41,7 +41,7 @@ use crate::stream::function::catch;
 // Traits
 // ----------------------------------------------------------------------------
 
-/// Get function.
+/// Inspect function.
 pub trait InspectFn<A, I, T>: Send + 'static {
     /// Executes the inspect function.
     ///
