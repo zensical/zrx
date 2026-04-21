@@ -27,12 +27,13 @@
 
 use std::fmt::Display;
 
-use zrx_scheduler::step::Result;
+use zrx_scheduler::step::error::IntoResult;
+use zrx_scheduler::step::{Result, Scope};
 use zrx_scheduler::Key;
 
 use crate::stream::function::arguments::{
-    ForId, ForIdSplat, ForIdValue, ForKey, ForKeySplat, ForKeyValue, ForSplat,
-    ForValue,
+    ForId, ForIdSplat, ForIdValue, ForKey, ForKeySplat, ForKeyValue, ForScope,
+    ForScopeSplat, ForScopeValue, ForSplat, ForValue,
 };
 use crate::stream::function::catch;
 
@@ -47,16 +48,17 @@ pub trait FilterFn<A, I, T>: Send + 'static {
     /// # Errors
     ///
     /// This method returns an error if the function fails to execute.
-    fn execute(&self, scope: &Key<I>, value: &T) -> Result<bool>;
+    fn execute(&self, scope: &mut Scope<I>, value: &T) -> Result<bool>;
 }
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<F, I, T> FilterFn<ForKey, I, T> for F
+impl<F, R, I, T> FilterFn<ForScope, I, T> for F
 where
-    F: Fn(&Key<I>) -> Result<bool> + Send + 'static,
+    F: Fn(&mut Scope<I>) -> R + Send + 'static,
+    R: IntoResult<bool>,
     I: Display,
 {
     #[cfg_attr(
@@ -64,14 +66,15 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, _: &T) -> Result<bool> {
-        catch(|| self(scope))
+    fn execute(&self, scope: &mut Scope<I>, _: &T) -> Result<bool> {
+        catch(|| self(scope).into_result())
     }
 }
 
-impl<F, I, T> FilterFn<ForId, I, T> for F
+impl<F, R, I, T> FilterFn<ForScopeValue, I, T> for F
 where
-    F: Fn(&I) -> Result<bool> + Send + 'static,
+    F: Fn(&mut Scope<I>, &T) -> R + Send + 'static,
+    R: IntoResult<bool>,
     I: Display,
 {
     #[cfg_attr(
@@ -79,14 +82,17 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, _: &T) -> Result<bool> {
-        catch(|| self(scope.try_as_id()?))
+    fn execute(&self, scope: &mut Scope<I>, value: &T) -> Result<bool> {
+        catch(|| self(scope, value).into_result())
     }
 }
 
-impl<F, I, T> FilterFn<ForValue, I, T> for F
+// ----------------------------------------------------------------------------
+
+impl<F, R, I, T> FilterFn<ForKey, I, T> for F
 where
-    F: Fn(&T) -> Result<bool> + Send + 'static,
+    F: Fn(&Key<I>) -> R + Send + 'static,
+    R: IntoResult<bool>,
     I: Display,
 {
     #[cfg_attr(
@@ -94,14 +100,15 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, value: &T) -> Result<bool> {
-        catch(|| self(value))
+    fn execute(&self, scope: &mut Scope<I>, _: &T) -> Result<bool> {
+        catch(|| self(scope.key()).into_result())
     }
 }
 
-impl<F, I, T> FilterFn<ForKeyValue, I, T> for F
+impl<F, R, I, T> FilterFn<ForKeyValue, I, T> for F
 where
-    F: Fn(&Key<I>, &T) -> Result<bool> + Send + 'static,
+    F: Fn(&Key<I>, &T) -> R + Send + 'static,
+    R: IntoResult<bool>,
     I: Display,
 {
     #[cfg_attr(
@@ -109,14 +116,17 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, value: &T) -> Result<bool> {
-        catch(|| self(scope, value))
+    fn execute(&self, scope: &mut Scope<I>, value: &T) -> Result<bool> {
+        catch(|| self(scope.key(), value).into_result())
     }
 }
 
-impl<F, I, T> FilterFn<ForIdValue, I, T> for F
+// ----------------------------------------------------------------------------
+
+impl<F, R, I, T> FilterFn<ForId, I, T> for F
 where
-    F: Fn(&I, &T) -> Result<bool> + Send + 'static,
+    F: Fn(&I) -> R + Send + 'static,
+    R: IntoResult<bool>,
     I: Display,
 {
     #[cfg_attr(
@@ -124,8 +134,42 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, value: &T) -> Result<bool> {
-        catch(|| self(scope.try_as_id()?, value))
+    fn execute(&self, scope: &mut Scope<I>, _: &T) -> Result<bool> {
+        catch(|| self(scope.key().try_as_id()?).into_result())
+    }
+}
+
+impl<F, R, I, T> FilterFn<ForIdValue, I, T> for F
+where
+    F: Fn(&I, &T) -> R + Send + 'static,
+    R: IntoResult<bool>,
+    I: Display,
+{
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+    )]
+    #[inline]
+    fn execute(&self, scope: &mut Scope<I>, value: &T) -> Result<bool> {
+        catch(|| self(scope.key().try_as_id()?, value).into_result())
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl<F, R, I, T> FilterFn<ForValue, I, T> for F
+where
+    F: Fn(&T) -> R + Send + 'static,
+    R: IntoResult<bool>,
+    I: Display,
+{
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+    )]
+    #[inline]
+    fn execute(&self, scope: &mut Scope<I>, value: &T) -> Result<bool> {
+        catch(|| self(value).into_result())
     }
 }
 
@@ -133,12 +177,13 @@ where
 // Macros
 // ----------------------------------------------------------------------------
 
-/// Implements filter function trait for splat arguments.
-macro_rules! impl_filter_fn_for_splat {
+/// Implements filter function trait for scope and splat arguments.
+macro_rules! impl_filter_fn_for_scope_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+> FilterFn<ForSplat, I, ($($T,)+)> for F
+        impl<F, R, I, $($T,)+> FilterFn<ForScopeSplat, I, ($($T,)+)> for F
         where
-            F: Fn($(&$T),+) -> Result<bool> + Send + 'static,
+            F: Fn(&mut Scope<I>, $(&$T),+) -> R + Send + 'static,
+            R: IntoResult<bool>,
             I: Display,
         {
             #[cfg_attr(
@@ -149,22 +194,23 @@ macro_rules! impl_filter_fn_for_splat {
             )]
             #[inline]
             fn execute(
-                &self, scope: &Key<I>, value: &($($T,)+)
-            ) -> Result<bool> {
+                &self, scope: &mut Scope<I>, value: &($($T,)+)
+            ) -> Result<bool>{
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self($($T),+))
+                catch(|| self(scope, $($T),+).into_result())
             }
         }
     };
 }
 
-/// Implements filter function trait for scope and splat arguments.
-macro_rules! impl_filter_fn_for_scope_splat {
+/// Implements filter function trait for key and splat arguments.
+macro_rules! impl_filter_fn_for_key_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+> FilterFn<ForKeySplat, I, ($($T,)+)> for F
+        impl<F, R, I, $($T,)+> FilterFn<ForKeySplat, I, ($($T,)+)> for F
         where
-            F: Fn(&Key<I>, $(&$T),+) -> Result<bool> + Send + 'static,
+            F: Fn(&Key<I>, $(&$T),+) -> R + Send + 'static,
+            R: IntoResult<bool>,
             I: Display,
         {
             #[cfg_attr(
@@ -175,11 +221,11 @@ macro_rules! impl_filter_fn_for_scope_splat {
             )]
             #[inline]
             fn execute(
-                &self, scope: &Key<I>, value: &($($T,)+)
-            ) -> Result<bool> {
+                &self, scope: &mut Scope<I>, value: &($($T,)+)
+            ) -> Result<bool>{
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self(scope, $($T),+))
+                catch(|| self(scope.key(), $($T),+).into_result())
             }
         }
     };
@@ -188,9 +234,10 @@ macro_rules! impl_filter_fn_for_scope_splat {
 /// Implements filter function trait for identifier and splat arguments.
 macro_rules! impl_filter_fn_for_id_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+> FilterFn<ForIdSplat, I, ($($T,)+)> for F
+        impl<F, R, I, $($T,)+> FilterFn<ForIdSplat, I, ($($T,)+)> for F
         where
-            F: Fn(&I, $(&$T),+) -> Result<bool> + Send + 'static,
+            F: Fn(&I, $(&$T),+) -> R + Send + 'static,
+            R: IntoResult<bool>,
             I: Display,
         {
             #[cfg_attr(
@@ -201,22 +248,52 @@ macro_rules! impl_filter_fn_for_id_splat {
             )]
             #[inline]
             fn execute(
-                &self, scope: &Key<I>, value: &($($T,)+)
-            ) -> Result<bool> {
+                &self, scope: &mut Scope<I>, value: &($($T,)+)
+            ) -> Result<bool>{
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self(scope.try_as_id()?, $($T),+))
+                catch(|| self(scope.key().try_as_id()?, $($T),+).into_result())
             }
         }
     };
 }
 
+/// Implements filter function trait for splat arguments.
+macro_rules! impl_filter_fn_for_splat {
+    ($($T:ident),+) => {
+        impl<F, R, I, $($T,)+> FilterFn<ForSplat, I, ($($T,)+)> for F
+        where
+            F: Fn($(&$T),+) -> R + Send + 'static,
+            R: IntoResult<bool>,
+            I: Display,
+        {
+            #[cfg_attr(
+                feature = "tracing",
+                tracing::instrument(
+                    level = "debug", skip_all, fields(scope = %scope)
+                )
+            )]
+            #[inline]
+            fn execute(
+                &self, scope: &mut Scope<I>, value: &($($T,)+)
+            ) -> Result<bool>{
+                #[allow(non_snake_case)]
+                let ($($T,)+) = value;
+                catch(|| self($($T),+).into_result())
+            }
+        }
+    };
+}
+
+// ----------------------------------------------------------------------------
+
 /// Implements filter function traits.
 macro_rules! impl_filter_fn {
     ($($T:ident),+) => {
-        impl_filter_fn_for_splat!($($T),+);
         impl_filter_fn_for_scope_splat!($($T),+);
+        impl_filter_fn_for_key_splat!($($T),+);
         impl_filter_fn_for_id_splat!($($T),+);
+        impl_filter_fn_for_splat!($($T),+);
     };
 }
 
