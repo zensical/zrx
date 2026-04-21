@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Module error conversions.
+//! Step error conversions.
 
 use std::error;
 
@@ -35,12 +35,12 @@ use super::Error;
 
 /// Conversion into [`Error`].
 pub trait IntoError {
-    /// Converts into a module error.
+    /// Converts into a step error.
     ///
-    /// This method is intended to be used within [`Module::setup`][], to make
-    /// it convenient to convert an arbitrary error into a module error.
+    /// This method is intended to be used within [`Action::execute`][], to make
+    /// it convenient to convert an arbitrary error into a step error.
     ///
-    /// [`Module::setup`]: crate::Module::setup
+    /// [`Action::execute`]: crate::scheduler::action::Action::execute
     fn into_error(self) -> Error;
 }
 
@@ -52,7 +52,7 @@ impl<E> IntoError for E
 where
     E: error::Error + Send + 'static,
 {
-    /// Converts any error into a module error.
+    /// Converts any error into a step error.
     ///
     /// This implementation attempts to downcast the error into one of the known
     /// variants, and falls back to the [`Error::Other`] variant in other cases.
@@ -77,8 +77,8 @@ where
         }
 
         // Downcast known error variants
-        downcast!(Error::Id);
-        downcast!(Error::Expression);
+        downcast!(Error::Session);
+        downcast!(Error::Scope);
 
         // Handle unknown error variants
         Error::Other(err)

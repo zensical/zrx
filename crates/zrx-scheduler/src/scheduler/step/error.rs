@@ -26,17 +26,38 @@
 //! Step error.
 
 use std::any::Any;
+use std::panic::{self, AssertUnwindSafe};
 use std::{error, result};
 use thiserror::Error;
 
 use crate::scheduler::session;
 use crate::scheduler::signal::scope;
 
+mod convert;
+
+pub use convert::IntoError;
+
 // ----------------------------------------------------------------------------
 // Enums
 // ----------------------------------------------------------------------------
 
 /// Step error.
+///
+/// An [`Action`][] is composed of one or more [`Steps`][], which are returned
+/// and executed sequentially as part of the action's definition. If an action
+/// accepts any user-defined code, e.g. in the form of a function, it needs to
+/// account for all errors occurring during the execution of that function.
+///
+/// The enum is deliberately not marked as non-exhaustive, because this type is
+/// intended to be the sink for all errors that typically occur in actions, and
+/// should never be used in external code. As such, we're allowed to freely add
+/// new variants, moving errors out of [`Error::Other`] when necessary.
+///
+/// In order to integrate with error types that are not already covered by the
+/// existing variants, the [`IntoError`] conversion trait is provided.
+///
+/// [`Action`]: crate::scheduler::action::Action
+/// [`Steps`]: crate::scheduler::step::Steps
 #[derive(Debug, Error)]
 pub enum Error {
     /// Session error.
@@ -59,3 +80,54 @@ pub enum Error {
 
 /// Step result.
 pub type Result<T = ()> = result::Result<T, Error>;
+
+// ----------------------------------------------------------------------------
+// Functions
+// ----------------------------------------------------------------------------
+
+/// Catches panics and converts them to errors.
+///
+/// This function is useful for wrapping code that may panic, i.e., to shield
+/// against panics in user-defined code or third-party libraries. It captures
+/// the panic and returns it as an [`Error::Panic`], allowing the program to
+/// continue running gracefully instead of terminating unexpectedly.
+///
+/// # Errors
+///
+/// Returns [`Error::Panic`] if the provided function panics.
+///
+/// # Safety
+///
+/// This function uses [`AssertUnwindSafe`] to wrap the provided closure, which
+/// suppresses the compiler's unwind-safety checks. This is sound here because
+/// the closure and all state it captures are discarded immediately after a
+/// panic is caught – the [`Error::Panic`] variant owns the panic payload, but
+/// nothing from the closure's captured environment is accessed or reused
+/// afterwards. Callers must ensure that any side effects performed before the
+/// panic (e.g. writes to shared state outside the closure) are accounted for,
+/// as those cannot be unwound or recovered by this function.
+///
+/// # Examples
+///
+/// ```
+/// use zrx_scheduler::step::error::catch;
+/// use zrx_scheduler::step::Error;
+///
+/// // Define function that panics
+/// let res = catch(|| {
+///     panic!("don't panic!");
+///     Ok(42) // Never returned
+/// });
+///
+/// // Assert that panic was caught
+/// assert!(matches!(res, Err(Error::Panic(_))));
+/// ```
+#[inline]
+pub fn catch<F, T>(f: F) -> Result<T>
+where
+    F: FnOnce() -> Result<T>,
+{
+    panic::catch_unwind(AssertUnwindSafe(f))
+        .map_err(Error::Panic)
+        .and_then(|res| res)
+}

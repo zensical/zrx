@@ -62,7 +62,7 @@ where
     #[inline]
     pub fn filter<F, A>(&self, f: F) -> Stream<I, T>
     where
-        F: FilterFn<A, I, T> + Clone,
+        F: FilterFn<A, I, T>,
         A: Arguments,
     {
         self.subscribe(Filter {
@@ -80,7 +80,7 @@ impl<I, T, F, A> Action<I> for Filter<T, F, A>
 where
     I: Id,
     T: Value,
-    F: FilterFn<A, I, T> + Clone,
+    F: FilterFn<A, I, T>,
     A: Arguments,
 {
     type Inputs = (T,);
