@@ -27,6 +27,7 @@
 
 use std::fmt::Display;
 
+use zrx_scheduler::step::error::IntoResult;
 use zrx_scheduler::step::{Result, Scope};
 use zrx_scheduler::Key;
 
@@ -54,9 +55,10 @@ pub trait MapFn<A, I, T, U>: Send + 'static {
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<F, I, T, U> MapFn<ForScope, I, T, U> for F
+impl<F, R, I, T, U> MapFn<ForScope, I, T, U> for F
 where
-    F: Fn(&mut Scope<I>) -> Result<U> + Send + 'static,
+    F: Fn(&mut Scope<I>) -> R + Send + 'static,
+    R: IntoResult<U>,
     I: Display,
 {
     #[cfg_attr(
@@ -65,13 +67,14 @@ where
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, _: T) -> Result<U> {
-        catch(|| self(scope))
+        catch(|| self(scope).into_result())
     }
 }
 
-impl<F, I, T, U> MapFn<ForScopeValue, I, T, U> for F
+impl<F, R, I, T, U> MapFn<ForScopeValue, I, T, U> for F
 where
-    F: Fn(&mut Scope<I>, T) -> Result<U> + Send + 'static,
+    F: Fn(&mut Scope<I>, T) -> R + Send + 'static,
+    R: IntoResult<U>,
     I: Display,
 {
     #[cfg_attr(
@@ -80,15 +83,16 @@ where
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<U> {
-        catch(|| self(scope, value))
+        catch(|| self(scope, value).into_result())
     }
 }
 
 // ----------------------------------------------------------------------------
 
-impl<F, I, T, U> MapFn<ForKey, I, T, U> for F
+impl<F, R, I, T, U> MapFn<ForKey, I, T, U> for F
 where
-    F: Fn(&Key<I>) -> Result<U> + Send + 'static,
+    F: Fn(&Key<I>) -> R + Send + 'static,
+    R: IntoResult<U>,
     I: Display,
 {
     #[cfg_attr(
@@ -97,13 +101,14 @@ where
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, _: T) -> Result<U> {
-        catch(|| self(scope.key()))
+        catch(|| self(scope.key()).into_result())
     }
 }
 
-impl<F, I, T, U> MapFn<ForKeyValue, I, T, U> for F
+impl<F, R, I, T, U> MapFn<ForKeyValue, I, T, U> for F
 where
-    F: Fn(&Key<I>, T) -> Result<U> + Send + 'static,
+    F: Fn(&Key<I>, T) -> R + Send + 'static,
+    R: IntoResult<U>,
     I: Display,
 {
     #[cfg_attr(
@@ -112,15 +117,16 @@ where
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<U> {
-        catch(|| self(scope.key(), value))
+        catch(|| self(scope.key(), value).into_result())
     }
 }
 
 // ----------------------------------------------------------------------------
 
-impl<F, I, T, U> MapFn<ForId, I, T, U> for F
+impl<F, R, I, T, U> MapFn<ForId, I, T, U> for F
 where
-    F: Fn(&I) -> Result<U> + Send + 'static,
+    F: Fn(&I) -> R + Send + 'static,
+    R: IntoResult<U>,
     I: Display,
 {
     #[cfg_attr(
@@ -129,13 +135,14 @@ where
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, _: T) -> Result<U> {
-        catch(|| self(scope.key().try_as_id()?))
+        catch(|| self(scope.key().try_as_id()?).into_result())
     }
 }
 
-impl<F, I, T, U> MapFn<ForIdValue, I, T, U> for F
+impl<F, R, I, T, U> MapFn<ForIdValue, I, T, U> for F
 where
-    F: Fn(&I, T) -> Result<U> + Send + 'static,
+    F: Fn(&I, T) -> R + Send + 'static,
+    R: IntoResult<U>,
     I: Display,
 {
     #[cfg_attr(
@@ -144,15 +151,16 @@ where
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<U> {
-        catch(|| self(scope.key().try_as_id()?, value))
+        catch(|| self(scope.key().try_as_id()?, value).into_result())
     }
 }
 
 // ----------------------------------------------------------------------------
 
-impl<F, I, T, U> MapFn<ForValue, I, T, U> for F
+impl<F, R, I, T, U> MapFn<ForValue, I, T, U> for F
 where
-    F: Fn(T) -> Result<U> + Send + 'static,
+    F: Fn(T) -> R + Send + 'static,
+    R: IntoResult<U>,
     I: Display,
 {
     #[cfg_attr(
@@ -161,7 +169,7 @@ where
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<U> {
-        catch(|| self(value))
+        catch(|| self(value).into_result())
     }
 }
 
@@ -172,9 +180,10 @@ where
 /// Implements map function trait for scope and splat arguments.
 macro_rules! impl_map_fn_for_scope_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ U> MapFn<ForScopeSplat, I, ($($T,)+), U> for F
+        impl<F, R, I, $($T,)+ U> MapFn<ForScopeSplat, I, ($($T,)+), U> for F
         where
-            F: Fn(&mut Scope<I>, $($T),+) -> Result<U> + Send + 'static,
+            F: Fn(&mut Scope<I>, $($T),+) -> R + Send + 'static,
+            R: IntoResult<U>,
             I: Display,
         {
             #[cfg_attr(
@@ -189,7 +198,7 @@ macro_rules! impl_map_fn_for_scope_splat {
             ) -> Result<U> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self(scope, $($T),+))
+                catch(|| self(scope, $($T),+).into_result())
             }
         }
     };
@@ -198,9 +207,10 @@ macro_rules! impl_map_fn_for_scope_splat {
 /// Implements map function trait for key and splat arguments.
 macro_rules! impl_map_fn_for_key_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ U> MapFn<ForKeySplat, I, ($($T,)+), U> for F
+        impl<F, R, I, $($T,)+ U> MapFn<ForKeySplat, I, ($($T,)+), U> for F
         where
-            F: Fn(&Key<I>, $($T),+) -> Result<U> + Send + 'static,
+            F: Fn(&Key<I>, $($T),+) -> R + Send + 'static,
+            R: IntoResult<U>,
             I: Display,
         {
             #[cfg_attr(
@@ -215,7 +225,7 @@ macro_rules! impl_map_fn_for_key_splat {
             ) -> Result<U> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self(scope.key(), $($T),+))
+                catch(|| self(scope.key(), $($T),+).into_result())
             }
         }
     };
@@ -224,9 +234,10 @@ macro_rules! impl_map_fn_for_key_splat {
 /// Implements map function trait for identifier and splat arguments.
 macro_rules! impl_map_fn_for_id_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ U> MapFn<ForIdSplat, I, ($($T,)+), U> for F
+        impl<F, R, I, $($T,)+ U> MapFn<ForIdSplat, I, ($($T,)+), U> for F
         where
-            F: Fn(&I, $($T),+) -> Result<U> + Send + 'static,
+            F: Fn(&I, $($T),+) -> R + Send + 'static,
+            R: IntoResult<U>,
             I: Display,
         {
             #[cfg_attr(
@@ -241,7 +252,7 @@ macro_rules! impl_map_fn_for_id_splat {
             ) -> Result<U> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self(scope.key().try_as_id()?, $($T),+))
+                catch(|| self(scope.key().try_as_id()?, $($T),+).into_result())
             }
         }
     };
@@ -250,9 +261,10 @@ macro_rules! impl_map_fn_for_id_splat {
 /// Implements map function trait for splat arguments.
 macro_rules! impl_map_fn_for_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ U> MapFn<ForSplat, I, ($($T,)+), U> for F
+        impl<F, R, I, $($T,)+ U> MapFn<ForSplat, I, ($($T,)+), U> for F
         where
-            F: Fn($($T),+) -> Result<U> + Send + 'static,
+            F: Fn($($T),+) -> R + Send + 'static,
+            R: IntoResult<U>,
             I: Display,
         {
             #[cfg_attr(
@@ -267,7 +279,7 @@ macro_rules! impl_map_fn_for_splat {
             ) -> Result<U> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self($($T),+))
+                catch(|| self($($T),+).into_result())
             }
         }
     };
