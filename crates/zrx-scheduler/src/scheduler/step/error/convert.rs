@@ -51,6 +51,10 @@ pub trait IntoError {
 /// Conversion into [`Result`].
 pub trait IntoResult<T>: Sized {
     /// Converts into a step result.
+    ///
+    /// # Errors
+    ///
+    /// In case conversion fails, an error should be returned.
     fn into_result(self) -> Result<T, Error>;
 }
 
