@@ -27,12 +27,13 @@
 
 use std::fmt::Display;
 
-use zrx_scheduler::step::Result;
+use zrx_scheduler::step::error::IntoResult;
+use zrx_scheduler::step::{Result, Scope};
 use zrx_scheduler::Key;
 
 use crate::stream::function::arguments::{
-    ForId, ForIdSplat, ForIdValue, ForKey, ForKeySplat, ForKeyValue, ForSplat,
-    ForValue,
+    ForId, ForIdSplat, ForIdValue, ForKey, ForKeySplat, ForKeyValue, ForScope,
+    ForScopeSplat, ForScopeValue, ForSplat, ForValue,
 };
 use crate::stream::function::catch;
 
@@ -47,16 +48,17 @@ pub trait FilterMapFn<A, I, T, U>: Send + 'static {
     /// # Errors
     ///
     /// This method returns an error if the function fails to execute.
-    fn execute(&self, scope: &Key<I>, value: T) -> Result<Option<U>>;
+    fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<Option<U>>;
 }
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<F, I, T, U> FilterMapFn<ForKey, I, T, U> for F
+impl<F, R, I, T, U> FilterMapFn<ForScope, I, T, U> for F
 where
-    F: Fn(&Key<I>) -> Result<Option<U>> + Send + 'static,
+    F: Fn(&mut Scope<I>) -> R + Send + 'static,
+    R: IntoResult<Option<U>>,
     I: Display,
 {
     #[cfg_attr(
@@ -64,14 +66,15 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, _: T) -> Result<Option<U>> {
-        catch(|| self(scope))
+    fn execute(&self, scope: &mut Scope<I>, _: T) -> Result<Option<U>> {
+        catch(|| self(scope).into_result())
     }
 }
 
-impl<F, I, T, U> FilterMapFn<ForId, I, T, U> for F
+impl<F, R, I, T, U> FilterMapFn<ForScopeValue, I, T, U> for F
 where
-    F: Fn(&I) -> Result<Option<U>> + Send + 'static,
+    F: Fn(&mut Scope<I>, T) -> R + Send + 'static,
+    R: IntoResult<Option<U>>,
     I: Display,
 {
     #[cfg_attr(
@@ -79,14 +82,17 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, _: T) -> Result<Option<U>> {
-        catch(|| self(scope.try_as_id()?))
+    fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<Option<U>> {
+        catch(|| self(scope, value).into_result())
     }
 }
 
-impl<F, I, T, U> FilterMapFn<ForValue, I, T, U> for F
+// ----------------------------------------------------------------------------
+
+impl<F, R, I, T, U> FilterMapFn<ForKey, I, T, U> for F
 where
-    F: Fn(T) -> Result<Option<U>> + Send + 'static,
+    F: Fn(&Key<I>) -> R + Send + 'static,
+    R: IntoResult<Option<U>>,
     I: Display,
 {
     #[cfg_attr(
@@ -94,14 +100,15 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, value: T) -> Result<Option<U>> {
-        catch(|| self(value))
+    fn execute(&self, scope: &mut Scope<I>, _: T) -> Result<Option<U>> {
+        catch(|| self(scope.key()).into_result())
     }
 }
 
-impl<F, I, T, U> FilterMapFn<ForKeyValue, I, T, U> for F
+impl<F, R, I, T, U> FilterMapFn<ForKeyValue, I, T, U> for F
 where
-    F: Fn(&Key<I>, T) -> Result<Option<U>> + Send + 'static,
+    F: Fn(&Key<I>, T) -> R + Send + 'static,
+    R: IntoResult<Option<U>>,
     I: Display,
 {
     #[cfg_attr(
@@ -109,14 +116,17 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, value: T) -> Result<Option<U>> {
-        catch(|| self(scope, value))
+    fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<Option<U>> {
+        catch(|| self(scope.key(), value).into_result())
     }
 }
 
-impl<F, I, T, U> FilterMapFn<ForIdValue, I, T, U> for F
+// ----------------------------------------------------------------------------
+
+impl<F, R, I, T, U> FilterMapFn<ForId, I, T, U> for F
 where
-    F: Fn(&I, T) -> Result<Option<U>> + Send + 'static,
+    F: Fn(&I) -> R + Send + 'static,
+    R: IntoResult<Option<U>>,
     I: Display,
 {
     #[cfg_attr(
@@ -124,8 +134,42 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, value: T) -> Result<Option<U>> {
-        catch(|| self(scope.try_as_id()?, value))
+    fn execute(&self, scope: &mut Scope<I>, _: T) -> Result<Option<U>> {
+        catch(|| self(scope.key().try_as_id()?).into_result())
+    }
+}
+
+impl<F, R, I, T, U> FilterMapFn<ForIdValue, I, T, U> for F
+where
+    F: Fn(&I, T) -> R + Send + 'static,
+    R: IntoResult<Option<U>>,
+    I: Display,
+{
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+    )]
+    #[inline]
+    fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<Option<U>> {
+        catch(|| self(scope.key().try_as_id()?, value).into_result())
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl<F, R, I, T, U> FilterMapFn<ForValue, I, T, U> for F
+where
+    F: Fn(T) -> R + Send + 'static,
+    R: IntoResult<Option<U>>,
+    I: Display,
+{
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+    )]
+    #[inline]
+    fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<Option<U>> {
+        catch(|| self(value).into_result())
     }
 }
 
@@ -133,38 +177,13 @@ where
 // Macros
 // ----------------------------------------------------------------------------
 
-/// Implements filter map function trait for splat arguments.
-macro_rules! impl_filter_map_fn_for_splat {
-    ($($T:ident),+) => {
-        impl<F, I, $($T,)+ U> FilterMapFn<ForSplat, I, ($($T,)+), U> for F
-        where
-            F: Fn($($T),+) -> Result<Option<U>> + Send + 'static,
-            I: Display,
-        {
-            #[cfg_attr(
-                feature = "tracing",
-                tracing::instrument(
-                    level = "debug", skip_all, fields(scope = %scope)
-                )
-            )]
-            #[inline]
-            fn execute(
-                &self, scope: &Key<I>, value: ($($T,)+)
-            ) -> Result<Option<U>> {
-                #[allow(non_snake_case)]
-                let ($($T,)+) = value;
-                catch(|| self($($T),+))
-            }
-        }
-    };
-}
-
 /// Implements filter map function trait for scope and splat arguments.
 macro_rules! impl_filter_map_fn_for_scope_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ U> FilterMapFn<ForKeySplat, I, ($($T,)+), U> for F
+        impl<F, R, I, $($T,)+ U> FilterMapFn<ForScopeSplat, I, ($($T,)+), U> for F
         where
-            F: Fn(&Key<I>, $($T),+) -> Result<Option<U>> + Send + 'static,
+            F: Fn(&mut Scope<I>, $($T),+) -> R + Send + 'static,
+            R: IntoResult<Option<U>>,
             I: Display,
         {
             #[cfg_attr(
@@ -175,22 +194,23 @@ macro_rules! impl_filter_map_fn_for_scope_splat {
             )]
             #[inline]
             fn execute(
-                &self, scope: &Key<I>, value: ($($T,)+)
+                &self, scope: &mut Scope<I>, value: ($($T,)+)
             ) -> Result<Option<U>> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self(scope, $($T),+))
+                catch(|| self(scope, $($T),+).into_result())
             }
         }
     };
 }
 
-/// Implements filter map function trait for identifier and splat arguments.
-macro_rules! impl_filter_map_fn_for_id_splat {
+/// Implements filter map function trait for key and splat arguments.
+macro_rules! impl_filter_map_fn_for_key_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ U> FilterMapFn<ForIdSplat, I, ($($T,)+), U> for F
+        impl<F, R, I, $($T,)+ U> FilterMapFn<ForKeySplat, I, ($($T,)+), U> for F
         where
-            F: Fn(&I, $($T),+) -> Result<Option<U>> + Send + 'static,
+            F: Fn(&Key<I>, $($T),+) -> R + Send + 'static,
+            R: IntoResult<Option<U>>,
             I: Display,
         {
             #[cfg_attr(
@@ -201,22 +221,79 @@ macro_rules! impl_filter_map_fn_for_id_splat {
             )]
             #[inline]
             fn execute(
-                &self, scope: &Key<I>, value: ($($T,)+)
+                &self, scope: &mut Scope<I>, value: ($($T,)+)
             ) -> Result<Option<U>> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self(scope.try_as_id()?, $($T),+))
+                catch(|| self(scope.key(), $($T),+).into_result())
             }
         }
     };
 }
+
+/// Implements filter  map function trait for identifier and splat arguments.
+macro_rules! impl_filter_map_fn_for_id_splat {
+    ($($T:ident),+) => {
+        impl<F, R, I, $($T,)+ U> FilterMapFn<ForIdSplat, I, ($($T,)+), U> for F
+        where
+            F: Fn(&I, $($T),+) -> R + Send + 'static,
+            R: IntoResult<Option<U>>,
+            I: Display,
+        {
+            #[cfg_attr(
+                feature = "tracing",
+                tracing::instrument(
+                    level = "debug", skip_all, fields(scope = %scope)
+                )
+            )]
+            #[inline]
+            fn execute(
+                &self, scope: &mut Scope<I>, value: ($($T,)+)
+            ) -> Result<Option<U>> {
+                #[allow(non_snake_case)]
+                let ($($T,)+) = value;
+                catch(|| self(scope.key().try_as_id()?, $($T),+).into_result())
+            }
+        }
+    };
+}
+
+/// Implements filter map function trait for splat arguments.
+macro_rules! impl_filter_map_fn_for_splat {
+    ($($T:ident),+) => {
+        impl<F, R, I, $($T,)+ U> FilterMapFn<ForSplat, I, ($($T,)+), U> for F
+        where
+            F: Fn($($T),+) -> R + Send + 'static,
+            R: IntoResult<Option<U>>,
+            I: Display,
+        {
+            #[cfg_attr(
+                feature = "tracing",
+                tracing::instrument(
+                    level = "debug", skip_all, fields(scope = %scope)
+                )
+            )]
+            #[inline]
+            fn execute(
+                &self, scope: &mut Scope<I>, value: ($($T,)+)
+            ) -> Result<Option<U>> {
+                #[allow(non_snake_case)]
+                let ($($T,)+) = value;
+                catch(|| self($($T),+).into_result())
+            }
+        }
+    };
+}
+
+// ----------------------------------------------------------------------------
 
 /// Implements filter map function traits.
 macro_rules! impl_filter_map_fn {
     ($($T:ident),+) => {
-        impl_filter_map_fn_for_splat!($($T),+);
         impl_filter_map_fn_for_scope_splat!($($T),+);
+        impl_filter_map_fn_for_key_splat!($($T),+);
         impl_filter_map_fn_for_id_splat!($($T),+);
+        impl_filter_map_fn_for_splat!($($T),+);
     };
 }
 
