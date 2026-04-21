@@ -125,7 +125,7 @@ where
         )
     }
 
-    /// Completes a schedule with the given token and scoped value.
+    /// Completes a schedule with the given token and scope.
     pub fn complete(&mut self, token: Token, scope: &Scope<I>) {
         let schedule = &mut self.schedules[token.module];
         for node in schedule.complete(token.node, scope) {

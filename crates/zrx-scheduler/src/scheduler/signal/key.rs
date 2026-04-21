@@ -29,6 +29,7 @@ use ahash::AHasher;
 use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::ops::Index;
+use std::slice::Iter;
 use std::sync::Arc;
 
 use super::value::Value;
@@ -120,15 +121,20 @@ where
     ///
     /// // Create and concat keys
     /// let key = Key::from(1);
-    /// let other = Key::from_iter([2, 3]);
     /// assert_eq!(
-    ///     key.concat(&other),
+    ///     key.concat(Key::from_iter([2, 3])),
     ///     Key::from_iter([1, 2, 3])
     /// );
     /// ```
     #[must_use]
-    pub fn concat(&self, other: &Self) -> Self {
-        let iter = self.path.iter().chain(other.path.iter());
+    pub fn concat<K>(&self, tail: K) -> Self
+    where
+        K: AsRef<Self>,
+    {
+        let tail = tail.as_ref();
+
+        // Concatenate paths and return key
+        let iter = self.path.iter().chain(tail.path.iter());
         let path = iter.cloned().collect();
         Self { hash: hash(&path), path }
     }
@@ -149,12 +155,8 @@ where
     /// ```
     #[must_use]
     pub fn reverse(&self) -> Self {
-        let mut path = self.path.to_vec();
-        path.reverse();
-        Self {
-            hash: hash(&path),
-            path: Arc::from(path),
-        }
+        let iter = self.path.iter().rev();
+        iter.cloned().collect()
     }
 
     /// Rotates the key left by `n` positions.
@@ -177,12 +179,8 @@ where
     /// ```
     #[must_use]
     pub fn rotate_left(&self, n: usize) -> Self {
-        let mut path = self.path.to_vec();
-        path.rotate_left(n);
-        Self {
-            hash: hash(&path),
-            path: Arc::from(path),
-        }
+        let iter = self.path[n..].iter().chain(self.path[..n].iter());
+        iter.cloned().collect()
     }
 
     /// Rotates the key right by `n` positions.
@@ -203,14 +201,30 @@ where
     ///     Key::from_iter([3, 1, 2])
     /// );
     /// ```
+    #[inline]
     #[must_use]
     pub fn rotate_right(&self, n: usize) -> Self {
-        let mut path = self.path.to_vec();
-        path.rotate_right(n);
-        Self {
-            hash: hash(&path),
-            path: Arc::from(path),
-        }
+        self.rotate_left(self.path.len() - n)
+    }
+
+    /// Creates an iterator over the key.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_scheduler::Key;
+    ///
+    /// // Create key from iterator
+    /// let key = Key::from_iter([1, 2, 3]);
+    ///
+    /// // Create iterator over key
+    /// for id in &key {
+    ///     println!("{id}");
+    /// }
+    /// ```
+    #[inline]
+    pub fn iter(&self) -> Iter<'_, I> {
+        self.path.iter()
     }
 }
 
@@ -219,6 +233,16 @@ where
 // ----------------------------------------------------------------------------
 
 impl<I> Value for Key<I> where I: Value {}
+
+// ----------------------------------------------------------------------------
+
+impl<I> AsRef<Key<I>> for Key<I> {
+    /// Returns a reference to the key.
+    #[inline]
+    fn as_ref(&self) -> &Key<I> {
+        self
+    }
+}
 
 // ----------------------------------------------------------------------------
 
@@ -265,6 +289,34 @@ where
     {
         let path = iter.into_iter().collect();
         Self { hash: hash(&path), path }
+    }
+}
+
+impl<'a, I> IntoIterator for &'a Key<I>
+where
+    I: Id,
+{
+    type Item = &'a I;
+    type IntoIter = Iter<'a, I>;
+
+    /// Creates an iterator over the key.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_scheduler::Key;
+    ///
+    /// // Create key from iterator
+    /// let key = Key::from_iter([1, 2, 3]);
+    ///
+    /// // Create iterator over key
+    /// for id in &key {
+    ///     println!("{id}");
+    /// }
+    /// ```
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 

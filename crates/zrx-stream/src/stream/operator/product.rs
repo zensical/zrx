@@ -121,7 +121,7 @@ where
                 }
             } else {
                 for l_scope in left.keys() {
-                    let combined = l_scope.concat(&scope);
+                    let combined = l_scope.concat(&*scope);
                     output.remove(&combined);
                     scoped.push(Scope::from(combined).done());
                 }
