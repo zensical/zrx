@@ -32,13 +32,10 @@
 /// Creates a diagnostic with error severity.
 ///
 /// This macro creates a diagnostic message with [`Severity::Error`][], using
-/// either a static string or a format string as an argument. Diagnostics are
-/// not globally registered but always returned, so the caller needs to make
-/// sure to forward them by including them into a [`Report`][].
+/// either a static string or a format string as an argument.
 ///
 /// The diagnostic will include file, line and column information.
 ///
-/// [`Report`]: crate::diagnostic::report::Report
 /// [`Severity::Error`]: crate::diagnostic::Severity::Error
 ///
 /// # Examples
@@ -70,13 +67,10 @@ macro_rules! error {
 /// Creates a diagnostic with warning severity.
 ///
 /// This macro creates a diagnostic message with [`Severity::Warning`][], using
-/// either a static string or a format string as an argument. Diagnostics are
-/// not globally registered but always returned, so the caller needs to make
-/// sure to forward them by including them into a [`Report`][].
+/// either a static string or a format string as an argument.
 ///
 /// The diagnostic will include file, line and column information.
 ///
-/// [`Report`]: crate::diagnostic::report::Report
 /// [`Severity::Warning`]: crate::diagnostic::Severity::Warning
 ///
 /// # Examples
@@ -108,13 +102,10 @@ macro_rules! warning {
 /// Creates a diagnostic with info severity.
 ///
 /// This macro creates a diagnostic message with [`Severity::Info`][], using
-/// either a static string or a format string as an argument. Diagnostics are
-/// not globally registered but always returned, so the caller needs to make
-/// sure to forward them by including them into a [`Report`][].
+/// either a static string or a format string as an argument.
 ///
 /// The diagnostic will include file, line and column information.
 ///
-/// [`Report`]: crate::diagnostic::report::Report
 /// [`Severity::Info`]: crate::diagnostic::Severity::Info
 ///
 /// # Examples
@@ -146,13 +137,10 @@ macro_rules! info {
 /// Creates a diagnostic with hint severity.
 ///
 /// This macro creates a diagnostic message with [`Severity::Hint`][], using
-/// either a static string or a format string as an argument. Diagnostics are
-/// not globally registered but always returned, so the caller needs to make
-/// sure to forward them by including them into a [`Report`][].
+/// either a static string or a format string as an argument.
 ///
 /// The diagnostic will include file, line and column information.
 ///
-/// [`Report`]: crate::diagnostic::report::Report
 /// [`Severity::Hint`]: crate::diagnostic::Severity::Hint
 ///
 /// # Examples
@@ -184,13 +172,10 @@ macro_rules! hint {
 /// Creates a diagnostic with debug severity.
 ///
 /// This macro creates a diagnostic message with [`Severity::Debug`][], using
-/// either a static string or a format string as an argument. Diagnostics are
-/// not globally registered but always returned, so the caller needs to make
-/// sure to forward them by including them into a [`Report`][].
+/// either a static string or a format string as an argument.
 ///
 /// The diagnostic will include file, line and column information.
 ///
-/// [`Report`]: crate::diagnostic::report::Report
 /// [`Severity::Debug`]: crate::diagnostic::Severity::Debug
 ///
 /// # Examples
