@@ -103,26 +103,26 @@ where
             self.barriers.handle(&event);
         }
         for scope in scopes {
-            if inputs.contains_key(&scope) {
-                self.barriers.notify(&scope);
+            if inputs.contains_key(scope.key()) {
+                self.barriers.notify(scope.key());
             }
         }
 
         // Drain all fulfilled barriers in a single pass.
         self.barriers.drain().map(move |advance| {
-            let new_scope = advance.scope().clone();
+            let new_key = advance.scope().clone();
             output.insert(
-                new_scope.clone(),
+                new_key.clone(),
                 advance
                     .into_iter()
                     .cloned()
-                    .map(|scope| {
-                        let value = inputs.get(&scope).expect("invariant");
-                        (scope, value.clone())
+                    .map(|key| {
+                        let value = inputs.get(&key).expect("invariant");
+                        (key, value.clone())
                     })
                     .collect(),
             );
-            Scope::from(new_scope).done()
+            Scope::from(new_key).done()
         })
     }
 }

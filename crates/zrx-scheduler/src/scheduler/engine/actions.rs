@@ -107,8 +107,8 @@ where
         match scope.id() {
             Some(_) => scope.clone(),
             None => Scope::new(
-                (**scope).clone(),
-                schedule.submit(token.node, scope),
+                scope.key().clone(),
+                schedule.submit(token.node, scope.key()),
             ),
         }
     }
@@ -150,7 +150,7 @@ where
 
                 // Obtain sender from source node in dependent module
                 let source = graph[token.node].as_source_mut().unwrap();
-                source.sender().forward(&storages[prior.node], scope);
+                source.sender().forward(&storages[prior.node], scope.key());
 
                 // Add to queue
                 if !self.queue.contains(token) {

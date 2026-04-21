@@ -25,8 +25,6 @@
 
 //! Scope.
 
-use std::ops::Deref;
-
 use crate::scheduler::signal::{Id, Key};
 use crate::scheduler::step::{Result, Step, Steps};
 
@@ -91,17 +89,5 @@ impl<I> From<Key<I>> for Scope<I> {
     #[inline]
     fn from(scope: Key<I>) -> Self {
         Self { key: scope, id: None }
-    }
-}
-
-// ----------------------------------------------------------------------------
-
-impl<I> Deref for Scope<I> {
-    type Target = Key<I>;
-
-    /// Dereferences the scope to its key.
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.key
     }
 }
