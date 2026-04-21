@@ -102,7 +102,7 @@ where
     T: Value,
     E: IntoError,
 {
-    /// Converts a result into a step result.
+    /// Converts any result into a step result.
     #[inline]
     fn into_result(self) -> Result<T, Error> {
         self.map_err(IntoError::into_error)
@@ -113,7 +113,7 @@ impl<T> IntoResult<T> for T
 where
     T: Value,
 {
-    /// Converts a value into a step result.
+    /// Converts any value into a step result.
     #[inline]
     fn into_result(self) -> Result<T, Error> {
         Ok(self)
