@@ -35,7 +35,7 @@ use crate::scheduler::signal::key;
 
 mod convert;
 
-pub use convert::IntoError;
+pub use convert::{IntoError, IntoResult};
 
 // ----------------------------------------------------------------------------
 // Enums

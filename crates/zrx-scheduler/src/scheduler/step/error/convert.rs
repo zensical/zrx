@@ -27,6 +27,8 @@
 
 use std::error;
 
+use crate::scheduler::signal::Value;
+
 use super::Error;
 
 // ----------------------------------------------------------------------------
@@ -42,6 +44,14 @@ pub trait IntoError {
     ///
     /// [`Action::execute`]: crate::scheduler::action::Action::execute
     fn into_error(self) -> Error;
+}
+
+// ----------------------------------------------------------------------------
+
+/// Conversion into [`Result`].
+pub trait IntoResult<T>: Sized {
+    /// Converts into a step result.
+    fn into_result(self) -> Result<T, Error>;
 }
 
 // ----------------------------------------------------------------------------
@@ -82,5 +92,30 @@ where
 
         // Handle unknown error variants
         Error::Other(err)
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl<T, E> IntoResult<T> for Result<T, E>
+where
+    T: Value,
+    E: IntoError,
+{
+    /// Converts a result into a step result.
+    #[inline]
+    fn into_result(self) -> Result<T, Error> {
+        self.map_err(IntoError::into_error)
+    }
+}
+
+impl<T> IntoResult<T> for T
+where
+    T: Value,
+{
+    /// Converts a value into a step result.
+    #[inline]
+    fn into_result(self) -> Result<T, Error> {
+        Ok(self)
     }
 }
