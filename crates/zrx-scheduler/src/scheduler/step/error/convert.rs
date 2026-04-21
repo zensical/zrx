@@ -49,7 +49,7 @@ pub trait IntoError {
 // ----------------------------------------------------------------------------
 
 /// Conversion into [`Result`].
-pub trait IntoResult<T>: Sized {
+pub trait IntoResult<T = ()>: Sized {
     /// Converts into a step result.
     ///
     /// # Errors
