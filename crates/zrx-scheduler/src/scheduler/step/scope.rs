@@ -69,6 +69,12 @@ where
 
 #[allow(clippy::must_use_candidate)]
 impl<I> Scope<I> {
+    /// Returns the key of the scope.
+    #[inline]
+    pub fn key(&self) -> &Key<I> {
+        &self.key
+    }
+
     /// Returns the frontier identifier of the scope.
     #[inline]
     pub fn id(&self) -> Option<usize> {
