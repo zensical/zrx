@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Scope error.
+//! Key error.
 
 use std::result;
 use thiserror::Error;
@@ -32,14 +32,14 @@ use thiserror::Error;
 // Enums
 // ----------------------------------------------------------------------------
 
-/// Scope error.
+/// Key error.
 #[derive(Debug, Error)]
 pub enum Error {
-    /// Scope is empty.
-    #[error("scope is empty")]
+    /// Key is empty.
+    #[error("key is empty")]
     Empty,
-    /// Scope is deeper than one level.
-    #[error("scope is deeper than one level")]
+    /// Key is deeper than one level.
+    #[error("key is deeper than one level")]
     Depth,
 }
 
@@ -47,5 +47,5 @@ pub enum Error {
 // Type aliases
 // ----------------------------------------------------------------------------
 
-/// Scope result.
+/// Key result.
 pub type Result<T = ()> = result::Result<T, Error>;

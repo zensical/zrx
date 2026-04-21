@@ -30,7 +30,7 @@ use std::marker::PhantomData;
 use crate::scheduler::action::Context;
 use crate::scheduler::signal::Id;
 use crate::scheduler::step::effect::Effect;
-use crate::scheduler::step::{Result, Scoped, Step, Steps};
+use crate::scheduler::step::{Result, Scope, Step, Steps};
 
 use super::Then;
 
@@ -41,7 +41,7 @@ use super::Then;
 /// Continuation builder.
 pub struct Builder<I, C> {
     /// Scope.
-    scope: Scoped<I>,
+    scope: Scope<I>,
     /// Capture types.
     marker: PhantomData<C>,
 }
@@ -50,7 +50,7 @@ pub struct Builder<I, C> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<I> Scoped<I>
+impl<I> Scope<I>
 where
     I: Id,
 {

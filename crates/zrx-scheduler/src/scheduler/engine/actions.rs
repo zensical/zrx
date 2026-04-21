@@ -38,7 +38,7 @@ use crate::scheduler::engine::queue::Token;
 use crate::scheduler::schedule::Schedule;
 use crate::scheduler::signal::Id;
 use crate::scheduler::step::effect::Then;
-use crate::scheduler::step::{Scoped, Steps};
+use crate::scheduler::step::{Scope, Steps};
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -101,14 +101,14 @@ where
         })
     }
 
-    /// Ensure a frontier exists for the given token and scoped value.
-    pub fn ensure(&mut self, token: Token, scoped: &Scoped<I>) -> Scoped<I> {
+    /// Ensure a frontier exists for the given token and scope.
+    pub fn ensure(&mut self, token: Token, scope: &Scope<I>) -> Scope<I> {
         let schedule = &mut self.schedules[token.module];
-        match scoped.id() {
-            Some(_) => scoped.clone(),
-            None => Scoped::new(
-                (**scoped).clone(),
-                schedule.submit(token.node, scoped),
+        match scope.id() {
+            Some(_) => scope.clone(),
+            None => Scope::new(
+                (**scope).clone(),
+                schedule.submit(token.node, scope),
             ),
         }
     }
@@ -126,7 +126,7 @@ where
     }
 
     /// Completes a schedule with the given token and scoped value.
-    pub fn complete(&mut self, token: Token, scope: &Scoped<I>) {
+    pub fn complete(&mut self, token: Token, scope: &Scope<I>) {
         let schedule = &mut self.schedules[token.module];
         for node in schedule.complete(token.node, scope) {
             let token = Token { module: token.module, node };

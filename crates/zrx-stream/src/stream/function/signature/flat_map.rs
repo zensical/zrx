@@ -28,11 +28,11 @@
 use std::fmt::Display;
 
 use zrx_scheduler::step::Result;
-use zrx_scheduler::Scope;
+use zrx_scheduler::Key;
 
 use crate::stream::function::arguments::{
-    ForId, ForIdSplat, ForIdValue, ForScope, ForScopeSplat, ForScopeValue,
-    ForSplat, ForValue,
+    ForId, ForIdSplat, ForIdValue, ForKey, ForKeySplat, ForKeyValue, ForSplat,
+    ForValue,
 };
 use crate::stream::function::catch;
 
@@ -50,16 +50,16 @@ where
     /// # Errors
     ///
     /// This method returns an error if the function fails to execute.
-    fn execute(&self, scope: &Scope<I>, value: T) -> Result<R>;
+    fn execute(&self, scope: &Key<I>, value: T) -> Result<R>;
 }
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<F, I, T, U, R> FlatMapFn<ForScope, I, T, U, R> for F
+impl<F, I, T, U, R> FlatMapFn<ForKey, I, T, U, R> for F
 where
-    F: Fn(&Scope<I>) -> Result<R> + Send + 'static,
+    F: Fn(&Key<I>) -> Result<R> + Send + 'static,
     R: IntoIterator<Item = (I, U)>,
     I: Display,
 {
@@ -68,7 +68,7 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, _: T) -> Result<R> {
+    fn execute(&self, scope: &Key<I>, _: T) -> Result<R> {
         catch(|| self(scope))
     }
 }
@@ -84,7 +84,7 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, _: T) -> Result<R> {
+    fn execute(&self, scope: &Key<I>, _: T) -> Result<R> {
         catch(|| self(scope.try_as_id()?))
     }
 }
@@ -100,14 +100,14 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, value: T) -> Result<R> {
+    fn execute(&self, scope: &Key<I>, value: T) -> Result<R> {
         catch(|| self(value))
     }
 }
 
-impl<F, I, T, U, R> FlatMapFn<ForScopeValue, I, T, U, R> for F
+impl<F, I, T, U, R> FlatMapFn<ForKeyValue, I, T, U, R> for F
 where
-    F: Fn(&Scope<I>, T) -> Result<R> + Send + 'static,
+    F: Fn(&Key<I>, T) -> Result<R> + Send + 'static,
     R: IntoIterator<Item = (I, U)>,
     I: Display,
 {
@@ -116,7 +116,7 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, value: T) -> Result<R> {
+    fn execute(&self, scope: &Key<I>, value: T) -> Result<R> {
         catch(|| self(scope, value))
     }
 }
@@ -132,7 +132,7 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, value: T) -> Result<R> {
+    fn execute(&self, scope: &Key<I>, value: T) -> Result<R> {
         catch(|| self(scope.try_as_id()?, value))
     }
 }
@@ -159,7 +159,7 @@ macro_rules! impl_flat_map_fn_for_splat {
             )]
             #[inline]
             fn execute(
-                &self, scope: &Scope<I>, value: ($($T,)+)
+                &self, scope: &Key<I>, value: ($($T,)+)
             ) -> Result<R> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
@@ -172,10 +172,10 @@ macro_rules! impl_flat_map_fn_for_splat {
 /// Implements flat map function trait for scope and splat arguments.
 macro_rules! impl_flat_map_fn_for_scope_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ U, R> FlatMapFn<ForScopeSplat, I, ($($T,)+), U, R>
+        impl<F, I, $($T,)+ U, R> FlatMapFn<ForKeySplat, I, ($($T,)+), U, R>
             for F
         where
-            F: Fn(&Scope<I>, $($T),+) -> Result<R> + Send + 'static,
+            F: Fn(&Key<I>, $($T),+) -> Result<R> + Send + 'static,
             R: IntoIterator<Item = (I, U)>,
             I: Display,
         {
@@ -187,7 +187,7 @@ macro_rules! impl_flat_map_fn_for_scope_splat {
             )]
             #[inline]
             fn execute(
-                &self, scope: &Scope<I>, value: ($($T,)+)
+                &self, scope: &Key<I>, value: ($($T,)+)
             ) -> Result<R> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
@@ -215,7 +215,7 @@ macro_rules! impl_flat_map_fn_for_id_splat {
             )]
             #[inline]
             fn execute(
-                &self, scope: &Scope<I>, value: ($($T,)+)
+                &self, scope: &Key<I>, value: ($($T,)+)
             ) -> Result<R> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;

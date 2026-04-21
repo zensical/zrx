@@ -26,7 +26,7 @@
 //! Barrier set.
 
 use zrx_scheduler::action::options::Event;
-use zrx_scheduler::{Id, Scope};
+use zrx_scheduler::{Id, Key};
 use zrx_store::stash::Items;
 use zrx_store::{Stash, Store};
 
@@ -49,9 +49,9 @@ pub use drain::Drain;
 #[derive(Clone, Debug)]
 pub struct Barriers<I> {
     /// Inner set of barriers.
-    inner: Stash<Scope<I>, Barrier<I>>,
+    inner: Stash<Key<I>, Barrier<I>>,
     /// All known scopes.
-    scopes: Stash<Scope<I>, Items>,
+    scopes: Stash<Key<I>, Items>,
     /// Global lifecycle.
     lifecycle: Lifecycle,
     /// Barrier indices that are fulfilled and pending drain.
@@ -80,7 +80,7 @@ where
     /// Inserts a barrier into the barrier set.
     pub fn insert<S, B>(&mut self, scope: S, barrier: B)
     where
-        S: Into<Scope<I>>,
+        S: Into<Key<I>>,
         B: Into<Barrier<I>>,
     {
         let b = self.inner.insert(scope.into(), barrier.into());
@@ -100,7 +100,7 @@ where
     }
 
     /// Removes a barrier from the barrier set.
-    pub fn remove(&mut self, scope: &Scope<I>) -> Option<Barrier<I>> {
+    pub fn remove(&mut self, scope: &Key<I>) -> Option<Barrier<I>> {
         let b = self.inner.get(scope)?;
         let (_, mut barrier) = self.inner.remove(b)?;
         barrier.items.clear();
@@ -161,7 +161,7 @@ where
     }
 
     /// Marks a scope as complete, queuing advances for any fulfilled barriers.
-    pub fn notify(&mut self, scope: &Scope<I>) {
+    pub fn notify(&mut self, scope: &Key<I>) {
         let Some(s) = self.scopes.get(scope) else {
             return;
         };
@@ -203,7 +203,7 @@ where
 
 impl<S, I> FromIterator<(S, Barrier<I>)> for Barriers<I>
 where
-    S: Into<Scope<I>>,
+    S: Into<Key<I>>,
     I: Id,
 {
     /// Creates a barrier set from an iterator.

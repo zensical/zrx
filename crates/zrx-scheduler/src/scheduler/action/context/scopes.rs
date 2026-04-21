@@ -27,7 +27,7 @@
 
 use std::vec::IntoIter;
 
-use crate::scheduler::step::Scoped;
+use crate::scheduler::step::Scope;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -37,7 +37,7 @@ use crate::scheduler::step::Scoped;
 #[derive(Debug)]
 pub struct Scopes<I> {
     /// Inner set of scopes.
-    inner: Vec<Scoped<I>>,
+    inner: Vec<Scope<I>>,
 }
 
 // ----------------------------------------------------------------------------
@@ -46,7 +46,7 @@ pub struct Scopes<I> {
 
 impl<S, I> FromIterator<S> for Scopes<I>
 where
-    S: Into<Scoped<I>>,
+    S: Into<Scope<I>>,
 {
     /// Creates a scope set from an iterator.
     #[inline]
@@ -60,7 +60,7 @@ where
 }
 
 impl<I> IntoIterator for Scopes<I> {
-    type Item = Scoped<I>;
+    type Item = Scope<I>;
     type IntoIter = IntoIter<Self::Item>;
 
     /// Converts the scope set into an iterator.

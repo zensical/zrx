@@ -30,12 +30,12 @@ use crate::scheduler::engine::Tag;
 pub mod effect;
 pub mod error;
 mod macros;
-mod scoped;
+mod scope;
 mod set;
 
 use effect::Effect;
 pub use error::{Error, Result};
-pub use scoped::Scoped;
+pub use scope::Scope;
 pub use set::{IntoSteps, Steps};
 
 // ----------------------------------------------------------------------------
@@ -45,8 +45,8 @@ pub use set::{IntoSteps, Steps};
 /// Step.
 #[derive(Debug)]
 pub struct Step<I, C = ()> {
-    /// Scoped identifier .
-    pub scoped: Scoped<I>,
+    /// Scope.
+    pub scope: Scope<I>,
     /// Effect.
     pub effect: Effect<I, C>,
 }
@@ -58,8 +58,8 @@ pub struct Step<I, C = ()> {
 impl<I, C> Step<I, C> {
     /// Creates a step.
     #[must_use]
-    pub fn new(scoped: Scoped<I>, effect: Effect<I, C>) -> Self {
-        Self { scoped, effect }
+    pub fn new(scope: Scope<I>, effect: Effect<I, C>) -> Self {
+        Self { scope, effect }
     }
 }
 
@@ -74,7 +74,7 @@ impl<I, C> Tag<I, C> for Step<I, C> {
     #[inline]
     fn tag<T>(self) -> Self::Target<T> {
         Step {
-            scoped: self.scoped,
+            scope: self.scope,
             effect: self.effect.tag(),
         }
     }

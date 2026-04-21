@@ -32,7 +32,7 @@ use zrx_storage::convert::TryAsStorageMut;
 use zrx_storage::Storage;
 
 use crate::scheduler::action::Action;
-use crate::scheduler::signal::{Id, Scope, Value};
+use crate::scheduler::signal::{Id, Key, Value};
 
 use super::error::Result;
 use super::Context;
@@ -45,7 +45,7 @@ use super::Context;
 #[derive(Debug)]
 pub struct Output<'a, I, S>
 where
-    S: TryAsStorageMut<Scope<I>>,
+    S: TryAsStorageMut<Key<I>>,
 {
     /// Conversion target.
     target: S::Target<'a>,
@@ -77,7 +77,7 @@ where
 
 impl<'a, I, S> Output<'a, I, S>
 where
-    S: TryAsStorageMut<Scope<I>>,
+    S: TryAsStorageMut<Key<I>>,
 {
     /// Creates an output storage.
     ///
@@ -104,7 +104,7 @@ where
     I: Id,
     T: Value,
 {
-    type Target = Storage<Scope<I>, T>;
+    type Target = Storage<Key<I>, T>;
 
     /// Dereferences to the output storage.
     #[inline]

@@ -31,7 +31,7 @@ use std::ops::{Index, IndexMut};
 
 use zrx_graph::traversal::{Error, Result};
 
-use crate::scheduler::signal::{Id, Scope};
+use crate::scheduler::signal::{Id, Key};
 
 use super::Frontier;
 
@@ -45,7 +45,7 @@ pub struct Frontiers<I> {
     /// Underlying store.
     store: Slab<Frontier<I>>,
     /// Index for frontier lookup.
-    index: HashMap<Scope<I>, Vec<usize>>,
+    index: HashMap<Key<I>, Vec<usize>>,
 }
 
 // ----------------------------------------------------------------------------
@@ -58,10 +58,10 @@ where
 {
     /// Inserts a frontier into the set.
     pub fn insert(&mut self, frontier: Frontier<I>) -> Result<usize> {
-        let Frontier { scope, mut traversal, .. } = frontier;
+        let Frontier { key, mut traversal, .. } = frontier;
 
         // Try to converge with each existing frontier
-        if let Some(ids) = self.index.get(&scope) {
+        if let Some(ids) = self.index.get(&key) {
             for &id in ids {
                 match self.store[id].traversal.converge(traversal) {
                     Ok(()) => return Ok(id),
@@ -72,21 +72,21 @@ where
         }
 
         // No convergence with any existing frontier, insert new one
-        let id = self.store.insert(Frontier::new(scope.clone(), traversal));
+        let id = self.store.insert(Frontier::new(key.clone(), traversal));
 
         // Update index and return frontier identifier
-        self.index.entry(scope).or_default().push(id);
+        self.index.entry(key).or_default().push(id);
         Ok(id)
     }
 
     /// Removes a frontier from the set.
     pub fn remove(&mut self, id: usize) -> Option<Frontier<I>> {
         let frontier = self.store.try_remove(id)?;
-        let scope = frontier.scope();
-        if let Some(ids) = self.index.get_mut(scope) {
+        let key = frontier.key();
+        if let Some(ids) = self.index.get_mut(key) {
             ids.retain(|&x| x != id);
             if ids.is_empty() {
-                self.index.remove(scope);
+                self.index.remove(key);
             }
         }
         Some(frontier)

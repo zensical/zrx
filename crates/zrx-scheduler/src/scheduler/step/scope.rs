@@ -23,11 +23,11 @@
 
 // ----------------------------------------------------------------------------
 
-//! Scoped value.
+//! Scope.
 
 use std::ops::Deref;
 
-use crate::scheduler::signal::{Id, Scope};
+use crate::scheduler::signal::{Id, Key};
 use crate::scheduler::step::{Result, Step, Steps};
 
 use super::effect::Effect;
@@ -36,11 +36,11 @@ use super::effect::Effect;
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Scoped value.
+/// Scope.
 #[derive(Clone, Debug)]
-pub struct Scoped<I> {
-    /// Scope.
-    scope: Scope<I>,
+pub struct Scope<I> {
+    /// Key.
+    key: Key<I>,
     /// Frontier identifier.
     id: Option<usize>,
 }
@@ -49,14 +49,14 @@ pub struct Scoped<I> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<I> Scoped<I>
+impl<I> Scope<I>
 where
     I: Id,
 {
-    /// Creates a scoped value from the given scope.
+    /// Creates a scope from the given key.
     #[must_use]
-    pub fn new(scope: Scope<I>, id: usize) -> Self {
-        Self { scope, id: Some(id) }
+    pub fn new(key: Key<I>, id: usize) -> Self {
+        Self { key, id: Some(id) }
     }
 
     /// Marks the step as done.
@@ -68,8 +68,8 @@ where
 }
 
 #[allow(clippy::must_use_candidate)]
-impl<I> Scoped<I> {
-    /// Returns the frontier identifier of the scoped value.
+impl<I> Scope<I> {
+    /// Returns the frontier identifier of the scope.
     #[inline]
     pub fn id(&self) -> Option<usize> {
         self.id
@@ -80,22 +80,22 @@ impl<I> Scoped<I> {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I> From<Scope<I>> for Scoped<I> {
-    /// Creates a scoped value from the given scope.
+impl<I> From<Key<I>> for Scope<I> {
+    /// Creates a scope from the given key.
     #[inline]
-    fn from(scope: Scope<I>) -> Self {
-        Self { scope, id: None }
+    fn from(scope: Key<I>) -> Self {
+        Self { key: scope, id: None }
     }
 }
 
 // ----------------------------------------------------------------------------
 
-impl<I> Deref for Scoped<I> {
-    type Target = Scope<I>;
+impl<I> Deref for Scope<I> {
+    type Target = Key<I>;
 
-    /// Dereferences the scoped value to its scope.
+    /// Dereferences the scope to its key.
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.scope
+        &self.key
     }
 }

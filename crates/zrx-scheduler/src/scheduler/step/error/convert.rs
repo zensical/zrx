@@ -78,7 +78,7 @@ where
 
         // Downcast known error variants
         downcast!(Error::Session);
-        downcast!(Error::Scope);
+        downcast!(Error::Key);
 
         // Handle unknown error variants
         Error::Other(err)

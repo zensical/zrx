@@ -285,10 +285,10 @@ where
     )]
     fn handle(&mut self, token: Token, steps: Steps<I>) {
         for step in steps {
-            let Step { scoped, effect } = step;
+            let Step { scope, effect } = step;
 
             // Ensure the scope has a frontier attached
-            let scoped = self.actions.ensure(token, &scoped);
+            let scope = self.actions.ensure(token, &scope);
             match effect {
                 Effect::Then(then) => {
                     let (token, inner) = self.actions.resume(token, then);
@@ -301,7 +301,7 @@ where
                         TokenFull {
                             module: token.module,
                             node: token.node,
-                            frontier: scoped.id().expect("invariant"),
+                            frontier: scope.id().expect("invariant"),
                         },
                         timer,
                     );
@@ -311,13 +311,13 @@ where
                         TokenFull {
                             module: token.module,
                             node: token.node,
-                            frontier: scoped.id().expect("invariant"),
+                            frontier: scope.id().expect("invariant"),
                         },
                         task,
                     );
                 }
                 Effect::Done => {
-                    self.actions.complete(token, &scoped);
+                    self.actions.complete(token, &scope);
                 }
             }
         }

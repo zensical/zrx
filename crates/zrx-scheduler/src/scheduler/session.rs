@@ -27,7 +27,7 @@
 
 use crossbeam::channel::Sender;
 
-use super::signal::{Diff, Scope, Value};
+use super::signal::{Diff, Key, Value};
 
 mod error;
 
@@ -61,7 +61,7 @@ where
 {
     /// Inserts an item into the session.
     ///
-    /// This method inserts an item with a scope and associated value into the
+    /// This method inserts an item with a key and associated value into the
     /// session, queueing it for processing by the [`Scheduler`][] the session
     /// belongs to. Note that calling this method might block in order to apply
     /// backpressure, which happens if the scheduler is at capacity.
@@ -72,18 +72,18 @@ where
     ///
     /// Returns [`Error::Disconnected`] if the scheduler terminated.
     #[inline]
-    pub fn insert<S>(&self, scope: S, value: T) -> Result
+    pub fn insert<K>(&self, key: K, value: T) -> Result
     where
-        S: Into<Scope<I>>,
+        K: Into<Key<I>>,
     {
         self.sender
-            .send(Diff::Insert(scope.into(), value))
+            .send(Diff::Insert(key.into(), value))
             .map_err(|_| Error::Disconnected)
     }
 
     /// Removes an item from the session.
     ///
-    /// This method removes the item associated with the given scope from the
+    /// This method removes the item associated with the given key from the
     /// session, queueing it for processing by the [`Scheduler`][] the session
     /// belongs to. Note that calling this method might block in order to apply
     /// backpressure, which happens if the scheduler is at capacity.
@@ -94,12 +94,12 @@ where
     ///
     /// Returns [`Error::Disconnected`] if the scheduler terminated.
     #[inline]
-    pub fn remove<S>(&self, scope: S) -> Result
+    pub fn remove<K>(&self, key: K) -> Result
     where
-        S: Into<Scope<I>>,
+        K: Into<Key<I>>,
     {
         self.sender
-            .send(Diff::Remove(scope.into()))
+            .send(Diff::Remove(key.into()))
             .map_err(|_| Error::Disconnected)
     }
 }

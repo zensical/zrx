@@ -36,8 +36,8 @@ pub trait Arguments: Send + Sync + 'static {}
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Marker for identifier arguments.
-pub struct ForScope;
+/// Marker for key arguments.
+pub struct ForKey;
 
 /// Marker for identifier arguments.
 pub struct ForId;
@@ -48,11 +48,11 @@ pub struct ForValue;
 /// Marker for splat arguments.
 pub struct ForSplat;
 
-/// Marker for scope and value arguments.
-pub struct ForScopeValue;
+/// Marker for key and value arguments.
+pub struct ForKeyValue;
 
-/// Marker for scope and splat arguments.
-pub struct ForScopeSplat;
+/// Marker for key and splat arguments.
+pub struct ForKeySplat;
 
 /// Marker for identifier and value arguments.
 pub struct ForIdValue;

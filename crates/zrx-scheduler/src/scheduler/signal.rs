@@ -25,12 +25,10 @@
 
 //! Signal.
 
-mod id;
-pub mod scope;
+pub mod key;
 mod value;
 
-pub use id::Id;
-pub use scope::Scope;
+pub use key::{Id, Key};
 pub use value::Value;
 
 // ----------------------------------------------------------------------------
@@ -40,8 +38,8 @@ pub use value::Value;
 /// Difference.
 #[derive(Clone, Debug)]
 pub enum Diff<I, T> {
-    /// Insert scope and associated value.
-    Insert(Scope<I>, T),
-    /// Remove scope.
-    Remove(Scope<I>),
+    /// Insert key and associated value.
+    Insert(Key<I>, T),
+    /// Remove key.
+    Remove(Key<I>),
 }

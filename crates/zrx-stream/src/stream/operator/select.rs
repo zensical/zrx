@@ -31,8 +31,8 @@ use zrx_scheduler::action::context::Binding;
 use zrx_scheduler::action::options::Interest;
 use zrx_scheduler::action::{Action, Context, Options};
 use zrx_scheduler::schedule::Subscriber;
-use zrx_scheduler::step::{IntoSteps, Scoped};
-use zrx_scheduler::{Id, Scope, Value};
+use zrx_scheduler::step::{IntoSteps, Scope};
+use zrx_scheduler::{Id, Key, Value};
 
 use crate::stream::barrier::{Barrier, Barriers};
 use crate::stream::Stream;
@@ -63,9 +63,9 @@ where
 {
     /// Selects scopes from the stream using the provided barriers.
     #[inline]
-    pub fn select<B>(&self, iter: B) -> Stream<I, Vec<(Scope<I>, T)>>
+    pub fn select<B>(&self, iter: B) -> Stream<I, Vec<(Key<I>, T)>>
     where
-        B: IntoIterator<Item = (Scope<I>, Barrier<I>)>,
+        B: IntoIterator<Item = (Key<I>, Barrier<I>)>,
     {
         let options = Options::default().interest(Interest::Enter);
         let barriers = Barriers::from_iter(iter);
@@ -86,7 +86,7 @@ where
     T: Value,
 {
     type Inputs = (T,);
-    type Output<'a> = Vec<(Scope<I>, T)>;
+    type Output<'a> = Vec<(Key<I>, T)>;
 
     /// Executes the operator.
     fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {
@@ -122,7 +122,7 @@ where
                     })
                     .collect(),
             );
-            Scoped::from(new_scope).done()
+            Scope::from(new_scope).done()
         })
     }
 }

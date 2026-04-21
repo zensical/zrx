@@ -25,7 +25,7 @@
 
 //! Drain iterator implementation for [`Barriers`].
 
-use zrx_scheduler::{Id, Scope};
+use zrx_scheduler::{Id, Key};
 use zrx_store::stash::{items, Items};
 use zrx_store::Stash;
 
@@ -40,9 +40,9 @@ use super::{Advance, Barriers};
 /// Drain iterator for [`Barriers`].
 pub struct Drain<'a, I> {
     /// Inner set of barriers.
-    inner: &'a Stash<Scope<I>, Barrier<I>>,
+    inner: &'a Stash<Key<I>, Barrier<I>>,
     /// All known scopes.
-    scopes: &'a Stash<Scope<I>, Items>,
+    scopes: &'a Stash<Key<I>, Items>,
     /// Drain iterator over fulfilled barriers.
     items: items::Drain<'a>,
 }

@@ -28,7 +28,7 @@
 use std::fmt::{self, Debug};
 use std::sync::Arc;
 
-use zrx_scheduler::{Id, Scope, Value};
+use zrx_scheduler::{Id, Key, Value};
 use zrx_store::stash::Items;
 
 pub mod advance;
@@ -46,7 +46,7 @@ pub use set::Barriers;
 /// Barrier function.
 trait BarrierFn<I>: Send + Sync {
     /// Returns whether the barrier contains the given scope.
-    fn contains(&self, scope: &Scope<I>) -> bool;
+    fn contains(&self, scope: &Key<I>) -> bool;
 }
 
 // ----------------------------------------------------------------------------
@@ -74,7 +74,7 @@ where
     #[must_use]
     pub fn new<F>(f: F) -> Self
     where
-        F: Fn(&Scope<I>) -> bool + Send + Sync + 'static,
+        F: Fn(&Key<I>) -> bool + Send + Sync + 'static,
     {
         Self {
             function: Arc::new(f),
@@ -85,7 +85,7 @@ where
     /// Returns whether the barrier contains the given scope.
     #[inline]
     #[must_use]
-    pub fn contains(&self, scope: &Scope<I>) -> bool {
+    pub fn contains(&self, scope: &Key<I>) -> bool {
         self.function.contains(scope)
     }
 
@@ -154,10 +154,10 @@ impl<I> Debug for Barrier<I> {
 
 impl<F, I> BarrierFn<I> for F
 where
-    F: Fn(&Scope<I>) -> bool + Send + Sync,
+    F: Fn(&Key<I>) -> bool + Send + Sync,
 {
     #[inline]
-    fn contains(&self, scope: &Scope<I>) -> bool {
+    fn contains(&self, scope: &Key<I>) -> bool {
         self(scope)
     }
 }

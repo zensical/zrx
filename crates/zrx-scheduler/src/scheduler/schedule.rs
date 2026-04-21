@@ -32,8 +32,8 @@ use zrx_storage::Storages;
 use crate::action::options::{Event, Interest};
 use crate::scheduler::action::graph::{self, Graph};
 use crate::scheduler::action::{context, Context, Result};
-use crate::scheduler::signal::{Id, Scope};
-use crate::scheduler::step::{Scoped, Steps};
+use crate::scheduler::signal::{Id, Key};
+use crate::scheduler::step::{Scope, Steps};
 
 pub mod builder;
 mod frontier;
@@ -72,11 +72,11 @@ where
 {
     /// Submits a node.
     #[allow(clippy::missing_panics_doc)]
-    pub fn submit(&mut self, node: usize, scope: &Scope<I>) -> usize {
+    pub fn submit(&mut self, node: usize, key: &Key<I>) -> usize {
         let traversal = self.graph.traverse([node]);
 
         // Create and insert frontier
-        let frontier = Frontier::new(scope.clone(), traversal);
+        let frontier = Frontier::new(key.clone(), traversal);
         let f = self.frontiers.insert(frontier).expect("invariant");
 
         // Notify interested nodes about new frontier
@@ -84,7 +84,7 @@ where
             for n in &self.graph {
                 let options = self.graph[n].options();
                 if options.interests.contains(&Interest::Enter) {
-                    self.events[n].push_back(Event::Insert(scope.clone()));
+                    self.events[n].push_back(Event::Insert(key.clone()));
                 }
             }
         }
@@ -101,7 +101,7 @@ where
         let events: Vec<_> = self.events[node].drain(..).collect();
         let scopes: Vec<_> = self.queues[node]
             .drain(..)
-            .map(|f| Scoped::new(self.frontiers[f].scope().clone(), f))
+            .map(|f| Scope::new(self.frontiers[f].key().clone(), f))
             .collect();
 
         // Obtain action and input/output views for the node
@@ -122,8 +122,8 @@ where
 
     /// Completes the given node.
     #[allow(clippy::missing_panics_doc)]
-    pub fn complete(&mut self, node: usize, scoped: &Scoped<I>) -> Vec<usize> {
-        let f = scoped.id().expect("invariant");
+    pub fn complete(&mut self, node: usize, scope: &Scope<I>) -> Vec<usize> {
+        let f = scope.id().expect("invariant");
 
         // In case the fronter is empty after completion, remove it
         let res = self.frontiers[f].complete(node);

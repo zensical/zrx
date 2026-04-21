@@ -28,9 +28,9 @@
 use std::fmt::Display;
 
 use zrx_scheduler::step::Result;
-use zrx_scheduler::Scope;
+use zrx_scheduler::Key;
 
-use crate::stream::function::arguments::{ForId, ForScope, ForValue};
+use crate::stream::function::arguments::{ForId, ForKey, ForValue};
 use crate::stream::function::catch;
 
 // ----------------------------------------------------------------------------
@@ -44,16 +44,16 @@ pub trait DefaultFn<A, I, T>: Send + 'static {
     /// # Errors
     ///
     /// This method returns an error if the function fails to execute.
-    fn execute(&self, scope: &Scope<I>) -> Result<Option<T>>;
+    fn execute(&self, scope: &Key<I>) -> Result<Option<T>>;
 }
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<F, I, T> DefaultFn<ForScope, I, T> for F
+impl<F, I, T> DefaultFn<ForKey, I, T> for F
 where
-    F: Fn(&Scope<I>) -> Result<Option<T>> + Send + 'static,
+    F: Fn(&Key<I>) -> Result<Option<T>> + Send + 'static,
     I: Display,
 {
     #[cfg_attr(
@@ -61,7 +61,7 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>) -> Result<Option<T>> {
+    fn execute(&self, scope: &Key<I>) -> Result<Option<T>> {
         catch(|| self(scope))
     }
 }
@@ -76,7 +76,7 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>) -> Result<Option<T>> {
+    fn execute(&self, scope: &Key<I>) -> Result<Option<T>> {
         catch(|| self(scope.try_as_id()?))
     }
 }
@@ -91,7 +91,7 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>) -> Result<Option<T>> {
+    fn execute(&self, scope: &Key<I>) -> Result<Option<T>> {
         catch(self)
     }
 }

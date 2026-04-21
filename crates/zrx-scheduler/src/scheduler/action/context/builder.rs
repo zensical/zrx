@@ -30,7 +30,7 @@ use std::marker::PhantomData;
 use zrx_storage::set::{View, ViewMut};
 
 use crate::scheduler::signal::Id;
-use crate::scheduler::step::Scoped;
+use crate::scheduler::step::Scope;
 
 use super::{Context, Event};
 
@@ -102,7 +102,7 @@ where
     /// Returns an error if the input or output view is not set.
     pub fn build<T, C>(self, scopes: T) -> Result<Context<'a, I, C>>
     where
-        T: IntoIterator<Item = Scoped<I>>,
+        T: IntoIterator<Item = Scope<I>>,
     {
         Ok(Context {
             events: self.events,

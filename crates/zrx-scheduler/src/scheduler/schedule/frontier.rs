@@ -28,7 +28,7 @@
 use zrx_graph::traversal::Result;
 use zrx_graph::Traversal;
 
-use crate::scheduler::signal::{Id, Scope};
+use crate::scheduler::signal::{Id, Key};
 
 mod set;
 
@@ -41,8 +41,8 @@ pub use set::Frontiers;
 /// Frontier.
 #[derive(Debug)]
 pub struct Frontier<I> {
-    /// Frontier scope.
-    scope: Scope<I>,
+    /// Frontier key.
+    key: Key<I>,
     /// Topological traversal.
     traversal: Traversal,
     /// Number of pending nodes.
@@ -56,9 +56,9 @@ pub struct Frontier<I> {
 impl<I> Frontier<I> {
     /// Creates a frontier.
     #[must_use]
-    pub fn new(scope: Scope<I>, traversal: Traversal) -> Self {
+    pub fn new(key: Key<I>, traversal: Traversal) -> Self {
         Self {
-            scope,
+            key,
             traversal,
             pending: Vec::new(),
         }
@@ -88,10 +88,10 @@ impl<I> Frontier<I>
 where
     I: Id,
 {
-    /// Returns a reference to the scope.
+    /// Returns a reference to the key.
     #[inline]
-    pub fn scope(&self) -> &Scope<I> {
-        &self.scope
+    pub fn key(&self) -> &Key<I> {
+        &self.key
     }
 
     // /// Returns the number of visitable nodes.

@@ -28,11 +28,11 @@
 use std::fmt::Display;
 
 use zrx_scheduler::step::Result;
-use zrx_scheduler::Scope;
+use zrx_scheduler::Key;
 
 use crate::stream::function::arguments::{
-    ForId, ForIdSplat, ForIdValue, ForScope, ForScopeSplat, ForScopeValue,
-    ForSplat, ForValue,
+    ForId, ForIdSplat, ForIdValue, ForKey, ForKeySplat, ForKeyValue, ForSplat,
+    ForValue,
 };
 use crate::stream::function::catch;
 
@@ -47,16 +47,16 @@ pub trait InspectFn<A, I, T>: Send + 'static {
     /// # Errors
     ///
     /// This method returns an error if the function fails to execute.
-    fn execute(&self, scope: &Scope<I>, value: &T) -> Result;
+    fn execute(&self, scope: &Key<I>, value: &T) -> Result;
 }
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<F, I, T> InspectFn<ForScope, I, T> for F
+impl<F, I, T> InspectFn<ForKey, I, T> for F
 where
-    F: Fn(&Scope<I>) -> Result + Send + 'static,
+    F: Fn(&Key<I>) -> Result + Send + 'static,
     I: Display,
 {
     #[cfg_attr(
@@ -64,7 +64,7 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, _: &T) -> Result {
+    fn execute(&self, scope: &Key<I>, _: &T) -> Result {
         catch(|| self(scope))
     }
 }
@@ -79,7 +79,7 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, _: &T) -> Result {
+    fn execute(&self, scope: &Key<I>, _: &T) -> Result {
         catch(|| self(scope.try_as_id()?))
     }
 }
@@ -94,14 +94,14 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, value: &T) -> Result {
+    fn execute(&self, scope: &Key<I>, value: &T) -> Result {
         catch(|| self(value))
     }
 }
 
-impl<F, I, T> InspectFn<ForScopeValue, I, T> for F
+impl<F, I, T> InspectFn<ForKeyValue, I, T> for F
 where
-    F: Fn(&Scope<I>, &T) -> Result + Send + 'static,
+    F: Fn(&Key<I>, &T) -> Result + Send + 'static,
     I: Display,
 {
     #[cfg_attr(
@@ -109,7 +109,7 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, value: &T) -> Result {
+    fn execute(&self, scope: &Key<I>, value: &T) -> Result {
         catch(|| self(scope, value))
     }
 }
@@ -124,7 +124,7 @@ where
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, value: &T) -> Result {
+    fn execute(&self, scope: &Key<I>, value: &T) -> Result {
         catch(|| self(scope.try_as_id()?, value))
     }
 }
@@ -149,7 +149,7 @@ macro_rules! impl_inspect_fn_for_splat {
             )]
             #[inline]
             fn execute(
-                &self, scope: &Scope<I>, value: &($($T,)+)
+                &self, scope: &Key<I>, value: &($($T,)+)
             ) -> Result {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
@@ -162,9 +162,9 @@ macro_rules! impl_inspect_fn_for_splat {
 /// Implements inspect function trait for scope and splat arguments.
 macro_rules! impl_inspect_fn_for_scope_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+> InspectFn<ForScopeSplat, I, ($($T,)+)> for F
+        impl<F, I, $($T,)+> InspectFn<ForKeySplat, I, ($($T,)+)> for F
         where
-            F: Fn(&Scope<I>, $(&$T),+) -> Result + Send + 'static,
+            F: Fn(&Key<I>, $(&$T),+) -> Result + Send + 'static,
             I: Display,
         {
             #[cfg_attr(
@@ -175,7 +175,7 @@ macro_rules! impl_inspect_fn_for_scope_splat {
             )]
             #[inline]
             fn execute(
-                &self, scope: &Scope<I>, value: &($($T,)+)
+                &self, scope: &Key<I>, value: &($($T,)+)
             ) -> Result {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
@@ -201,7 +201,7 @@ macro_rules! impl_inspect_fn_for_id_splat {
             )]
             #[inline]
             fn execute(
-                &self, scope: &Scope<I>, value: &($($T,)+)
+                &self, scope: &Key<I>, value: &($($T,)+)
             ) -> Result {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
