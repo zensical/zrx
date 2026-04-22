@@ -69,7 +69,9 @@ where
 
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, _: T) -> Result<J> {
@@ -88,7 +90,9 @@ where
 
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<J> {
@@ -109,7 +113,9 @@ where
 
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, _: T) -> Result<J> {
@@ -128,7 +134,9 @@ where
 
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<J> {
@@ -149,7 +157,9 @@ where
 
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, _: T) -> Result<J> {
@@ -168,7 +178,9 @@ where
 
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<J> {
@@ -189,7 +201,9 @@ where
 
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<J> {
@@ -216,7 +230,7 @@ macro_rules! impl_flat_map_fn_for_scope_splat {
             #[cfg_attr(
                 feature = "tracing",
                 tracing::instrument(
-                    level = "debug", skip_all, fields(scope = %scope)
+                    level = "debug", skip_all, fields(key = %scope.key())
                 )
             )]
             #[inline]
@@ -246,7 +260,7 @@ macro_rules! impl_flat_map_fn_for_key_splat {
             #[cfg_attr(
                 feature = "tracing",
                 tracing::instrument(
-                    level = "debug", skip_all, fields(scope = %scope)
+                    level = "debug", skip_all, fields(key = %scope.key())
                 )
             )]
             #[inline]
@@ -276,7 +290,7 @@ macro_rules! impl_flat_map_fn_for_id_splat {
             #[cfg_attr(
                 feature = "tracing",
                 tracing::instrument(
-                    level = "debug", skip_all, fields(scope = %scope)
+                    level = "debug", skip_all, fields(key = %scope.key())
                 )
             )]
             #[inline]
@@ -306,7 +320,7 @@ macro_rules! impl_flat_map_fn_for_splat {
             #[cfg_attr(
                 feature = "tracing",
                 tracing::instrument(
-                    level = "debug", skip_all, fields(scope = %scope)
+                    level = "debug", skip_all, fields(key = %scope.key())
                 )
             )]
             #[inline]

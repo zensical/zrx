@@ -60,7 +60,9 @@ where
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>) -> Result<Option<T>> {
@@ -78,7 +80,9 @@ where
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>) -> Result<Option<T>> {
@@ -96,7 +100,9 @@ where
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>) -> Result<Option<T>> {
@@ -114,7 +120,9 @@ where
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
     fn execute(&self, scope: &mut Scope<I>) -> Result<Option<T>> {
