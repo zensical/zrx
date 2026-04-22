@@ -102,10 +102,10 @@ where
     }
 
     /// Ensure a frontier exists for the given token and scope.
-    pub fn ensure(&mut self, token: Token, scope: &Scope<I>) -> Scope<I> {
+    pub fn ensure(&mut self, token: Token, scope: &mut Scope<I>) -> Scope<I> {
         let schedule = &mut self.schedules[token.module];
         match scope.id() {
-            Some(_) => scope.clone(),
+            Some(_) => scope.take(),
             None => Scope::new(
                 scope.key().clone(),
                 schedule.submit(token.node, scope.key()),

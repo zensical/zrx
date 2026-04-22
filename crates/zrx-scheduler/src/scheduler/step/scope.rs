@@ -25,6 +25,10 @@
 
 //! Scope.
 
+use std::mem;
+
+use zrx_diagnostic::Diagnostic;
+
 use crate::scheduler::signal::{Id, Key};
 use crate::scheduler::step::{Result, Step, Steps};
 
@@ -35,12 +39,14 @@ use super::effect::Effect;
 // ----------------------------------------------------------------------------
 
 /// Scope.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Scope<I> {
     /// Key.
     key: Key<I>,
     /// Frontier identifier.
     id: Option<usize>,
+    /// Diagnostics.
+    diagnostics: Vec<Diagnostic>,
 }
 
 // ----------------------------------------------------------------------------
@@ -54,14 +60,35 @@ where
     /// Creates a scope from the given key.
     #[must_use]
     pub fn new(key: Key<I>, id: usize) -> Self {
-        Self { key, id: Some(id) }
+        Self {
+            key,
+            id: Some(id),
+            diagnostics: Vec::new(),
+        }
+    }
+
+    /// Creates a new scope, moving diagnostics into it.
+    pub(crate) fn take(&mut self) -> Self {
+        Self {
+            key: self.key.clone(),
+            id: self.id,
+            diagnostics: mem::take(&mut self.diagnostics),
+        }
+    }
+
+    /// Adds a diagnostic to the scope.
+    pub fn add_diagnostic<D>(&mut self, diagnostic: D)
+    where
+        D: Into<Diagnostic>,
+    {
+        self.diagnostics.push(diagnostic.into());
     }
 
     /// Marks the step as done.
     #[allow(clippy::missing_errors_doc)]
     #[inline]
-    pub fn done<C>(&self) -> Result<Steps<I, C>> {
-        Ok(Steps::from(Step::new(self.clone(), Effect::Done)))
+    pub fn done<C>(&mut self) -> Result<Steps<I, C>> {
+        Ok(Steps::from(Step::new(self.take(), Effect::Done)))
     }
 }
 
@@ -88,6 +115,10 @@ impl<I> From<Key<I>> for Scope<I> {
     /// Creates a scope from the given key.
     #[inline]
     fn from(scope: Key<I>) -> Self {
-        Self { key: scope, id: None }
+        Self {
+            key: scope,
+            id: None,
+            diagnostics: Vec::new(),
+        }
     }
 }

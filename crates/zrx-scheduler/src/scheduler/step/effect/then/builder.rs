@@ -56,9 +56,9 @@ where
 {
     /// Creates a continuation builder.
     #[must_use]
-    pub fn then<C>(&self) -> Builder<I, C> {
+    pub fn then<C>(&mut self) -> Builder<I, C> {
         Builder {
-            scope: self.clone(),
+            scope: self.take(),
             marker: PhantomData,
         }
     }

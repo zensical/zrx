@@ -285,10 +285,10 @@ where
     )]
     fn handle(&mut self, token: Token, steps: Steps<I>) {
         for step in steps {
-            let Step { scope, effect } = step;
+            let Step { mut scope, effect } = step;
 
             // Ensure the scope has a frontier attached
-            let scope = self.actions.ensure(token, &scope);
+            let scope = self.actions.ensure(token, &mut scope);
             match effect {
                 Effect::Then(then) => {
                     let (token, inner) = self.actions.resume(token, then);

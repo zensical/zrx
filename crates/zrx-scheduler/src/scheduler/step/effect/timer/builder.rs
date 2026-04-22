@@ -52,11 +52,8 @@ where
 {
     /// Creates a timer builder.
     #[must_use]
-    pub fn timer<C>(&self) -> Builder<I, C> {
-        Builder {
-            scope: self.clone(),
-            data: None,
-        }
+    pub fn timer<C>(&mut self) -> Builder<I, C> {
+        Builder { scope: self.take(), data: None }
     }
 }
 
