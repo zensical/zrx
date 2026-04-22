@@ -27,12 +27,13 @@
 
 use std::fmt::Display;
 
-use zrx_scheduler::step::Result;
+use zrx_scheduler::step::error::IntoResult;
+use zrx_scheduler::step::{Result, Scope};
 use zrx_scheduler::Key;
 
 use crate::stream::function::arguments::{
-    ForId, ForIdSplat, ForIdValue, ForKey, ForKeySplat, ForKeyValue, ForSplat,
-    ForValue,
+    ForId, ForIdSplat, ForIdValue, ForKey, ForKeySplat, ForKeyValue, ForScope,
+    ForScopeSplat, ForScopeValue, ForSplat, ForValue,
 };
 use crate::stream::function::catch;
 
@@ -41,99 +42,158 @@ use crate::stream::function::catch;
 // ----------------------------------------------------------------------------
 
 /// Flat map function.
-pub trait FlatMapFn<A, I, T, U, R>: Send + 'static
-where
-    R: IntoIterator<Item = (I, U)>,
-{
+pub trait FlatMapFn<A, J, I, T, U>: Send + 'static {
+    /// Iterator type returned by this function.
+    type Iter: IntoIterator<Item = (Key<I>, U)>;
+
     /// Executes the flat map function.
     ///
     /// # Errors
     ///
     /// This method returns an error if the function fails to execute.
-    fn execute(&self, scope: &Key<I>, value: T) -> Result<R>;
+    fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<Self::Iter>;
 }
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<F, I, T, U, R> FlatMapFn<ForKey, I, T, U, R> for F
+impl<F, R, J, I, T, U> FlatMapFn<ForScope, J, I, T, U> for F
 where
-    F: Fn(&Key<I>) -> Result<R> + Send + 'static,
-    R: IntoIterator<Item = (I, U)>,
+    F: Fn(&mut Scope<I>) -> R + Send + 'static,
+    R: IntoResult<J>,
+    J: IntoIterator<Item = (Key<I>, U)>,
     I: Display,
 {
+    type Iter = J;
+
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, _: T) -> Result<R> {
-        catch(|| self(scope))
+    fn execute(&self, scope: &mut Scope<I>, _: T) -> Result<J> {
+        catch(|| self(scope).into_result())
     }
 }
 
-impl<F, I, T, U, R> FlatMapFn<ForId, I, T, U, R> for F
+impl<F, R, J, I, T, U> FlatMapFn<ForScopeValue, J, I, T, U> for F
 where
-    F: Fn(&I) -> Result<R> + Send + 'static,
-    R: IntoIterator<Item = (I, U)>,
+    F: Fn(&mut Scope<I>, T) -> R + Send + 'static,
+    R: IntoResult<J>,
+    J: IntoIterator<Item = (Key<I>, U)>,
     I: Display,
 {
+    type Iter = J;
+
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, _: T) -> Result<R> {
-        catch(|| self(scope.try_as_id()?))
+    fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<J> {
+        catch(|| self(scope, value).into_result())
     }
 }
 
-impl<F, I, T, U, R> FlatMapFn<ForValue, I, T, U, R> for F
+// ----------------------------------------------------------------------------
+
+impl<F, R, J, I, T, U> FlatMapFn<ForKey, J, I, T, U> for F
 where
-    F: Fn(T) -> Result<R> + Send + 'static,
-    R: IntoIterator<Item = (I, U)>,
+    F: Fn(&Key<I>) -> R + Send + 'static,
+    R: IntoResult<J>,
+    J: IntoIterator<Item = (Key<I>, U)>,
     I: Display,
 {
+    type Iter = J;
+
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, value: T) -> Result<R> {
-        catch(|| self(value))
+    fn execute(&self, scope: &mut Scope<I>, _: T) -> Result<J> {
+        catch(|| self(scope.key()).into_result())
     }
 }
 
-impl<F, I, T, U, R> FlatMapFn<ForKeyValue, I, T, U, R> for F
+impl<F, R, J, I, T, U> FlatMapFn<ForKeyValue, J, I, T, U> for F
 where
-    F: Fn(&Key<I>, T) -> Result<R> + Send + 'static,
-    R: IntoIterator<Item = (I, U)>,
+    F: Fn(&Key<I>, T) -> R + Send + 'static,
+    R: IntoResult<J>,
+    J: IntoIterator<Item = (Key<I>, U)>,
     I: Display,
 {
+    type Iter = J;
+
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, value: T) -> Result<R> {
-        catch(|| self(scope, value))
+    fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<J> {
+        catch(|| self(scope.key(), value).into_result())
     }
 }
 
-impl<F, I, T, U, R> FlatMapFn<ForIdValue, I, T, U, R> for F
+// ----------------------------------------------------------------------------
+
+impl<F, R, J, I, T, U> FlatMapFn<ForId, J, I, T, U> for F
 where
-    F: Fn(&I, T) -> Result<R> + Send + 'static,
-    R: IntoIterator<Item = (I, U)>,
+    F: Fn(&I) -> R + Send + 'static,
+    R: IntoResult<J>,
+    J: IntoIterator<Item = (Key<I>, U)>,
     I: Display,
 {
+    type Iter = J;
+
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
     )]
     #[inline]
-    fn execute(&self, scope: &Key<I>, value: T) -> Result<R> {
-        catch(|| self(scope.try_as_id()?, value))
+    fn execute(&self, scope: &mut Scope<I>, _: T) -> Result<J> {
+        catch(|| self(scope.key().try_as_id()?).into_result())
+    }
+}
+
+impl<F, R, J, I, T, U> FlatMapFn<ForIdValue, J, I, T, U> for F
+where
+    F: Fn(&I, T) -> R + Send + 'static,
+    R: IntoResult<J>,
+    J: IntoIterator<Item = (Key<I>, U)>,
+    I: Display,
+{
+    type Iter = J;
+
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+    )]
+    #[inline]
+    fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<J> {
+        catch(|| self(scope.key().try_as_id()?, value).into_result())
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl<F, R, J, I, T, U> FlatMapFn<ForValue, J, I, T, U> for F
+where
+    F: Fn(T) -> R + Send + 'static,
+    R: IntoResult<J>,
+    J: IntoIterator<Item = (Key<I>, U)>,
+    I: Display,
+{
+    type Iter = J;
+
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+    )]
+    #[inline]
+    fn execute(&self, scope: &mut Scope<I>, value: T) -> Result<J> {
+        catch(|| self(value).into_result())
     }
 }
 
@@ -141,44 +201,18 @@ where
 // Macros
 // ----------------------------------------------------------------------------
 
-/// Implements flat map function trait for splat arguments.
-macro_rules! impl_flat_map_fn_for_splat {
-    ($($T:ident),+) => {
-        impl<F, I, $($T,)+ U, R> FlatMapFn<ForSplat, I, ($($T,)+), U, R>
-            for F
-        where
-            F: Fn($($T),+) -> Result<R> + Send + 'static,
-            R: IntoIterator<Item = (I, U)>,
-            I: Display,
-        {
-            #[cfg_attr(
-                feature = "tracing",
-                tracing::instrument(
-                    level = "debug", skip_all, fields(scope = %scope)
-                )
-            )]
-            #[inline]
-            fn execute(
-                &self, scope: &Key<I>, value: ($($T,)+)
-            ) -> Result<R> {
-                #[allow(non_snake_case)]
-                let ($($T,)+) = value;
-                catch(|| self($($T),+))
-            }
-        }
-    };
-}
-
-/// Implements flat map function trait for scope and splat arguments.
 macro_rules! impl_flat_map_fn_for_scope_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ U, R> FlatMapFn<ForKeySplat, I, ($($T,)+), U, R>
+        impl<F, R, J, I, $($T,)+ U> FlatMapFn<ForScopeSplat, J, I, ($($T,)+), U>
             for F
         where
-            F: Fn(&Key<I>, $($T),+) -> Result<R> + Send + 'static,
-            R: IntoIterator<Item = (I, U)>,
+            F: Fn(&mut Scope<I>, $($T),+) -> R + Send + 'static,
+            R: IntoResult<J>,
+            J: IntoIterator<Item = (Key<I>, U)>,
             I: Display,
         {
+            type Iter = J;
+
             #[cfg_attr(
                 feature = "tracing",
                 tracing::instrument(
@@ -187,26 +221,28 @@ macro_rules! impl_flat_map_fn_for_scope_splat {
             )]
             #[inline]
             fn execute(
-                &self, scope: &Key<I>, value: ($($T,)+)
-            ) -> Result<R> {
+                &self, scope: &mut Scope<I>, value: ($($T,)+),
+            ) -> Result<J> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self(scope, $($T),+))
+                catch(|| self(scope, $($T),+).into_result())
             }
         }
     };
 }
 
-/// Implements flat map function trait for identifier and splat arguments.
-macro_rules! impl_flat_map_fn_for_id_splat {
+macro_rules! impl_flat_map_fn_for_key_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+ U, R> FlatMapFn<ForIdSplat, I, ($($T,)+), U, R>
+        impl<F, R, J, I, $($T,)+ U> FlatMapFn<ForKeySplat, J, I, ($($T,)+), U>
             for F
         where
-            F: Fn(&I, $($T),+) -> Result<R> + Send + 'static,
-            R: IntoIterator<Item = (I, U)>,
+            F: Fn(&Key<I>, $($T),+) -> R + Send + 'static,
+            R: IntoResult<J>,
+            J: IntoIterator<Item = (Key<I>, U)>,
             I: Display,
         {
+            type Iter = J;
+
             #[cfg_attr(
                 feature = "tracing",
                 tracing::instrument(
@@ -215,22 +251,85 @@ macro_rules! impl_flat_map_fn_for_id_splat {
             )]
             #[inline]
             fn execute(
-                &self, scope: &Key<I>, value: ($($T,)+)
-            ) -> Result<R> {
+                &self, scope: &mut Scope<I>, value: ($($T,)+),
+            ) -> Result<J> {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self(scope.try_as_id()?, $($T),+))
+                catch(|| self(scope.key(), $($T),+).into_result())
             }
         }
     };
 }
+
+macro_rules! impl_flat_map_fn_for_id_splat {
+    ($($T:ident),+) => {
+        impl<F, R, J, I, $($T,)+ U> FlatMapFn<ForIdSplat, J, I, ($($T,)+), U>
+            for F
+        where
+            F: Fn(&I, $($T),+) -> R + Send + 'static,
+            R: IntoResult<J>,
+            J: IntoIterator<Item = (Key<I>, U)>,
+            I: Display,
+        {
+            type Iter = J;
+
+            #[cfg_attr(
+                feature = "tracing",
+                tracing::instrument(
+                    level = "debug", skip_all, fields(scope = %scope)
+                )
+            )]
+            #[inline]
+            fn execute(
+                &self, scope: &mut Scope<I>, value: ($($T,)+),
+            ) -> Result<J> {
+                #[allow(non_snake_case)]
+                let ($($T,)+) = value;
+                catch(|| self(scope.key().try_as_id()?, $($T),+).into_result())
+            }
+        }
+    };
+}
+
+macro_rules! impl_flat_map_fn_for_splat {
+    ($($T:ident),+) => {
+        impl<F, R, J, I, $($T,)+ U> FlatMapFn<ForSplat, J, I, ($($T,)+), U>
+            for F
+        where
+            F: Fn($($T),+) -> R + Send + 'static,
+            R: IntoResult<J>,
+            J: IntoIterator<Item = (Key<I>, U)>,
+            I: Display,
+        {
+            type Iter = J;
+
+            #[cfg_attr(
+                feature = "tracing",
+                tracing::instrument(
+                    level = "debug", skip_all, fields(scope = %scope)
+                )
+            )]
+            #[inline]
+            fn execute(
+                &self, scope: &mut Scope<I>, value: ($($T,)+),
+            ) -> Result<J> {
+                #[allow(non_snake_case)]
+                let ($($T,)+) = value;
+                catch(|| self($($T),+).into_result())
+            }
+        }
+    };
+}
+
+// ----------------------------------------------------------------------------
 
 /// Implements flat map function traits.
 macro_rules! impl_flat_map_fn {
     ($($T:ident),+) => {
-        impl_flat_map_fn_for_splat!($($T),+);
         impl_flat_map_fn_for_scope_splat!($($T),+);
+        impl_flat_map_fn_for_key_splat!($($T),+);
         impl_flat_map_fn_for_id_splat!($($T),+);
+        impl_flat_map_fn_for_splat!($($T),+);
     };
 }
 
