@@ -23,7 +23,7 @@
 
 [package]
 name = "zrx-diagnostic"
-version = "0.0.1"
+version = "0.0.2"
 description = "Diagnostic utilities"
 edition.workspace = true
 rust-version.workspace = true
