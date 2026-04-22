@@ -32,7 +32,7 @@ use crate::scheduler::action::context::Binding;
 use crate::scheduler::action::{Action, Context};
 use crate::scheduler::session::Error;
 use crate::scheduler::signal::{Diff, Id, Value};
-use crate::scheduler::step::{IntoSteps, Scoped};
+use crate::scheduler::step::{IntoSteps, Scope};
 
 // ----------------------------------------------------------------------------
 // Trait implementations
@@ -51,14 +51,14 @@ where
         let Binding { mut output, .. } = ctx.bind();
         iter::from_fn(move || match self.try_recv() {
             Ok(diff) => Some(
-                Scoped::from(match diff {
-                    Diff::Insert(scope, value) => {
-                        output.insert(scope.clone(), value);
-                        scope
+                Scope::from(match diff {
+                    Diff::Insert(key, value) => {
+                        output.insert(key.clone(), value);
+                        key
                     }
-                    Diff::Remove(scope) => {
-                        output.remove(&scope);
-                        scope
+                    Diff::Remove(key) => {
+                        output.remove(&key);
+                        key
                     }
                 })
                 .done(),

@@ -23,11 +23,13 @@
 
 // ----------------------------------------------------------------------------
 
-//! Scoped value.
+//! Scope.
 
-use std::ops::Deref;
+use std::mem;
 
-use crate::scheduler::signal::{Id, Scope};
+use zrx_diagnostic::Diagnostic;
+
+use crate::scheduler::signal::{Id, Key};
 use crate::scheduler::step::{Result, Step, Steps};
 
 use super::effect::Effect;
@@ -36,40 +38,69 @@ use super::effect::Effect;
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Scoped value.
-#[derive(Clone, Debug)]
-pub struct Scoped<I> {
-    /// Scope.
-    scope: Scope<I>,
+/// Scope.
+#[derive(Debug)]
+pub struct Scope<I> {
+    /// Key.
+    key: Key<I>,
     /// Frontier identifier.
     id: Option<usize>,
+    /// Diagnostics.
+    diagnostics: Vec<Diagnostic>,
 }
 
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<I> Scoped<I>
+impl<I> Scope<I>
 where
     I: Id,
 {
-    /// Creates a scoped value from the given scope.
+    /// Creates a scope from the given key.
     #[must_use]
-    pub fn new(scope: Scope<I>, id: usize) -> Self {
-        Self { scope, id: Some(id) }
+    pub fn new(key: Key<I>, id: usize) -> Self {
+        Self {
+            key,
+            id: Some(id),
+            diagnostics: Vec::new(),
+        }
+    }
+
+    /// Creates a new scope, moving diagnostics into it.
+    pub(crate) fn take(&mut self) -> Self {
+        Self {
+            key: self.key.clone(),
+            id: self.id,
+            diagnostics: mem::take(&mut self.diagnostics),
+        }
+    }
+
+    /// Adds a diagnostic to the scope.
+    pub fn add_diagnostic<D>(&mut self, diagnostic: D)
+    where
+        D: Into<Diagnostic>,
+    {
+        self.diagnostics.push(diagnostic.into());
     }
 
     /// Marks the step as done.
     #[allow(clippy::missing_errors_doc)]
     #[inline]
-    pub fn done<C>(&self) -> Result<Steps<I, C>> {
-        Ok(Steps::from(Step::new(self.clone(), Effect::Done)))
+    pub fn done<C>(&mut self) -> Result<Steps<I, C>> {
+        Ok(Steps::from(Step::new(self.take(), Effect::Done)))
     }
 }
 
 #[allow(clippy::must_use_candidate)]
-impl<I> Scoped<I> {
-    /// Returns the frontier identifier of the scoped value.
+impl<I> Scope<I> {
+    /// Returns the key of the scope.
+    #[inline]
+    pub fn key(&self) -> &Key<I> {
+        &self.key
+    }
+
+    /// Returns the frontier identifier of the scope.
     #[inline]
     pub fn id(&self) -> Option<usize> {
         self.id
@@ -80,22 +111,14 @@ impl<I> Scoped<I> {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I> From<Scope<I>> for Scoped<I> {
-    /// Creates a scoped value from the given scope.
+impl<I> From<Key<I>> for Scope<I> {
+    /// Creates a scope from the given key.
     #[inline]
-    fn from(scope: Scope<I>) -> Self {
-        Self { scope, id: None }
-    }
-}
-
-// ----------------------------------------------------------------------------
-
-impl<I> Deref for Scoped<I> {
-    type Target = Scope<I>;
-
-    /// Dereferences the scoped value to its scope.
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.scope
+    fn from(scope: Key<I>) -> Self {
+        Self {
+            key: scope,
+            id: None,
+            diagnostics: Vec::new(),
+        }
     }
 }

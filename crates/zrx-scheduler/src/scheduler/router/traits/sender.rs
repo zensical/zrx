@@ -33,7 +33,7 @@ use zrx_storage::Storage;
 use zrx_storage::convert::TryAsStorage;
 
 use crate::scheduler::router::transport::{Error, Result};
-use crate::scheduler::signal::{Diff, Id, Scope, Value};
+use crate::scheduler::signal::{Diff, Id, Key, Value};
 
 // ----------------------------------------------------------------------------
 // Traits
@@ -44,7 +44,7 @@ pub trait AnySender<I>: Any + Debug {
     /// Creates a boxed clone of the sender.
     fn clone_box(&self) -> Box<dyn AnySender<I>>;
     /// Forward a value to the sender.
-    fn forward(&self, storage: &dyn Any, key: &Scope<I>);
+    fn forward(&self, storage: &dyn Any, key: &Key<I>);
 }
 
 // ----------------------------------------------------------------------------
@@ -82,8 +82,8 @@ where
 
     /// Forward a value to the sender.
     #[inline]
-    fn forward(&self, storage: &dyn Any, key: &Scope<I>) {
-        let storage: &Storage<Scope<I>, T> =
+    fn forward(&self, storage: &dyn Any, key: &Key<I>) {
+        let storage: &Storage<Key<I>, T> =
             T::try_as_storage(storage).expect("invariant");
 
         // Forward insert or remove diff to sender

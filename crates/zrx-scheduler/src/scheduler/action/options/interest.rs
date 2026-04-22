@@ -25,7 +25,7 @@
 
 //! Action interest.
 
-use crate::scheduler::signal::Scope;
+use crate::scheduler::signal::Key;
 
 // ----------------------------------------------------------------------------
 // Enums
@@ -34,17 +34,17 @@ use crate::scheduler::signal::Scope;
 /// Action interest.
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum Interest {
-    /// Action is interested in scope entry.
+    /// Action is interested in key entry.
     Enter,
-    /// Action is interested in scope exit.
+    /// Action is interested in key exit.
     Leave,
 }
 
 /// Action event. -
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Event<I> {
-    /// Scope insertion.
-    Insert(Scope<I>),
-    /// Scope removal.
-    Remove(Scope<I>),
+    /// Key insertion.
+    Insert(Key<I>),
+    /// Key removal.
+    Remove(Key<I>),
 }

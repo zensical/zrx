@@ -25,7 +25,7 @@
 
 //! Barrier advancement.
 
-use zrx_scheduler::{Id, Scope};
+use zrx_scheduler::{Id, Key};
 use zrx_store::stash::Items;
 use zrx_store::Stash;
 
@@ -41,11 +41,11 @@ pub use iter::Iter;
 #[derive(Debug)]
 pub struct Advance<'a, I> {
     /// Barrier scope for identification.
-    key: &'a Scope<I>,
+    key: &'a Key<I>,
     /// Contained scopes.
     items: &'a Items,
     /// All known scopes.
-    scopes: &'a Stash<Scope<I>, Items>,
+    scopes: &'a Stash<Key<I>, Items>,
 }
 
 // ----------------------------------------------------------------------------
@@ -56,7 +56,7 @@ impl<'a, I> Advance<'a, I> {
     /// Converts the barrier advancement into an event.
     #[must_use]
     pub fn new(
-        key: &'a Scope<I>, items: &'a Items, scopes: &'a Stash<Scope<I>, Items>,
+        key: &'a Key<I>, items: &'a Items, scopes: &'a Stash<Key<I>, Items>,
     ) -> Self {
         Self { key, items, scopes }
     }
@@ -66,7 +66,7 @@ impl<'a, I> Advance<'a, I> {
 impl<I> Advance<'_, I> {
     /// Returns a reference to the scope.
     #[inline]
-    pub fn scope(&self) -> &Scope<I> {
+    pub fn scope(&self) -> &Key<I> {
         self.key
     }
 }
@@ -79,7 +79,7 @@ impl<'a, I> IntoIterator for &'a Advance<'a, I>
 where
     I: Id,
 {
-    type Item = &'a Scope<I>;
+    type Item = &'a Key<I>;
     type IntoIter = Iter<'a, I>;
 
     /// Creates a consuming iterator over the barrier advancement.

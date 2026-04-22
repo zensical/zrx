@@ -28,7 +28,6 @@
 mod convert;
 pub mod location;
 mod macros;
-pub mod report;
 mod severity;
 mod tag;
 
@@ -44,11 +43,7 @@ pub use tag::Tag;
 /// Diagnostic.
 ///
 /// Diagnostics are messages that provide information about notable events that
-/// occur during the execution of a function. This crate makes it easy to amend
-/// and function to include diagnostics by returning an implementation of the
-/// [`IntoReport`][] trait.
-///
-/// There are two primary cases for using diagnostics:
+/// occur during the execution of a function. There are two primary cases:
 ///
 /// - __Integration__: By implementing the [`IntoDiagnostic`] trait, any type
 ///   can be converted into a [`Diagnostic`], which allows for the integration
@@ -65,7 +60,6 @@ pub use tag::Tag;
 ///
 /// [`error!`]: crate::error!
 /// [`warning!`]: crate::warning!
-/// [`IntoReport`]: crate::diagnostic::report::IntoReport
 ///
 /// # Examples
 ///

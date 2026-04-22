@@ -29,7 +29,7 @@ use std::marker::PhantomData;
 
 use crate::scheduler::signal::Id;
 use crate::scheduler::step::effect::Effect;
-use crate::scheduler::step::{Result, Scoped, Step, Steps};
+use crate::scheduler::step::{Result, Scope, Step, Steps};
 
 use super::Task;
 
@@ -40,7 +40,7 @@ use super::Task;
 /// Task builder.
 pub struct Builder<I, C> {
     /// Scope.
-    scope: Scoped<I>,
+    scope: Scope<I>,
     /// Capture types.
     marker: PhantomData<C>,
 }
@@ -49,15 +49,15 @@ pub struct Builder<I, C> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<I> Scoped<I>
+impl<I> Scope<I>
 where
     I: Id,
 {
     /// Creates a task builder.
     #[must_use]
-    pub fn task<C>(&self) -> Builder<I, C> {
+    pub fn task<C>(&mut self) -> Builder<I, C> {
         Builder {
-            scope: self.clone(),
+            scope: self.take(),
             marker: PhantomData,
         }
     }

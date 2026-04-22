@@ -23,46 +23,48 @@
 
 // ----------------------------------------------------------------------------
 
-//! Scope.
+//! Key.
 
 use ahash::AHasher;
 use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::ops::Index;
+use std::slice::Iter;
 use std::sync::Arc;
 
 use super::value::Value;
-use super::Id;
 
 mod error;
+mod id;
 
 pub use error::{Error, Result};
+pub use id::Id;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Scope.
+/// Key.
 ///
-/// Scopes represent hierarchies of identifiers, which are a fundamental tool
-/// for representing the hierarchical structure of computations and relations.
-/// A scope can consist of a single identifier, or arbitrary long chains of
-/// multiple identifiers.
+/// Keys represent hierarchies of identifiers, which are a fundamental tool for
+/// representing the hierarchical structure of computations and relations. A key
+/// can consist of a single identifier, or arbitrary long chains of multiple
+/// identifiers to model derivations and dependencies.
 ///
 /// # Examples
 ///
 /// ```
-/// use zrx_scheduler::Scope;
+/// use zrx_scheduler::Key;
 ///
-/// // Create and transform scope
-/// let scope = Scope::from_iter([1, 2, 3]);
+/// // Create and transform key
+/// let key = Key::from_iter([1, 2, 3]);
 /// assert_eq!(
-///     scope.rotate_left(1),
-///     Scope::from_iter([2, 3, 1])
+///     key.rotate_left(1),
+///     Key::from_iter([2, 3, 1])
 /// );
 /// ```
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Scope<I> {
+pub struct Key<I> {
     /// Path.
     path: Arc<[I]>,
     /// Precomputed hash.
@@ -73,26 +75,26 @@ pub struct Scope<I> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<I> Scope<I> {
-    /// Returns the identifier, if scope has length 1.
+impl<I> Key<I> {
+    /// Returns the identifier, if key has length 1.
     ///
     /// # Errors
     ///
-    /// Returns [`Error::Empty`] if the scope is empty, and [`Error::Depth`] if
-    /// the scope is deeper than one level, containing multiple identifiers.
+    /// Returns [`Error::Empty`] if the key is empty, and [`Error::Depth`] if
+    /// the key is deeper than one level, containing multiple identifiers.
     ///
     /// # Examples
     ///
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_scheduler::Scope;
+    /// use zrx_scheduler::Key;
     ///
-    /// // Create scope
-    /// let scope = Scope::from(42);
+    /// // Create key
+    /// let key = Key::from(42);
     ///
     /// // Obtain identifier
-    /// assert_eq!(scope.try_as_id()?, &42);
+    /// assert_eq!(key.try_as_id()?, &42);
     /// # Ok(())
     /// # }
     /// ```
@@ -106,57 +108,58 @@ impl<I> Scope<I> {
     }
 }
 
-impl<I> Scope<I>
+impl<I> Key<I>
 where
     I: Id,
 {
-    /// Concatenates the scope with another scope.
+    /// Concatenates the key with another key.
     ///
     /// # Examples
     ///
     /// ```
-    /// use zrx_scheduler::Scope;
+    /// use zrx_scheduler::Key;
     ///
-    /// // Create and concat scopes
-    /// let scope = Scope::from(1);
-    /// let other = Scope::from_iter([2, 3]);
+    /// // Create and concat keys
+    /// let key = Key::from(1);
     /// assert_eq!(
-    ///     scope.concat(&other),
-    ///     Scope::from_iter([1, 2, 3])
+    ///     key.concat(Key::from_iter([2, 3])),
+    ///     Key::from_iter([1, 2, 3])
     /// );
     /// ```
     #[must_use]
-    pub fn concat(&self, other: &Self) -> Self {
-        let iter = self.path.iter().chain(other.path.iter());
+    pub fn concat<K>(&self, tail: K) -> Self
+    where
+        K: AsRef<Self>,
+    {
+        let tail = tail.as_ref();
+
+        // Concatenate paths and return key
+        let iter = self.path.iter().chain(tail.path.iter());
         let path = iter.cloned().collect();
         Self { hash: hash(&path), path }
     }
 
-    /// Reverses the scope.
+    /// Reverses the key.
     ///
     /// # Examples
     ///
     /// ```
-    /// use zrx_scheduler::Scope;
+    /// use zrx_scheduler::Key;
     ///
-    /// // Create and transform scope
-    /// let scope = Scope::from_iter([1, 2, 3]);
+    /// // Create and transform key
+    /// let key = Key::from_iter([1, 2, 3]);
     /// assert_eq!(
-    ///     scope.reverse(),
-    ///     Scope::from_iter([3, 2, 1])
+    ///     key.reverse(),
+    ///     Key::from_iter([3, 2, 1])
     /// );
     /// ```
     #[must_use]
     pub fn reverse(&self) -> Self {
-        let mut path = self.path.to_vec();
-        path.reverse();
-        Self {
-            hash: hash(&path),
-            path: Arc::from(path),
-        }
+        let iter = self.path.iter().rev();
+        iter.cloned().collect()
     }
 
-    /// Rotates the scope left by `n` positions.
+    /// Rotates the key left by `n` positions.
     ///
     /// # Panics
     ///
@@ -165,26 +168,22 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_scheduler::Scope;
+    /// use zrx_scheduler::Key;
     ///
-    /// // Create and transform scope
-    /// let scope = Scope::from_iter([1, 2, 3]);
+    /// // Create and transform key
+    /// let key = Key::from_iter([1, 2, 3]);
     /// assert_eq!(
-    ///     scope.rotate_left(1),
-    ///     Scope::from_iter([2, 3, 1])
+    ///     key.rotate_left(1),
+    ///     Key::from_iter([2, 3, 1])
     /// );
     /// ```
     #[must_use]
     pub fn rotate_left(&self, n: usize) -> Self {
-        let mut path = self.path.to_vec();
-        path.rotate_left(n);
-        Self {
-            hash: hash(&path),
-            path: Arc::from(path),
-        }
+        let iter = self.path[n..].iter().chain(self.path[..n].iter());
+        iter.cloned().collect()
     }
 
-    /// Rotates the scope right by `n` positions.
+    /// Rotates the key right by `n` positions.
     ///
     /// # Panics
     ///
@@ -193,23 +192,39 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_scheduler::Scope;
+    /// use zrx_scheduler::Key;
     ///
-    /// // Create and transform scope
-    /// let scope = Scope::from_iter([1, 2, 3]);
+    /// // Create and transform key
+    /// let key = Key::from_iter([1, 2, 3]);
     /// assert_eq!(
-    ///     scope.rotate_right(1),
-    ///     Scope::from_iter([3, 1, 2])
+    ///     key.rotate_right(1),
+    ///     Key::from_iter([3, 1, 2])
     /// );
     /// ```
+    #[inline]
     #[must_use]
     pub fn rotate_right(&self, n: usize) -> Self {
-        let mut path = self.path.to_vec();
-        path.rotate_right(n);
-        Self {
-            hash: hash(&path),
-            path: Arc::from(path),
-        }
+        self.rotate_left(self.path.len() - n)
+    }
+
+    /// Creates an iterator over the key.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_scheduler::Key;
+    ///
+    /// // Create key from iterator
+    /// let key = Key::from_iter([1, 2, 3]);
+    ///
+    /// // Create iterator over key
+    /// for id in &key {
+    ///     println!("{id}");
+    /// }
+    /// ```
+    #[inline]
+    pub fn iter(&self) -> Iter<'_, I> {
+        self.path.iter()
     }
 }
 
@@ -217,23 +232,33 @@ where
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I> Value for Scope<I> where I: Value {}
+impl<I> Value for Key<I> where I: Value {}
 
 // ----------------------------------------------------------------------------
 
-impl<I> From<I> for Scope<I>
+impl<I> AsRef<Key<I>> for Key<I> {
+    /// Returns a reference to the key.
+    #[inline]
+    fn as_ref(&self) -> &Key<I> {
+        self
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl<I> From<I> for Key<I>
 where
     I: Id,
 {
-    /// Creates a scope from an identifier.
+    /// Creates a key from an identifier.
     ///
     /// # Examples
     ///
     /// ```
-    /// use zrx_scheduler::Scope;
+    /// use zrx_scheduler::Key;
     ///
-    /// // Create scope
-    /// let scope = Scope::from(42);
+    /// // Create key
+    /// let key = Key::from(42);
     /// ```
     #[inline]
     fn from(id: I) -> Self {
@@ -244,19 +269,19 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl<I> FromIterator<I> for Scope<I>
+impl<I> FromIterator<I> for Key<I>
 where
     I: Id,
 {
-    /// Creates a scope from an iterator.
+    /// Creates a key from an iterator.
     ///
     /// # Examples
     ///
     /// ```
-    /// use zrx_scheduler::Scope;
+    /// use zrx_scheduler::Key;
     ///
-    /// // Create scope from iterator
-    /// let scope = Scope::from_iter([1, 2, 3]);
+    /// // Create key from iterator
+    /// let key = Key::from_iter([1, 2, 3]);
     /// ```
     fn from_iter<T>(iter: T) -> Self
     where
@@ -267,12 +292,40 @@ where
     }
 }
 
+impl<'a, I> IntoIterator for &'a Key<I>
+where
+    I: Id,
+{
+    type Item = &'a I;
+    type IntoIter = Iter<'a, I>;
+
+    /// Creates an iterator over the key.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_scheduler::Key;
+    ///
+    /// // Create key from iterator
+    /// let key = Key::from_iter([1, 2, 3]);
+    ///
+    /// // Create iterator over key
+    /// for id in &key {
+    ///     println!("{id}");
+    /// }
+    /// ```
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
 // ----------------------------------------------------------------------------
 
-impl<I> Index<usize> for Scope<I> {
+impl<I> Index<usize> for Key<I> {
     type Output = I;
 
-    /// Indexes the scope by position.
+    /// Returns a reference to the identifier at the index.
     ///
     /// # Panics
     ///
@@ -285,11 +338,11 @@ impl<I> Index<usize> for Scope<I> {
 
 // ----------------------------------------------------------------------------
 
-impl<I> Hash for Scope<I> {
-    /// Hashes the scope.
+impl<I> Hash for Key<I> {
+    /// Hashes the key.
     ///
-    /// Since scope paths are immutable, we can use a precomputed hash for fast
-    /// hashing. This is especially useful when scope paths are used as keys in
+    /// Since key paths are immutable, we can use a precomputed hash for fast
+    /// hashing. This is especially useful when key paths are used as keys in
     /// hash maps or hash sets, where hashing is a frequent operation, as the
     /// performance gains are significant with constant time.
     #[inline]
@@ -303,11 +356,11 @@ impl<I> Hash for Scope<I> {
 
 // ----------------------------------------------------------------------------
 
-impl<I> Display for Scope<I>
+impl<I> Display for Key<I>
 where
     I: Display,
 {
-    /// Formats the scope for display.
+    /// Formats the key for display.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for (i, item) in self.path.iter().enumerate() {
             Display::fmt(item, f)?;
@@ -323,11 +376,11 @@ where
     }
 }
 
-impl<I> Debug for Scope<I>
+impl<I> Debug for Key<I>
 where
     I: Debug,
 {
-    // Formats the scope for debugging.
+    // Formats the key for debugging.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_list().entry(&self.path).finish()
     }
@@ -338,7 +391,7 @@ where
 // ----------------------------------------------------------------------------
 
 /// Precomputes the hash for the given path - this is used for fast hashing of
-/// scopes, since scope paths are immutable, meaning hashes can be precomputed.
+/// keys, since key paths are immutable, meaning hashes can be precomputed.
 #[inline]
 fn hash<P>(path: &P) -> u64
 where

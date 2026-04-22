@@ -23,48 +23,29 @@
 
 // ----------------------------------------------------------------------------
 
-//! Identifier.
+//! Key error.
 
-use std::fmt::{Debug, Display};
-use std::hash::Hash;
+use std::result;
+use thiserror::Error;
 
 // ----------------------------------------------------------------------------
-// Traits
+// Enums
 // ----------------------------------------------------------------------------
 
-/// Identifier.
-///
-/// This trait defines the requirements for identifiers, which are the central
-/// means of identifying inputs and outputs of actions. Note that identifiers
-/// will mostly be encountered in the context of a [`Scope`], which allows for
-/// modelling the hierarchical structure of computations.
-///
-/// Identifiers are required to implement [`Eq`], [`Hash`] and [`Ord`], so they
-/// can be stored for stateful operators, whereas [`Display`] and [`Debug`] are
-/// required for tracing and debugging purposes. Of course, identifiers must be
-/// [`Send`] and [`Sync`] to be usable in worker threads. Types which implement
-/// all of those traits can be used as identifiers in the scheduler, because we
-/// provide a blanket implementation of this trait.
-///
-/// We assume that identifiers are cheap to clone, so the use of [`Arc`][] is
-/// strongly recommended when using string-based identifiers.
-///
-/// __Warning__: The `'static` lifetime which is required by this trait is a
-/// deliberate design choice to simplify passing data to threads. If we would
-/// not require the lifetime, we would need to add a lifetime parameter to all
-/// types consuming this trait, which is cumbersome to use.
-///
-/// [`Arc`]: std::sync::Arc
-pub trait Id:
-    Clone + Debug + Display + Eq + Hash + Ord + Send + Sync + 'static
-{
+/// Key error.
+#[derive(Debug, Error)]
+pub enum Error {
+    /// Key is empty.
+    #[error("key is empty")]
+    Empty,
+    /// Key is deeper than one level.
+    #[error("key is deeper than one level")]
+    Depth,
 }
 
 // ----------------------------------------------------------------------------
-// Blanket implementations
+// Type aliases
 // ----------------------------------------------------------------------------
 
-#[rustfmt::skip]
-impl<T> Id for T
-where
-    T: Clone + Debug + Display + Eq + Hash + Ord + Send + Sync + 'static {}
+/// Key result.
+pub type Result<T = ()> = result::Result<T, Error>;

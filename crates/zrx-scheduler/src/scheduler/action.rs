@@ -27,7 +27,7 @@
 
 use zrx_storage::convert::{TryAsStorageMut, TryAsStorages};
 
-use super::signal::{Scope, Value};
+use super::signal::{Key, Value};
 use super::step::IntoSteps;
 
 pub mod context;
@@ -82,9 +82,9 @@ pub use options::Options;
 /// [`Timer`]: crate::scheduler::effect::Timer
 pub trait Action<I>: Sized {
     /// Input types of action.
-    type Inputs: Value + TryAsStorages<Scope<I>>;
+    type Inputs: Value + TryAsStorages<Key<I>>;
     /// Output type of action.
-    type Output<'a>: Value + TryAsStorageMut<Scope<I>>;
+    type Output<'a>: Value + TryAsStorageMut<Key<I>>;
 
     /// Executes the action.
     ///

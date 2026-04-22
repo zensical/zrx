@@ -25,7 +25,7 @@
 
 //! Iterator implementation for [`Advance`].
 
-use zrx_scheduler::{Id, Scope};
+use zrx_scheduler::{Id, Key};
 use zrx_store::stash::{items, Items};
 use zrx_store::Stash;
 
@@ -40,7 +40,7 @@ pub struct Iter<'a, I> {
     /// Inner iterator.
     inner: items::Iter<'a>,
     /// All known scopes.
-    stash: &'a Stash<Scope<I>, Items>,
+    stash: &'a Stash<Key<I>, Items>,
 }
 
 // ----------------------------------------------------------------------------
@@ -70,7 +70,7 @@ impl<'a, I> Iterator for Iter<'a, I>
 where
     I: Id,
 {
-    type Item = &'a Scope<I>;
+    type Item = &'a Key<I>;
 
     /// Returns the next scope.
     #[inline]

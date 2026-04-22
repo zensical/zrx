@@ -29,7 +29,7 @@ use std::marker::PhantomData;
 
 use zrx_scheduler::action::context::Binding;
 use zrx_scheduler::action::{Action, Context};
-use zrx_scheduler::step::{IntoSteps, Scoped};
+use zrx_scheduler::step::{IntoSteps, Scope};
 use zrx_scheduler::{Id, Value};
 
 use crate::stream::combinator::convert::IntoStreamTupleCons;
@@ -89,41 +89,41 @@ where
             let mut scoped = vec![];
 
             // If the key exists in the left scope,
-            if let Some(l_value) = left.get(&scope) {
+            if let Some(l_value) = left.get(scope.key()) {
                 for (r_scope, r_value) in right.iter() {
-                    let combined = scope.concat(r_scope);
+                    let combined = scope.key().concat(r_scope);
                     output.insert(
                         combined.clone(),
                         (l_value.clone(), r_value.clone()),
                     );
-                    scoped.push(Scoped::from(combined).done());
+                    scoped.push(Scope::from(combined).done());
                 }
             } else {
                 for r_scope in right.keys() {
-                    let combined = scope.concat(r_scope);
+                    let combined = scope.key().concat(r_scope);
                     output.remove(&combined);
-                    scoped.push(Scoped::from(combined).done());
+                    scoped.push(Scope::from(combined).done());
                 }
             }
 
             // If the key exists in the left scope,
-            if let Some(r_value) = right.get(&scope) {
+            if let Some(r_value) = right.get(scope.key()) {
                 // omit double-emit
                 for (l_scope, l_value) in
-                    left.iter().filter(|(k, _)| *k != &*scope)
+                    left.iter().filter(|(k, _)| *k != scope.key())
                 {
-                    let combined = scope.concat(l_scope);
+                    let combined = scope.key().concat(l_scope);
                     output.insert(
                         combined.clone(),
                         (l_value.clone(), r_value.clone()),
                     );
-                    scoped.push(Scoped::from(combined).done());
+                    scoped.push(Scope::from(combined).done());
                 }
             } else {
                 for l_scope in left.keys() {
-                    let combined = l_scope.concat(&scope);
+                    let combined = l_scope.concat(scope.key());
                     output.remove(&combined);
-                    scoped.push(Scoped::from(combined).done());
+                    scoped.push(Scope::from(combined).done());
                 }
             }
             scoped

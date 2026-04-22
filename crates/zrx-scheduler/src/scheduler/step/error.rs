@@ -31,11 +31,11 @@ use std::{error, result};
 use thiserror::Error;
 
 use crate::scheduler::session;
-use crate::scheduler::signal::scope;
+use crate::scheduler::signal::key;
 
 mod convert;
 
-pub use convert::IntoError;
+pub use convert::{IntoError, IntoResult};
 
 // ----------------------------------------------------------------------------
 // Enums
@@ -63,9 +63,9 @@ pub enum Error {
     /// Session error.
     #[error(transparent)]
     Session(#[from] session::Error),
-    /// Scope error.
+    /// Key error.
     #[error(transparent)]
-    Scope(#[from] scope::Error),
+    Key(#[from] key::Error),
     /// Other error.
     #[error(transparent)]
     Other(#[from] Box<dyn error::Error + Send>),

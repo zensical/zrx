@@ -52,7 +52,7 @@ pub struct Segment<'a> {
 // ----------------------------------------------------------------------------
 
 impl Segment<'_> {
-    /// Creates an iterator over the atoms of the segment.
+    /// Creates an iterator over the segment.
     #[inline]
     pub fn iter(&self) -> Iter<'_, Atom<'_>> {
         self.atoms.iter()
@@ -80,7 +80,7 @@ impl<'a> IntoIterator for &'a Segment<'a> {
     type Item = &'a Atom<'a>;
     type IntoIter = Iter<'a, Atom<'a>>;
 
-    /// Creates an iterator over the atoms of the segment.
+    /// Creates an iterator over the segment.
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter()

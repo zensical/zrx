@@ -27,12 +27,13 @@
 
 use std::fmt::Display;
 
-use zrx_scheduler::step::Result;
-use zrx_scheduler::Scope;
+use zrx_scheduler::step::error::IntoResult;
+use zrx_scheduler::step::{Result, Scope};
+use zrx_scheduler::Key;
 
 use crate::stream::function::arguments::{
-    ForId, ForIdSplat, ForIdValue, ForScope, ForScopeSplat, ForScopeValue,
-    ForSplat, ForValue,
+    ForId, ForIdSplat, ForIdValue, ForKey, ForKeySplat, ForKeyValue, ForScope,
+    ForScopeSplat, ForScopeValue, ForSplat, ForValue,
 };
 use crate::stream::function::catch;
 
@@ -47,85 +48,142 @@ pub trait InspectFn<A, I, T>: Send + 'static {
     /// # Errors
     ///
     /// This method returns an error if the function fails to execute.
-    fn execute(&self, scope: &Scope<I>, value: &T) -> Result;
+    fn execute(&self, scope: &mut Scope<I>, value: &T) -> Result;
 }
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<F, I, T> InspectFn<ForScope, I, T> for F
+impl<F, R, I, T> InspectFn<ForScope, I, T> for F
 where
-    F: Fn(&Scope<I>) -> Result + Send + 'static,
+    F: Fn(&mut Scope<I>) -> R + Send + 'static,
+    R: IntoResult,
     I: Display,
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, _: &T) -> Result {
-        catch(|| self(scope))
+    fn execute(&self, scope: &mut Scope<I>, _: &T) -> Result {
+        catch(|| self(scope).into_result())
     }
 }
 
-impl<F, I, T> InspectFn<ForId, I, T> for F
+impl<F, R, I, T> InspectFn<ForScopeValue, I, T> for F
 where
-    F: Fn(&I) -> Result + Send + 'static,
+    F: Fn(&mut Scope<I>, &T) -> R + Send + 'static,
+    R: IntoResult,
     I: Display,
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, _: &T) -> Result {
-        catch(|| self(scope.try_as_id()?))
+    fn execute(&self, scope: &mut Scope<I>, value: &T) -> Result {
+        catch(|| self(scope, value).into_result())
     }
 }
 
-impl<F, I, T> InspectFn<ForValue, I, T> for F
+// ----------------------------------------------------------------------------
+
+impl<F, R, I, T> InspectFn<ForKey, I, T> for F
 where
-    F: Fn(&T) -> Result + Send + 'static,
+    F: Fn(&Key<I>) -> R + Send + 'static,
+    R: IntoResult,
     I: Display,
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, value: &T) -> Result {
-        catch(|| self(value))
+    fn execute(&self, scope: &mut Scope<I>, _: &T) -> Result {
+        catch(|| self(scope.key()).into_result())
     }
 }
 
-impl<F, I, T> InspectFn<ForScopeValue, I, T> for F
+impl<F, R, I, T> InspectFn<ForKeyValue, I, T> for F
 where
-    F: Fn(&Scope<I>, &T) -> Result + Send + 'static,
+    F: Fn(&Key<I>, &T) -> R + Send + 'static,
+    R: IntoResult,
     I: Display,
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, value: &T) -> Result {
-        catch(|| self(scope, value))
+    fn execute(&self, scope: &mut Scope<I>, value: &T) -> Result {
+        catch(|| self(scope.key(), value).into_result())
     }
 }
 
-impl<F, I, T> InspectFn<ForIdValue, I, T> for F
+// ----------------------------------------------------------------------------
+
+impl<F, R, I, T> InspectFn<ForId, I, T> for F
 where
-    F: Fn(&I, &T) -> Result + Send + 'static,
+    F: Fn(&I) -> R + Send + 'static,
+    R: IntoResult,
     I: Display,
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>, value: &T) -> Result {
-        catch(|| self(scope.try_as_id()?, value))
+    fn execute(&self, scope: &mut Scope<I>, _: &T) -> Result {
+        catch(|| self(scope.key().try_as_id()?).into_result())
+    }
+}
+
+impl<F, R, I, T> InspectFn<ForIdValue, I, T> for F
+where
+    F: Fn(&I, &T) -> R + Send + 'static,
+    R: IntoResult,
+    I: Display,
+{
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
+    )]
+    #[inline]
+    fn execute(&self, scope: &mut Scope<I>, value: &T) -> Result {
+        catch(|| self(scope.key().try_as_id()?, value).into_result())
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl<F, R, I, T> InspectFn<ForValue, I, T> for F
+where
+    F: Fn(&T) -> R + Send + 'static,
+    R: IntoResult,
+    I: Display,
+{
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
+    )]
+    #[inline]
+    fn execute(&self, scope: &mut Scope<I>, value: &T) -> Result {
+        catch(|| self(value).into_result())
     }
 }
 
@@ -133,53 +191,55 @@ where
 // Macros
 // ----------------------------------------------------------------------------
 
-/// Implements inspect function trait for splat arguments.
-macro_rules! impl_inspect_fn_for_splat {
+/// Implements inspect function trait for scope and splat arguments.
+macro_rules! impl_inspect_fn_for_scope_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+> InspectFn<ForSplat, I, ($($T,)+)> for F
+        impl<F, R, I, $($T,)+> InspectFn<ForScopeSplat, I, ($($T,)+)> for F
         where
-            F: Fn($(&$T),+) -> Result + Send + 'static,
+            F: Fn(&mut Scope<I>, $(&$T),+) -> R + Send + 'static,
+            R: IntoResult,
             I: Display,
         {
             #[cfg_attr(
                 feature = "tracing",
                 tracing::instrument(
-                    level = "debug", skip_all, fields(scope = %scope)
+                    level = "debug", skip_all, fields(key = %scope.key())
                 )
             )]
             #[inline]
             fn execute(
-                &self, scope: &Scope<I>, value: &($($T,)+)
+                &self, scope: &mut Scope<I>, value: &($($T,)+)
             ) -> Result {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self($($T),+))
+                catch(|| self(scope, $($T),+).into_result())
             }
         }
     };
 }
 
-/// Implements inspect function trait for scope and splat arguments.
-macro_rules! impl_inspect_fn_for_scope_splat {
+/// Implements inspect function trait for key and splat arguments.
+macro_rules! impl_inspect_fn_for_key_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+> InspectFn<ForScopeSplat, I, ($($T,)+)> for F
+        impl<F, R, I, $($T,)+> InspectFn<ForKeySplat, I, ($($T,)+)> for F
         where
-            F: Fn(&Scope<I>, $(&$T),+) -> Result + Send + 'static,
+            F: Fn(&Key<I>, $(&$T),+) -> R + Send + 'static,
+            R: IntoResult,
             I: Display,
         {
             #[cfg_attr(
                 feature = "tracing",
                 tracing::instrument(
-                    level = "debug", skip_all, fields(scope = %scope)
+                    level = "debug", skip_all, fields(key = %scope.key())
                 )
             )]
             #[inline]
             fn execute(
-                &self, scope: &Scope<I>, value: &($($T,)+)
+                &self, scope: &mut Scope<I>, value: &($($T,)+)
             ) -> Result {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self(scope, $($T),+))
+                catch(|| self(scope.key(), $($T),+).into_result())
             }
         }
     };
@@ -188,35 +248,66 @@ macro_rules! impl_inspect_fn_for_scope_splat {
 /// Implements inspect function trait for identifier and splat arguments.
 macro_rules! impl_inspect_fn_for_id_splat {
     ($($T:ident),+) => {
-        impl<F, I, $($T,)+> InspectFn<ForIdSplat, I, ($($T,)+)> for F
+        impl<F, R, I, $($T,)+> InspectFn<ForIdSplat, I, ($($T,)+)> for F
         where
-            F: Fn(&I, $(&$T),+) -> Result + Send + 'static,
+            F: Fn(&I, $(&$T),+) -> R + Send + 'static,
+            R: IntoResult,
             I: Display,
         {
             #[cfg_attr(
                 feature = "tracing",
                 tracing::instrument(
-                    level = "debug", skip_all, fields(scope = %scope)
+                    level = "debug", skip_all, fields(key = %scope.key())
                 )
             )]
             #[inline]
             fn execute(
-                &self, scope: &Scope<I>, value: &($($T,)+)
+                &self, scope: &mut Scope<I>, value: &($($T,)+)
             ) -> Result {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = value;
-                catch(|| self(scope.try_as_id()?, $($T),+))
+                catch(|| self(scope.key().try_as_id()?, $($T),+).into_result())
             }
         }
     };
 }
 
+/// Implements inspect function trait for splat arguments.
+macro_rules! impl_inspect_fn_for_splat {
+    ($($T:ident),+) => {
+        impl<F, R, I, $($T,)+> InspectFn<ForSplat, I, ($($T,)+)> for F
+        where
+            F: Fn($(&$T),+) -> R + Send + 'static,
+            R: IntoResult,
+            I: Display,
+        {
+            #[cfg_attr(
+                feature = "tracing",
+                tracing::instrument(
+                    level = "debug", skip_all, fields(key = %scope.key())
+                )
+            )]
+            #[inline]
+            fn execute(
+                &self, scope: &mut Scope<I>, value: &($($T,)+)
+            ) -> Result {
+                #[allow(non_snake_case)]
+                let ($($T,)+) = value;
+                catch(|| self($($T),+).into_result())
+            }
+        }
+    };
+}
+
+// ----------------------------------------------------------------------------
+
 /// Implements inspect function traits.
 macro_rules! impl_inspect_fn {
     ($($T:ident),+) => {
-        impl_inspect_fn_for_splat!($($T),+);
         impl_inspect_fn_for_scope_splat!($($T),+);
+        impl_inspect_fn_for_key_splat!($($T),+);
         impl_inspect_fn_for_id_splat!($($T),+);
+        impl_inspect_fn_for_splat!($($T),+);
     };
 }
 

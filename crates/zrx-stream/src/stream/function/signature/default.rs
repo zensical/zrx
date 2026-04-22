@@ -23,14 +23,15 @@
 
 // ----------------------------------------------------------------------------
 
-//! Filter map function.
+//! Default function.
 
 use std::fmt::Display;
 
-use zrx_scheduler::step::Result;
-use zrx_scheduler::Scope;
+use zrx_scheduler::step::error::IntoResult;
+use zrx_scheduler::step::{Result, Scope};
+use zrx_scheduler::Key;
 
-use crate::stream::function::arguments::{ForId, ForScope, ForValue};
+use crate::stream::function::arguments::{ForId, ForKey, ForScope, ForValue};
 use crate::stream::function::catch;
 
 // ----------------------------------------------------------------------------
@@ -39,59 +40,92 @@ use crate::stream::function::catch;
 
 /// Default function.
 pub trait DefaultFn<A, I, T>: Send + 'static {
-    /// Executes the map function.
+    /// Executes the default function.
     ///
     /// # Errors
     ///
     /// This method returns an error if the function fails to execute.
-    fn execute(&self, scope: &Scope<I>) -> Result<Option<T>>;
+    fn execute(&self, scope: &mut Scope<I>) -> Result<Option<T>>;
 }
 
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<F, I, T> DefaultFn<ForScope, I, T> for F
+impl<F, R, I, T> DefaultFn<ForScope, I, T> for F
 where
-    F: Fn(&Scope<I>) -> Result<Option<T>> + Send + 'static,
+    F: Fn(&mut Scope<I>) -> R + Send + 'static,
+    R: IntoResult<Option<T>>,
     I: Display,
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>) -> Result<Option<T>> {
-        catch(|| self(scope))
+    fn execute(&self, scope: &mut Scope<I>) -> Result<Option<T>> {
+        catch(|| self(scope).into_result())
     }
 }
 
-impl<F, I, T> DefaultFn<ForId, I, T> for F
+// ----------------------------------------------------------------------------
+
+impl<F, R, I, T> DefaultFn<ForKey, I, T> for F
 where
-    F: Fn(&I) -> Result<Option<T>> + Send + 'static,
+    F: Fn(&Key<I>) -> R + Send + 'static,
+    R: IntoResult<Option<T>>,
     I: Display,
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>) -> Result<Option<T>> {
-        catch(|| self(scope.try_as_id()?))
+    fn execute(&self, scope: &mut Scope<I>) -> Result<Option<T>> {
+        catch(|| self(scope.key()).into_result())
     }
 }
 
-impl<F, I, T> DefaultFn<ForValue, I, T> for F
+// ----------------------------------------------------------------------------
+
+impl<F, R, I, T> DefaultFn<ForId, I, T> for F
 where
-    F: Fn() -> Result<Option<T>> + Send + 'static,
+    F: Fn(&I) -> R + Send + 'static,
+    R: IntoResult<Option<T>>,
     I: Display,
 {
     #[cfg_attr(
         feature = "tracing",
-        tracing::instrument(level = "debug", skip_all, fields(scope = %scope))
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
     )]
     #[inline]
-    fn execute(&self, scope: &Scope<I>) -> Result<Option<T>> {
-        catch(self)
+    fn execute(&self, scope: &mut Scope<I>) -> Result<Option<T>> {
+        catch(|| self(scope.key().try_as_id()?).into_result())
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl<F, R, I, T> DefaultFn<ForValue, I, T> for F
+where
+    F: Fn() -> R + Send + 'static,
+    R: IntoResult<Option<T>>,
+    I: Display,
+{
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            level = "debug", skip_all, fields(key = %scope.key())
+        )
+    )]
+    #[inline]
+    fn execute(&self, scope: &mut Scope<I>) -> Result<Option<T>> {
+        catch(|| self().into_result())
     }
 }

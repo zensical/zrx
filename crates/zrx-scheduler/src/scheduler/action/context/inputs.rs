@@ -31,7 +31,7 @@ use std::ops::Deref;
 use zrx_storage::convert::TryAsStorages;
 
 use crate::scheduler::action::Action;
-use crate::scheduler::signal::Scope;
+use crate::scheduler::signal::Key;
 
 use super::error::Result;
 use super::Context;
@@ -44,7 +44,7 @@ use super::Context;
 #[derive(Debug)]
 pub struct Inputs<'a, I, S>
 where
-    S: TryAsStorages<Scope<I>>,
+    S: TryAsStorages<Key<I>>,
 {
     /// Conversion target.
     target: S::Target<'a>,
@@ -76,7 +76,7 @@ where
 
 impl<'a, I, S> Inputs<'a, I, S>
 where
-    S: TryAsStorages<Scope<I>>,
+    S: TryAsStorages<Key<I>>,
 {
     /// Creates the input storages.
     ///
@@ -103,7 +103,7 @@ where
 
 impl<'a, I, S> Deref for Inputs<'a, I, S>
 where
-    S: TryAsStorages<Scope<I>>,
+    S: TryAsStorages<Key<I>>,
 {
     type Target = S::Target<'a>;
 

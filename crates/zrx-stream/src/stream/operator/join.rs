@@ -77,13 +77,13 @@ macro_rules! impl_action {
                 &mut self, ctx: Context<I, Self>
             ) -> impl IntoSteps<I, Self> {
                 let Binding { scopes, inputs, mut output, .. } = ctx.bind();
-                scopes.into_iter().map(move |scope| {
-                    match inputs.join(&scope) {
+                scopes.into_iter().map(move |mut scope| {
+                    match inputs.join(scope.key()) {
                         Some(value) => {
-                            output.insert((*scope).clone(), value.into_owned());
+                            output.insert(scope.key().clone(), value.into_owned());
                         }
                         None => {
-                            output.remove(&scope);
+                            output.remove(scope.key());
                         }
                     }
                     scope.done()

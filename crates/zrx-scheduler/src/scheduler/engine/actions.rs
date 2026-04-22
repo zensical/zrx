@@ -38,7 +38,7 @@ use crate::scheduler::engine::queue::Token;
 use crate::scheduler::schedule::Schedule;
 use crate::scheduler::signal::Id;
 use crate::scheduler::step::effect::Then;
-use crate::scheduler::step::{Scoped, Steps};
+use crate::scheduler::step::{Scope, Steps};
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -101,14 +101,14 @@ where
         })
     }
 
-    /// Ensure a frontier exists for the given token and scoped value.
-    pub fn ensure(&mut self, token: Token, scoped: &Scoped<I>) -> Scoped<I> {
+    /// Ensure a frontier exists for the given token and scope.
+    pub fn ensure(&mut self, token: Token, scope: &mut Scope<I>) -> Scope<I> {
         let schedule = &mut self.schedules[token.module];
-        match scoped.id() {
-            Some(_) => scoped.clone(),
-            None => Scoped::new(
-                (**scoped).clone(),
-                schedule.submit(token.node, scoped),
+        match scope.id() {
+            Some(_) => scope.take(),
+            None => Scope::new(
+                scope.key().clone(),
+                schedule.submit(token.node, scope.key()),
             ),
         }
     }
@@ -125,8 +125,8 @@ where
         )
     }
 
-    /// Completes a schedule with the given token and scoped value.
-    pub fn complete(&mut self, token: Token, scope: &Scoped<I>) {
+    /// Completes a schedule with the given token and scope.
+    pub fn complete(&mut self, token: Token, scope: &Scope<I>) {
         let schedule = &mut self.schedules[token.module];
         for node in schedule.complete(token.node, scope) {
             let token = Token { module: token.module, node };
@@ -150,7 +150,7 @@ where
 
                 // Obtain sender from source node in dependent module
                 let source = graph[token.node].as_source_mut().unwrap();
-                source.sender().forward(&storages[prior.node], scope);
+                source.sender().forward(&storages[prior.node], scope.key());
 
                 // Add to queue
                 if !self.queue.contains(token) {

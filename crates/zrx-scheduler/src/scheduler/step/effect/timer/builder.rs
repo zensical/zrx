@@ -28,7 +28,7 @@
 use crate::scheduler::signal::Id;
 use crate::scheduler::step::effect::timer::{IntoDuration, IntoInstant};
 use crate::scheduler::step::effect::{Effect, Timer};
-use crate::scheduler::step::{Result, Scoped, Step, Steps};
+use crate::scheduler::step::{Result, Scope, Step, Steps};
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -37,7 +37,7 @@ use crate::scheduler::step::{Result, Scoped, Step, Steps};
 /// Timer builder.
 pub struct Builder<I, C> {
     /// Scope.
-    scope: Scoped<I>,
+    scope: Scope<I>,
     /// Timer steps.
     data: Option<Steps<I, C>>,
 }
@@ -46,17 +46,14 @@ pub struct Builder<I, C> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<I> Scoped<I>
+impl<I> Scope<I>
 where
     I: Id,
 {
     /// Creates a timer builder.
     #[must_use]
-    pub fn timer<C>(&self) -> Builder<I, C> {
-        Builder {
-            scope: self.clone(),
-            data: None,
-        }
+    pub fn timer<C>(&mut self) -> Builder<I, C> {
+        Builder { scope: self.take(), data: None }
     }
 }
 

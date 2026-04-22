@@ -89,13 +89,13 @@ where
     /// Executes the operator.
     fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {
         let Binding { scopes, inputs, mut output, .. } = ctx.bind();
-        scopes.into_iter().map(move |scope| {
-            let Some(value) = inputs.get(&scope).cloned() else {
-                output.remove(&scope);
+        scopes.into_iter().map(move |mut scope| {
+            let Some(value) = inputs.get(scope.key()).cloned() else {
+                output.remove(scope.key());
                 return scope.done();
             };
-            self.function.execute(&scope, &value)?;
-            output.insert((*scope).clone(), value.clone());
+            self.function.execute(&mut scope, &value)?;
+            output.insert(scope.key().clone(), value.clone());
             scope.done()
         })
     }

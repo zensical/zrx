@@ -32,6 +32,6 @@ mod scheduler;
 pub use scheduler::action;
 pub use scheduler::schedule::{self, Schedule};
 pub use scheduler::session::{self, Session};
-pub use scheduler::signal::{self, Id, Scope, Value};
+pub use scheduler::signal::{self, Id, Key, Value};
 pub use scheduler::step;
 pub use scheduler::Scheduler;

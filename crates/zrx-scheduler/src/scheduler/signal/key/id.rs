@@ -23,29 +23,45 @@
 
 // ----------------------------------------------------------------------------
 
-//! Scope error.
+//! Identifier.
 
-use std::result;
-use thiserror::Error;
+use std::fmt::{Debug, Display};
+use std::hash::Hash;
 
 // ----------------------------------------------------------------------------
-// Enums
+// Traits
 // ----------------------------------------------------------------------------
 
-/// Scope error.
-#[derive(Debug, Error)]
-pub enum Error {
-    /// Scope is empty.
-    #[error("scope is empty")]
-    Empty,
-    /// Scope is deeper than one level.
-    #[error("scope is deeper than one level")]
-    Depth,
+/// Identifier.
+///
+/// This trait defines the requirements for identifiers, which are the central
+/// means of identifying inputs and outputs of actions. Note that identifiers
+/// will mostly be encountered in the context of a [`Key`][], which allows for
+/// modelling the hierarchical structure of computations.
+///
+/// Identifiers are required to implement [`Eq`], [`Hash`] and [`Ord`], so they
+/// can be stored for stateful operators, whereas [`Display`] and [`Debug`] are
+/// required for tracing and debugging purposes. Of course, identifiers must be
+/// [`Send`] and [`Sync`] to be usable in worker threads. Types which implement
+/// all of those traits can be used as identifiers in the scheduler, because we
+/// provide a blanket implementation of this trait.
+///
+/// __Warning__: The `'static` lifetime which is required by this trait is a
+/// deliberate design choice to simplify passing data to threads. If we would
+/// not require the lifetime, we would need to add a lifetime parameter to all
+/// types consuming this trait, which is cumbersome to use.
+///
+/// [`Key`]: super::Key
+pub trait Id:
+    Clone + Debug + Display + Eq + Hash + Ord + Send + Sync + 'static
+{
 }
 
 // ----------------------------------------------------------------------------
-// Type aliases
+// Blanket implementations
 // ----------------------------------------------------------------------------
 
-/// Scope result.
-pub type Result<T = ()> = result::Result<T, Error>;
+#[rustfmt::skip]
+impl<T> Id for T
+where
+    T: Clone + Debug + Display + Eq + Hash + Ord + Send + Sync + 'static {}

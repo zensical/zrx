@@ -31,7 +31,7 @@ use zrx_store::Collection;
 
 use crate::scheduler::action::{Action, Options};
 use crate::scheduler::signal::Diff;
-use crate::scheduler::signal::{Id, Scope, Value};
+use crate::scheduler::signal::{Id, Key, Value};
 
 use super::error::Result;
 use super::graph::{Descriptor, Handler, Node, Source, Worker};
@@ -63,7 +63,7 @@ where
     /// Action options.
     options: Options,
     /// Action storage.
-    storage: Option<Storage<Scope<I>, A::Output<'a>>>,
+    storage: Option<Storage<Key<I>, A::Output<'a>>>,
 }
 
 // ----------------------------------------------------------------------------
@@ -97,7 +97,7 @@ where
     #[must_use]
     pub fn with_storage<S>(mut self, storage: S) -> Self
     where
-        S: Collection<Scope<I>, A::Output<'a>>,
+        S: Collection<Key<I>, A::Output<'a>>,
     {
         self.storage = Some(Storage::new(storage));
         self
@@ -178,7 +178,7 @@ where
         ));
 
         // Create action storage from subscriber
-        let n = self.storages.insert(Storage::<Scope<I>, T>::default());
+        let n = self.storages.insert(Storage::<Key<I>, T>::default());
         debug_assert_eq!(n, target);
 
         // Return target node

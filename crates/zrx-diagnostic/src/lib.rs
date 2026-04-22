@@ -28,5 +28,4 @@
 mod diagnostic;
 
 pub use diagnostic::location::{self, Location, Position, Range};
-pub use diagnostic::report::{self, ResultExt};
 pub use diagnostic::{Diagnostic, IntoDiagnostic, Severity, Tag};
