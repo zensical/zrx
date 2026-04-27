@@ -50,6 +50,7 @@ zrx-store = { version = "0.0.10", path = "crates/zrx-store" }
 zrx-stream = { version = "0.0.19", path = "crates/zrx-stream" }
 
 ahash = "0.8.12"
+anyhow = "1.0.102"
 crossbeam = "0.8.4"
 file-id = "0.2.3"
 globset = "0.4.18"
