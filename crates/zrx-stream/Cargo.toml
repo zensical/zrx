@@ -23,7 +23,7 @@
 
 [package]
 name = "zrx-stream"
-version = "0.0.19"
+version = "0.0.20"
 description = "Stream interface"
 edition.workspace = true
 rust-version.workspace = true
