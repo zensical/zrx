@@ -25,27 +25,12 @@
 
 //! Step error conversions.
 
-use std::error;
-
 use crate::scheduler::signal::Value;
 
 use super::Error;
 
 // ----------------------------------------------------------------------------
 // Traits
-// ----------------------------------------------------------------------------
-
-/// Conversion into [`Error`].
-pub trait IntoError {
-    /// Converts into a step error.
-    ///
-    /// This method is intended to be used within [`Action::execute`][], to make
-    /// it convenient to convert an arbitrary error into a step error.
-    ///
-    /// [`Action::execute`]: crate::scheduler::action::Action::execute
-    fn into_error(self) -> Error;
-}
-
 // ----------------------------------------------------------------------------
 
 /// Conversion into [`Result`].
@@ -62,54 +47,15 @@ pub trait IntoResult<T = ()>: Sized {
 // Blanket implementations
 // ----------------------------------------------------------------------------
 
-impl<E> IntoError for E
-where
-    E: error::Error + Send + 'static,
-{
-    /// Converts any error into a step error.
-    ///
-    /// This implementation attempts to downcast the error into one of the known
-    /// variants, and falls back to the [`Error::Other`] variant in other cases.
-    /// It also ensures that the error is not double-boxed, returning unknown
-    /// errors captured by the [`Error::Other`] variant unchanged.
-    #[inline]
-    fn into_error(self) -> Error {
-        let mut err: Box<dyn error::Error + Send> = Box::new(self);
-        err = match err.downcast() {
-            Ok(err) => return *err,
-            Err(err) => err,
-        };
-
-        // Implements downcast attempt of error
-        macro_rules! downcast {
-            ($variant:path) => {
-                err = match err.downcast() {
-                    Ok(err) => return $variant(*err),
-                    Err(err) => err,
-                }
-            };
-        }
-
-        // Downcast known error variants
-        downcast!(Error::Session);
-        downcast!(Error::Key);
-
-        // Handle unknown error variants
-        Error::Other(err)
-    }
-}
-
-// ----------------------------------------------------------------------------
-
 impl<T, E> IntoResult<T> for Result<T, E>
 where
     T: Value,
-    E: IntoError,
+    E: Into<anyhow::Error>,
 {
     /// Converts any result into a step result.
     #[inline]
     fn into_result(self) -> Result<T, Error> {
-        self.map_err(IntoError::into_error)
+        self.map_err(into_error)
     }
 }
 
@@ -122,4 +68,70 @@ where
     fn into_result(self) -> Result<T, Error> {
         Ok(self)
     }
+}
+
+// ----------------------------------------------------------------------------
+// Macros
+// ----------------------------------------------------------------------------
+
+// Implements step error conversion for concrete types.
+macro_rules! impl_into_result {
+    ($($T:ty),+ $(,)?) => {
+        $(
+            impl<E> IntoResult<$T> for Result<$T, E>
+            where
+                E: Into<anyhow::Error>,
+            {
+                #[inline]
+                fn into_result(self) -> Result<$T, Error> {
+                    self.map_err(into_error)
+                }
+            }
+
+            impl IntoResult<$T> for $T {
+                #[inline]
+                fn into_result(self) -> Result<$T, Error> {
+                    Ok(self)
+                }
+            }
+        )+
+    };
+}
+
+// ----------------------------------------------------------------------------
+
+impl_into_result!(bool);
+
+// ----------------------------------------------------------------------------
+// Functions
+// ----------------------------------------------------------------------------
+
+/// Converts any error into a step error.
+///
+/// This implementation attempts to downcast the error into one of the known
+/// variants, and falls back to the [`Error::Other`] variant which will convert
+/// into [`anyhow::Error`] if the error to allow for flexible integration with
+/// external error types.
+fn into_error<E>(err: E) -> Error
+where
+    E: Into<anyhow::Error>,
+{
+    let mut err = err.into();
+
+    // Implements downcast attempt of error
+    macro_rules! downcast {
+        ($variant:path) => {
+            err = match err.downcast() {
+                Ok(err) => return $variant(err),
+                Err(err) => err,
+            };
+        };
+    }
+
+    // Downcast known error variants
+    downcast!(Error::Session);
+    downcast!(Error::Key);
+
+    // Handle unknown error variants
+    Error::Other(err)
 }

@@ -44,6 +44,7 @@ zrx-storage.workspace = true
 zrx-store.workspace = true
 
 ahash.workspace = true
+anyhow.workspace = true
 crossbeam.workspace = true
 slab.workspace = true
 thiserror.workspace = true

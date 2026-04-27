@@ -27,7 +27,7 @@
 
 use std::any::Any;
 use std::panic::{self, AssertUnwindSafe};
-use std::{error, result};
+use std::result;
 use thiserror::Error;
 
 use crate::scheduler::session;
@@ -35,7 +35,7 @@ use crate::scheduler::signal::key;
 
 mod convert;
 
-pub use convert::{IntoError, IntoResult};
+pub use convert::IntoResult;
 
 // ----------------------------------------------------------------------------
 // Enums
@@ -53,8 +53,8 @@ pub use convert::{IntoError, IntoResult};
 /// should never be used in external code. As such, we're allowed to freely add
 /// new variants, moving errors out of [`Error::Other`] when necessary.
 ///
-/// In order to integrate with error types that are not already covered by the
-/// existing variants, the [`IntoError`] conversion trait is provided.
+/// In order to integrate with user-provided error types that are not covered
+/// by the existing variants, the [`anyhow`] crate is used as a catch-all.
 ///
 /// [`Action`]: crate::scheduler::action::Action
 /// [`Steps`]: crate::scheduler::step::Steps
@@ -68,7 +68,7 @@ pub enum Error {
     Key(#[from] key::Error),
     /// Other error.
     #[error(transparent)]
-    Other(#[from] Box<dyn error::Error + Send>),
+    Other(#[from] anyhow::Error),
     /// Caught panic.
     #[error("caught panic")]
     Panic(Box<dyn Any + Send>),
@@ -100,7 +100,7 @@ pub type Result<T = ()> = result::Result<T, Error>;
 ///
 /// This function uses [`AssertUnwindSafe`] to wrap the provided closure, which
 /// suppresses the compiler's unwind-safety checks. This is sound here because
-/// the closure and all state it captures are discarded immediately after a
+/// the closure and all state it captures are discarded immediately after the
 /// panic is caught – the [`Error::Panic`] variant owns the panic payload, but
 /// nothing from the closure's captured environment is accessed or reused
 /// afterwards. Callers must ensure that any side effects performed before the
