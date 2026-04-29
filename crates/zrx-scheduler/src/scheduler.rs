@@ -40,6 +40,7 @@ pub mod session;
 pub mod signal;
 pub mod step;
 
+use action::Result;
 use engine::queue::{Tasks, Timers};
 use engine::{Actions, AsReceiver, Token, TokenFull};
 use router::Router;
@@ -129,27 +130,30 @@ where
     }
 
     /// Processes the next tick.
+    #[allow(clippy::missing_errors_doc)]
     #[inline]
-    pub fn tick(&mut self) {
-        self.process(None);
+    pub fn tick(&mut self) -> Result {
+        self.process(None)
     }
 
     /// Processes the next tick, waiting until the given deadline.
+    #[allow(clippy::missing_errors_doc)]
     #[inline]
-    pub fn tick_deadline<T>(&mut self, deadline: T)
+    pub fn tick_deadline<T>(&mut self, deadline: T) -> Result
     where
         T: IntoInstant,
     {
-        self.process(Some(deadline.into_instant()));
+        self.process(Some(deadline.into_instant()))
     }
 
     /// Processes the next tick, waiting for the given timeout.
+    #[allow(clippy::missing_errors_doc)]
     #[inline]
-    pub fn tick_timeout<T>(&mut self, timeout: T)
+    pub fn tick_timeout<T>(&mut self, timeout: T) -> Result
     where
         T: IntoDuration,
     {
-        self.process(Some(timeout.into_duration().into_instant()));
+        self.process(Some(timeout.into_duration().into_instant()))
     }
 
     /// Processes the next tick.
@@ -170,16 +174,16 @@ where
         feature = "tracing",
         tracing::instrument(level = "trace", skip_all)
     )]
-    fn process(&mut self, deadline: Option<Instant>) {
-        self.process_timers();
-        self.process_tasks();
+    fn process(&mut self, deadline: Option<Instant>) -> Result {
+        self.process_timers()?;
+        self.process_tasks()?;
 
         // Check, if there's at least one action that can be scheduled, and if
         // so, run it. Otherwise, if the queue is empty, enter waiting phase.
         if self.actions.is_empty() {
-            self.waiting(deadline.or(self.is_empty().then(Instant::now)));
+            self.waiting(deadline.or(self.is_empty().then(Instant::now)))
         } else {
-            self.running();
+            self.running()
         }
     }
 
@@ -188,7 +192,7 @@ where
         feature = "tracing",
         tracing::instrument(level = "debug", skip_all)
     )]
-    fn process_timers(&mut self) {
+    fn process_timers(&mut self) -> Result {
         while let Some((token, steps)) = self.timers.take() {
             self.handle(
                 Token {
@@ -196,8 +200,9 @@ where
                     node: token.node,
                 },
                 steps,
-            );
+            )?;
         }
+        Ok(())
     }
 
     /// Processes tasks.
@@ -205,20 +210,21 @@ where
         feature = "tracing",
         tracing::instrument(level = "debug", skip_all)
     )]
-    fn process_tasks(&mut self) {
+    fn process_tasks(&mut self) -> Result {
         while let Some((token, res)) = self.tasks.take() {
             self.handle(
                 Token {
                     module: token.module,
                     node: token.node,
                 },
-                res.unwrap(),
-            );
+                res?,
+            )?;
         }
 
         // Queue next tasks - this method returns whether any new tasks could
         // be submitted, and if there were some in the queue.
         self.tasks.update();
+        Ok(())
     }
 
     /// Waiting phase - the scheduler can't make progress on any of the active
@@ -231,7 +237,7 @@ where
         feature = "tracing",
         tracing::instrument(level = "debug", skip_all)
     )]
-    fn waiting(&mut self, deadline: Option<Instant>) {
+    fn waiting(&mut self, deadline: Option<Instant>) -> Result {
         let mut select = Select::new();
         assert_eq!(0, select.recv(self.timers.as_receiver()));
         assert_eq!(1, select.recv(self.tasks.as_receiver()));
@@ -241,7 +247,7 @@ where
         let n = if let Some(deadline) = deadline {
             match select.ready_deadline(deadline) {
                 Ok(ready) => ready,
-                Err(_) => return,
+                Err(_) => return Ok(()),
             }
         } else {
             select.ready()
@@ -255,6 +261,7 @@ where
                 for token in self.router.poll(n - 2) {
                     self.actions.submit(token);
                 }
+                Ok(())
             }
         }
     }
@@ -264,10 +271,10 @@ where
         feature = "tracing",
         tracing::instrument(level = "debug", skip_all)
     )]
-    fn running(&mut self) {
+    fn running(&mut self) -> Result {
         while let Some((token, steps)) = self.actions.take() {
             for res in steps {
-                self.handle(token, res.unwrap());
+                self.handle(token, res?)?;
             }
 
             // In case timers or tasks became ready in the meantime, we break
@@ -276,6 +283,7 @@ where
                 break;
             }
         }
+        Ok(())
     }
 
     /// Handle the given steps for the given token.
@@ -283,7 +291,7 @@ where
         feature = "tracing",
         tracing::instrument(level = "trace", skip_all)
     )]
-    fn handle(&mut self, token: Token, steps: Steps<I>) {
+    fn handle(&mut self, token: Token, steps: Steps<I>) -> Result {
         for step in steps {
             let Step { mut scope, effect } = step;
 
@@ -293,7 +301,7 @@ where
                 Effect::Then(then) => {
                     let (token, inner) = self.actions.resume(token, then);
                     for res in inner {
-                        self.handle(token, res.unwrap());
+                        self.handle(token, res?)?;
                     }
                 }
                 Effect::Timer(timer) => {
@@ -321,6 +329,7 @@ where
                 }
             }
         }
+        Ok(())
     }
 }
 
