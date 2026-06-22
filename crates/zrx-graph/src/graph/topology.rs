@@ -25,8 +25,7 @@
 
 //! Topology.
 
-use std::cell::OnceCell;
-use std::rc::Rc;
+use std::sync::{Arc, OnceLock};
 
 use super::builder::Edge;
 
@@ -55,7 +54,7 @@ pub use distance::Distance;
 #[derive(Clone, Debug)]
 pub struct Topology {
     /// Inner state.
-    inner: Rc<Inner>,
+    inner: Arc<Inner>,
 }
 
 // ----------------------------------------------------------------------------
@@ -68,7 +67,7 @@ struct Inner {
     /// Incoming edges.
     incoming: Adjacency,
     /// Distance matrix (computed on first access).
-    distance: OnceCell<Distance>,
+    distance: OnceLock<Distance>,
 }
 
 // ----------------------------------------------------------------------------
@@ -111,10 +110,10 @@ impl Topology {
     #[must_use]
     pub fn new(nodes: usize, edges: &[Edge]) -> Self {
         Self {
-            inner: Rc::new(Inner {
+            inner: Arc::new(Inner {
                 outgoing: Adjacency::outgoing(nodes, edges),
                 incoming: Adjacency::incoming(nodes, edges),
-                distance: OnceCell::new(),
+                distance: OnceLock::new(),
             }),
         }
     }
@@ -177,7 +176,7 @@ impl PartialEq for Topology {
     /// ```
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.inner, &other.inner)
+        Arc::ptr_eq(&self.inner, &other.inner)
     }
 }
 
