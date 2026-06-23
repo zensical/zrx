@@ -59,10 +59,10 @@ impl Transitive {
         Self { distance: Distance::new(adj) }
     }
 
-    /// Returns whether the target node is reachable from the source node.
+    /// Returns whether there is a path from the source to the target.
     #[inline]
     #[must_use]
-    pub fn is_reachable(&self, source: usize, target: usize) -> bool {
-        self.distance.is_reachable(source, target)
+    pub fn has_path(&self, source: usize, target: usize) -> bool {
+        self.distance.has_path(source, target)
     }
 }

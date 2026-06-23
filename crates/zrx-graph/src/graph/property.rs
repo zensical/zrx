@@ -288,7 +288,7 @@ impl<T> Graph<T, Transitive> {
     #[inline]
     #[must_use]
     pub fn is_ancestor(&self, source: usize, target: usize) -> bool {
-        self.topology.is_reachable(source, target)
+        self.topology.has_path(source, target)
     }
 
     /// Returns whether the source node is a descendant of the target node.
@@ -327,6 +327,6 @@ impl<T> Graph<T, Transitive> {
     #[inline]
     #[must_use]
     pub fn is_descendant(&self, source: usize, target: usize) -> bool {
-        self.topology.is_reachable(target, source)
+        self.topology.has_path(target, source)
     }
 }

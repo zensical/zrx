@@ -119,7 +119,7 @@ impl Iterator for FilterSources<'_> {
             // Emit the node if it's a source, which is true if it can't be
             // reached from any other node in the set through any path
             if !self.nodes.iter().any(|&ancestor| {
-                node != ancestor && self.topology.is_reachable(ancestor, node)
+                node != ancestor && self.topology.has_path(ancestor, node)
             }) {
                 return Some(node);
             }

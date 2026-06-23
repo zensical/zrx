@@ -119,8 +119,7 @@ impl Iterator for FilterSinks<'_> {
             // Emit the node if it's a sink, which is true if all other nodes
             // in the set are not reachable from it through any path
             if !self.nodes.iter().any(|&descendant| {
-                node != descendant
-                    && self.topology.is_reachable(node, descendant)
+                node != descendant && self.topology.has_path(node, descendant)
             }) {
                 return Some(node);
             }

@@ -74,10 +74,10 @@ impl Distance {
         dist
     }
 
-    /// Returns whether the target node is reachable from the source node.
+    /// Returns whether there is a path from the source to the target.
     #[inline]
     #[must_use]
-    pub fn is_reachable(&self, source: usize, target: usize) -> bool {
+    pub fn has_path(&self, source: usize, target: usize) -> bool {
         self[source][target] != u8::MAX
     }
 }

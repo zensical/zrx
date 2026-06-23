@@ -127,7 +127,7 @@ impl Traversal {
             // dependencies that are not reachable from the initial nodes
             for &dependency in &incoming[node] {
                 let mut iter = initial.as_ref().iter();
-                if !iter.any(|&n| topology.is_reachable(n, dependency)) {
+                if !iter.any(|&n| topology.has_path(n, dependency)) {
                     dependencies[node] -= 1;
                 }
             }

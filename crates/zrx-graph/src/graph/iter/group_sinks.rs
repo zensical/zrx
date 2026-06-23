@@ -105,8 +105,7 @@ impl<K> Iterator for GroupSinks<'_, K> {
         let (key, nodes) = self.inner.next()?;
         let iter = nodes.iter().copied().filter(|&node| {
             !nodes.iter().any(|&descendant| {
-                node != descendant
-                    && self.topology.is_reachable(node, descendant)
+                node != descendant && self.topology.has_path(node, descendant)
             })
         });
 

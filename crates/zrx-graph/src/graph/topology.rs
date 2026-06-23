@@ -64,7 +64,7 @@ struct Inner<R> {
     outgoing: Adjacency,
     /// Incoming edges.
     incoming: Adjacency,
-    /// Reachability state.
+    /// Reachability.
     reachability: R,
 }
 
@@ -161,6 +161,15 @@ impl Topology<Direct> {
     }
 }
 
+impl Topology<Transitive> {
+    /// Returns whether there is a path from the source to the target.
+    #[inline]
+    #[must_use]
+    pub fn has_path(&self, source: usize, target: usize) -> bool {
+        self.inner.reachability.has_path(source, target)
+    }
+}
+
 #[allow(clippy::must_use_candidate)]
 impl<R> Topology<R> {
     /// Returns a reference to the outgoing edges.
@@ -173,15 +182,6 @@ impl<R> Topology<R> {
     #[inline]
     pub fn incoming(&self) -> &Adjacency {
         &self.inner.incoming
-    }
-}
-
-#[allow(clippy::must_use_candidate)]
-impl Topology<Transitive> {
-    /// Returns whether the target node is reachable from the source node.
-    #[inline]
-    pub fn is_reachable(&self, source: usize, target: usize) -> bool {
-        self.inner.reachability.is_reachable(source, target)
     }
 }
 

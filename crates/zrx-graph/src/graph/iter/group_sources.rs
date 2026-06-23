@@ -105,7 +105,7 @@ impl<K> Iterator for GroupSources<'_, K> {
         let (key, nodes) = self.inner.next()?;
         let iter = nodes.iter().copied().filter(|&node| {
             !nodes.iter().any(|&ancestor| {
-                node != ancestor && self.topology.is_reachable(ancestor, node)
+                node != ancestor && self.topology.has_path(ancestor, node)
             })
         });
 

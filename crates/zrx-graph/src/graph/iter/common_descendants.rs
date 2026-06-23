@@ -96,7 +96,7 @@ impl<T> Graph<T, Transitive> {
         let mut descendants = BTreeSet::new();
         for descendant in self {
             let mut iter = nodes.iter();
-            if iter.all(|&node| self.topology.is_reachable(node, descendant)) {
+            if iter.all(|&node| self.topology.has_path(node, descendant)) {
                 descendants.insert(descendant);
             }
         }
@@ -130,7 +130,7 @@ impl Iterator for CommonDescendants<'_> {
         for &descendant in &self.descendants {
             let mut iter = self.descendants.iter();
             if !iter.any(|&node| {
-                node != descendant && self.topology.is_reachable(node, descendant)
+                node != descendant && self.topology.has_path(node, descendant)
             }) {
                 layer.push(descendant);
             }
