@@ -27,13 +27,14 @@
 
 use std::collections::VecDeque;
 
+use super::topology::Transitive;
 use super::Graph;
 
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, R> Graph<T, R> {
     /// Returns whether the given node is a source.
     ///
     /// # Panics
@@ -45,7 +46,7 @@ impl<T> Graph<T> {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::{Graph, Topology};
+    /// use zrx_graph::Graph;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();
@@ -85,7 +86,7 @@ impl<T> Graph<T> {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::{Graph, Topology};
+    /// use zrx_graph::Graph;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();
@@ -114,86 +115,6 @@ impl<T> Graph<T> {
         outgoing[node].is_empty()
     }
 
-    /// Returns whether the source node is an ancestor of the target node.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the node does not exist.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::{Graph, Topology};
-    ///
-    /// // Create graph builder and add nodes
-    /// let mut builder = Graph::builder();
-    /// let a = builder.add_node("a");
-    /// let b = builder.add_node("b");
-    /// let c = builder.add_node("c");
-    ///
-    /// // Create edges between nodes
-    /// builder.add_edge(a, b)?;
-    /// builder.add_edge(b, c)?;
-    ///
-    /// // Create graph from builder
-    /// let graph = builder.build();
-    ///
-    /// // Ensure nodes are ancestors (or not)
-    /// assert_eq!(graph.is_ancestor(a, b), true);
-    /// assert_eq!(graph.is_ancestor(a, c), true);
-    /// assert_eq!(graph.is_ancestor(b, a), false);
-    /// # Ok(())
-    /// # }
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn is_ancestor(&self, source: usize, target: usize) -> bool {
-        let distance = self.topology.distance();
-        distance[source][target] != u8::MAX
-    }
-
-    /// Returns whether the source node is a descendant of the target node.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the node does not exist.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::{Graph, Topology};
-    ///
-    /// // Create graph builder and add nodes
-    /// let mut builder = Graph::builder();
-    /// let a = builder.add_node("a");
-    /// let b = builder.add_node("b");
-    /// let c = builder.add_node("c");
-    ///
-    /// // Create edges between nodes
-    /// builder.add_edge(a, b)?;
-    /// builder.add_edge(b, c)?;
-    ///
-    /// // Create graph from builder
-    /// let graph = builder.build();
-    ///
-    /// // Ensure nodes are descendants (or not)
-    /// assert_eq!(graph.is_descendant(b, a), true);
-    /// assert_eq!(graph.is_descendant(c, a), true);
-    /// assert_eq!(graph.is_descendant(a, b), false);
-    /// # Ok(())
-    /// # }
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn is_descendant(&self, source: usize, target: usize) -> bool {
-        let distance = self.topology.distance();
-        distance[target][source] != u8::MAX
-    }
-
     /// Returns whether the source node is a predecessor of the target node.
     ///
     /// # Panics
@@ -205,7 +126,7 @@ impl<T> Graph<T> {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::{Graph, Topology};
+    /// use zrx_graph::Graph;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();
@@ -230,8 +151,8 @@ impl<T> Graph<T> {
     #[inline]
     #[must_use]
     pub fn is_predecessor(&self, source: usize, target: usize) -> bool {
-        let distance = self.topology.distance();
-        distance[source][target] == 1
+        let outgoing = self.topology.outgoing();
+        outgoing[source].contains(&target)
     }
 
     /// Returns whether the source node is a successor of the target node.
@@ -245,7 +166,7 @@ impl<T> Graph<T> {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::{Graph, Topology};
+    /// use zrx_graph::Graph;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();
@@ -270,8 +191,8 @@ impl<T> Graph<T> {
     #[inline]
     #[must_use]
     pub fn is_successor(&self, source: usize, target: usize) -> bool {
-        let distance = self.topology.distance();
-        distance[target][source] == 1
+        let incoming = self.topology.incoming();
+        incoming[source].contains(&target)
     }
 
     /// Returns whether the graph is acyclic.
@@ -327,5 +248,85 @@ impl<T> Graph<T> {
 
         // Graph is acyclic if all nodes were visited
         visited == self.len()
+    }
+}
+
+impl<T> Graph<T, Transitive> {
+    /// Returns whether the source node is an ancestor of the target node.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the node does not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_graph::Graph;
+    ///
+    /// // Create graph builder and add nodes
+    /// let mut builder = Graph::builder();
+    /// let a = builder.add_node("a");
+    /// let b = builder.add_node("b");
+    /// let c = builder.add_node("c");
+    ///
+    /// // Create edges between nodes
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
+    ///
+    /// // Create graph from builder
+    /// let graph = builder.build().into_transitive();
+    ///
+    /// // Ensure nodes are ancestors (or not)
+    /// assert_eq!(graph.is_ancestor(a, b), true);
+    /// assert_eq!(graph.is_ancestor(a, c), true);
+    /// assert_eq!(graph.is_ancestor(b, a), false);
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn is_ancestor(&self, source: usize, target: usize) -> bool {
+        self.topology.is_reachable(source, target)
+    }
+
+    /// Returns whether the source node is a descendant of the target node.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the node does not exist.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_graph::Graph;
+    ///
+    /// // Create graph builder and add nodes
+    /// let mut builder = Graph::builder();
+    /// let a = builder.add_node("a");
+    /// let b = builder.add_node("b");
+    /// let c = builder.add_node("c");
+    ///
+    /// // Create edges between nodes
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
+    ///
+    /// // Create graph from builder
+    /// let graph = builder.build().into_transitive();
+    ///
+    /// // Ensure nodes are descendants (or not)
+    /// assert_eq!(graph.is_descendant(b, a), true);
+    /// assert_eq!(graph.is_descendant(c, a), true);
+    /// assert_eq!(graph.is_descendant(a, b), false);
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn is_descendant(&self, source: usize, target: usize) -> bool {
+        self.topology.is_reachable(target, source)
     }
 }

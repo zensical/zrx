@@ -27,7 +27,7 @@
 
 use std::collections::btree_map::{self, BTreeMap};
 
-use crate::graph::topology::Distance;
+use crate::graph::topology::{Topology, Transitive};
 use crate::graph::Graph;
 
 // ----------------------------------------------------------------------------
@@ -36,8 +36,8 @@ use crate::graph::Graph;
 
 /// Iterator over sources of each key-group.
 pub struct GroupSources<'a, K> {
-    /// Distance matrix.
-    distance: &'a Distance,
+    /// Graph topology.
+    topology: &'a Topology<Transitive>,
     /// Iterator over groups.
     inner: btree_map::IntoIter<K, Vec<usize>>,
 }
@@ -46,7 +46,7 @@ pub struct GroupSources<'a, K> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T> Graph<T, Transitive> {
     /// Creates an iterator over the sources of each key-group.
     ///
     /// # Examples
@@ -67,7 +67,7 @@ impl<T> Graph<T> {
     /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
-    /// let graph = builder.build();
+    /// let graph = builder.build().into_transitive();
     ///
     /// // Create iterator over sources of key-groups
     /// for (key, nodes) in graph.group_sources(|node| node.len()) {
@@ -87,7 +87,7 @@ impl<T> Graph<T> {
             groups.entry(f(&self[node])).or_default().push(node);
         }
         GroupSources {
-            distance: self.topology.distance(),
+            topology: &self.topology,
             inner: groups.into_iter(),
         }
     }
@@ -105,7 +105,7 @@ impl<K> Iterator for GroupSources<'_, K> {
         let (key, nodes) = self.inner.next()?;
         let iter = nodes.iter().copied().filter(|&node| {
             !nodes.iter().any(|&ancestor| {
-                node != ancestor && self.distance[ancestor][node] != u8::MAX
+                node != ancestor && self.topology.is_reachable(ancestor, node)
             })
         });
 

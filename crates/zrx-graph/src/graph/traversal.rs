@@ -29,7 +29,7 @@ use ahash::HashSet;
 use std::collections::VecDeque;
 use std::mem;
 
-use super::topology::Topology;
+use super::topology::{Topology, Transitive};
 use super::Graph;
 
 mod error;
@@ -60,7 +60,7 @@ pub use into_iter::IntoIter;
 #[derive(Clone, Debug)]
 pub struct Traversal {
     /// Graph topology.
-    topology: Topology,
+    topology: Topology<Transitive>,
     /// Dependency counts.
     dependencies: Vec<u8>,
     /// Initial nodes.
@@ -99,7 +99,7 @@ impl Traversal {
     /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
-    /// let graph = builder.build();
+    /// let graph = builder.build().into_transitive();
     ///
     /// // Create topological traversal
     /// let traversal = Traversal::new(graph.topology(), [a]);
@@ -107,16 +107,15 @@ impl Traversal {
     /// # }
     /// ```
     #[must_use]
-    pub fn new<I>(topology: &Topology, initial: I) -> Self
+    pub fn new<I>(topology: &Topology<Transitive>, initial: I) -> Self
     where
         I: AsRef<[usize]>,
     {
         let mut visitable: VecDeque<_> =
             unique(initial.as_ref().iter()).collect();
 
-        // Obtain incoming edges and distance matrix
+        // Obtain incoming edges.
         let incoming = topology.incoming();
-        let distance = topology.distance();
 
         // When doing a topological traversal, we only visit a node once all of
         // its dependencies have been visited. This means that we need to track
@@ -128,7 +127,7 @@ impl Traversal {
             // dependencies that are not reachable from the initial nodes
             for &dependency in &incoming[node] {
                 let mut iter = initial.as_ref().iter();
-                if !iter.any(|&n| distance[n][dependency] != u8::MAX) {
+                if !iter.any(|&n| topology.is_reachable(n, dependency)) {
                     dependencies[node] -= 1;
                 }
             }
@@ -165,7 +164,7 @@ impl Traversal {
     /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
-    /// let graph = builder.build();
+    /// let graph = builder.build().into_transitive();
     ///
     /// // Create topological traversal
     /// let mut traversal = graph.traverse([a]);
@@ -221,7 +220,7 @@ impl Traversal {
     /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
-    /// let graph = builder.build();
+    /// let graph = builder.build().into_transitive();
     ///
     /// // Create topological traversal
     /// let mut traversal = graph.traverse([a]);
@@ -312,7 +311,7 @@ impl Traversal {
     /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
-    /// let graph = builder.build();
+    /// let graph = builder.build().into_transitive();
     ///
     /// // Create topological traversal
     /// let mut traversal = graph.traverse([a]);
@@ -383,7 +382,7 @@ impl Traversal {
 impl Traversal {
     /// Returns a reference to the graph topology.
     #[inline]
-    pub fn topology(&self) -> &Topology {
+    pub fn topology(&self) -> &Topology<Transitive> {
         &self.topology
     }
 
@@ -435,6 +434,7 @@ mod tests {
         #[test]
         fn handles_graph() {
             let graph = graph! {
+                transitive;
                 "a" => "b", "a" => "c",
                 "b" => "d", "b" => "e",
                 "c" => "f",
@@ -466,6 +466,7 @@ mod tests {
         #[test]
         fn handles_multi_graph() {
             let graph = graph! {
+                transitive;
                 "a" => "b", "a" => "c", "a" => "c",
                 "b" => "d", "b" => "e",
                 "c" => "f",
@@ -501,6 +502,7 @@ mod tests {
         #[test]
         fn handles_graph() {
             let graph = graph! {
+                transitive;
                 "a" => "b", "a" => "c",
                 "b" => "d", "b" => "e",
                 "c" => "f",
@@ -534,6 +536,7 @@ mod tests {
         #[test]
         fn handles_multi_graph() {
             let graph = graph! {
+                transitive;
                 "a" => "b", "a" => "c", "a" => "c",
                 "b" => "d", "b" => "e",
                 "c" => "f",

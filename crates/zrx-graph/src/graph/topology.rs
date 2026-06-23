@@ -25,15 +25,15 @@
 
 //! Topology.
 
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
 use super::builder::Edge;
 
 mod adjacency;
-mod distance;
+mod reachability;
 
 pub use adjacency::Adjacency;
-pub use distance::Distance;
+pub use reachability::{Direct, Transitive};
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -43,38 +43,36 @@ pub use distance::Distance;
 ///
 /// This data type represents the topology of a graph, which allows to find the
 /// outgoing and incoming edges for each node in linear time by using efficient
-/// adjacency lists. Note that our implementation does not support edge weights,
-/// as they're not necessary for scheduling purposes, and they would only add
-/// unnecessary complexity and overhead. The topology also contains the lazily
-/// computed [`Distance`] matrix that allows to find the shortest path between
-/// two nodes in the graph, or determine whether they're reachable at all.
+/// adjacency lists. Our implementation does not support edge weights, as they
+/// would add unnecessary complexity and overhead.
 ///
-/// [`Graph`]: crate::graph::Graph
-/// [`Traversal`]: crate::graph::traversal::Traversal
-#[derive(Clone, Debug)]
-pub struct Topology {
+/// Topologies can be [`Direct`] and [`Transitive`], the latter of which allows
+/// to determine whether one node is reachable from another. The [`Direct`]
+/// topology is the default, and can be converted on-demand.
+#[derive(Debug)]
+pub struct Topology<R = Direct> {
     /// Inner state.
-    inner: Arc<Inner>,
+    inner: Arc<Inner<R>>,
 }
 
 // ----------------------------------------------------------------------------
 
 /// Inner state.
 #[derive(Debug)]
-struct Inner {
+struct Inner<R> {
     /// Outgoing edges.
     outgoing: Adjacency,
     /// Incoming edges.
     incoming: Adjacency,
-    /// Distance matrix (computed on first access).
-    distance: OnceLock<Distance>,
+    /// Reachability state.
+    reachability: R,
 }
 
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl Topology {
+impl Topology<Direct> {
     /// Creates a topology of the given graph.
     ///
     /// This method constructs a topology from a graph's nodes and edges, and is
@@ -113,14 +111,58 @@ impl Topology {
             inner: Arc::new(Inner {
                 outgoing: Adjacency::outgoing(nodes, edges),
                 incoming: Adjacency::incoming(nodes, edges),
-                distance: OnceLock::new(),
+                reachability: Direct,
+            }),
+        }
+    }
+
+    /// Converts this topology into one with transitive reachability.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_graph::{Graph, Topology};
+    ///
+    /// // Create graph builder and add nodes
+    /// let mut builder = Graph::builder();
+    /// let a = builder.add_node("a");
+    /// let b = builder.add_node("b");
+    /// let c = builder.add_node("c");
+    ///
+    /// // Create edges between nodes
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
+    ///
+    /// // Create transitive topology
+    /// let topology = Topology::new(builder.len(), builder.edges())
+    ///     .into_transitive();
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[must_use]
+    pub fn into_transitive(self) -> Topology<Transitive> {
+        let inner = Arc::try_unwrap(self.inner) // fmt
+            .unwrap_or_else(|inner| Inner {
+                outgoing: inner.outgoing.clone(),
+                incoming: inner.incoming.clone(),
+                reachability: Direct,
+            });
+
+        // Create and return transitive topology
+        Topology {
+            inner: Arc::new(Inner {
+                reachability: Transitive::new(&inner.outgoing),
+                outgoing: inner.outgoing,
+                incoming: inner.incoming,
             }),
         }
     }
 }
 
 #[allow(clippy::must_use_candidate)]
-impl Topology {
+impl<R> Topology<R> {
     /// Returns a reference to the outgoing edges.
     #[inline]
     pub fn outgoing(&self) -> &Adjacency {
@@ -132,15 +174,14 @@ impl Topology {
     pub fn incoming(&self) -> &Adjacency {
         &self.inner.incoming
     }
+}
 
-    /// Returns a reference to the distance matrix.
+#[allow(clippy::must_use_candidate)]
+impl Topology<Transitive> {
+    /// Returns whether the target node is reachable from the source node.
     #[inline]
-    pub fn distance(&self) -> &Distance {
-        self.inner.distance.get_or_init(|| {
-            // Compute distance matrix on first access, since this incurs cost
-            // of O(n³) because of the usage of the Floyd-Warshall algorithm.
-            Distance::new(&self.inner.outgoing)
-        })
+    pub fn is_reachable(&self, source: usize, target: usize) -> bool {
+        self.inner.reachability.is_reachable(source, target)
     }
 }
 
@@ -148,7 +189,7 @@ impl Topology {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl PartialEq for Topology {
+impl<R> PartialEq for Topology<R> {
     /// Compares two topologies for equality.
     ///
     /// # Examples
@@ -180,4 +221,14 @@ impl PartialEq for Topology {
     }
 }
 
-impl Eq for Topology {}
+impl<R> Eq for Topology<R> {}
+
+// ----------------------------------------------------------------------------
+
+impl<R> Clone for Topology<R> {
+    /// Clones the topology.
+    #[inline]
+    fn clone(&self) -> Self {
+        Self { inner: self.inner.clone() }
+    }
+}

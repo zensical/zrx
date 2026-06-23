@@ -44,7 +44,7 @@ pub struct Sources<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, R> Graph<T, R> {
     /// Creates an iterator over the sources.
     ///
     /// This method returns an iterator over the source node indices of the

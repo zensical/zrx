@@ -27,7 +27,7 @@
 
 use std::ops::Index;
 
-use super::adjacency::Adjacency;
+use super::Adjacency;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -53,15 +53,6 @@ pub struct Distance {
 
 impl Distance {
     /// Creates a distance matrix.
-    ///
-    /// This method is called by [`Topology::new`][], and is not intended to be
-    /// used on its own, since an adjacency list is needed to create the matrix.
-    /// Computation is expensive, which is why [`Topology`] will defer creation
-    /// via [`OnceCell`], so it's only computed when first accessed.
-    ///
-    /// [`OnceCell`]: std::cell::OnceCell
-    /// [`Topology`]: crate::graph::topology::Topology
-    /// [`Topology::new`]: crate::graph::topology::Topology::new
     #[must_use]
     pub fn new(adj: &Adjacency) -> Self {
         let nodes = adj.len();
@@ -82,6 +73,13 @@ impl Distance {
         floyd_warshall(&mut dist);
         dist
     }
+
+    /// Returns whether the target node is reachable from the source node.
+    #[inline]
+    #[must_use]
+    pub fn is_reachable(&self, source: usize, target: usize) -> bool {
+        self[source][target] != u8::MAX
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -101,34 +99,6 @@ impl Index<usize> for Distance {
     /// # Panics
     ///
     /// Panics if the index is out of bounds.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::topology::Topology;
-    /// use zrx_graph::Graph;
-    ///
-    /// // Create graph builder and add nodes
-    /// let mut builder = Graph::builder();
-    /// let a = builder.add_node("a");
-    /// let b = builder.add_node("b");
-    /// let c = builder.add_node("c");
-    ///
-    /// // Create edges between nodes
-    /// builder.add_edge(a, b)?;
-    /// builder.add_edge(b, c)?;
-    ///
-    /// // Create topology
-    /// let topology = Topology::new(builder.len(), builder.edges());
-    ///
-    /// // Obtain distance matrix
-    /// let dist = topology.distance();
-    /// assert_eq!(dist[a][c], 2);
-    /// # Ok(())
-    /// # }
-    /// ```
     #[inline]
     fn index(&self, index: usize) -> &Self::Output {
         let start = index * self.rows;

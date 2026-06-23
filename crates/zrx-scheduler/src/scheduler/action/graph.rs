@@ -25,7 +25,8 @@
 
 //! Action graph.
 
-use zrx_graph as graph;
+use zrx_graph::topology::Transitive;
+use zrx_graph::{self as graph};
 
 mod descriptor;
 mod node;
@@ -41,4 +42,4 @@ pub use node::{Handler, Node, Source, Worker};
 pub type Builder<I> = graph::Builder<Node<I>>;
 
 /// Action graph.
-pub type Graph<I> = graph::Graph<Node<I>>;
+pub type Graph<I> = graph::Graph<Node<I>, Transitive>;

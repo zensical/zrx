@@ -38,7 +38,7 @@ pub mod traversal;
 
 pub use builder::Builder;
 pub use error::{Error, Result};
-use topology::Topology;
+use topology::{Direct, Topology, Transitive};
 use traversal::Traversal;
 
 // ----------------------------------------------------------------------------
@@ -77,7 +77,7 @@ use traversal::Traversal;
 /// builder.add_edge(b, c)?;
 ///
 /// // Create graph from builder
-/// let graph = builder.build();
+/// let graph = builder.build().into_transitive();
 ///
 /// // Create topological traversal
 /// let mut traversal = graph.traverse([a]);
@@ -89,65 +89,18 @@ use traversal::Traversal;
 /// # }
 /// ```
 #[derive(Clone, Debug)]
-pub struct Graph<T> {
+pub struct Graph<T, R = Direct> {
     /// Graph data.
     data: Vec<T>,
     /// Graph topology.
-    topology: Topology,
+    topology: Topology<R>,
 }
 
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
-    /// Creates a topogical traversal starting from the given initial nodes.
-    ///
-    /// This method creates a topological traversal of the graph, which allows
-    /// to visit nodes in a topological order, i.e., visiting a node only after
-    /// all of its dependencies have been visited. The traversal is initialized
-    /// with the given initial nodes, which are the starting points.
-    ///
-    /// Note that an arbitrary number of parallel traversals can be created
-    /// from the same graph, as the underlying topology is shared between them.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::Graph;
-    ///
-    /// // Create graph builder and add nodes
-    /// let mut builder = Graph::builder();
-    /// let a = builder.add_node("a");
-    /// let b = builder.add_node("b");
-    /// let c = builder.add_node("c");
-    ///
-    /// // Create edges between nodes
-    /// builder.add_edge(a, b)?;
-    /// builder.add_edge(b, c)?;
-    ///
-    /// // Create graph from builder
-    /// let graph = builder.build();
-    ///
-    /// // Create topological traversal
-    /// let mut traversal = graph.traverse([a]);
-    /// while let Some(node) = traversal.take() {
-    ///     println!("{node:?}");
-    ///     traversal.complete(node)?;
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
-    #[inline]
-    pub fn traverse<I>(&self, initial: I) -> Traversal
-    where
-        I: AsRef<[usize]>,
-    {
-        Traversal::new(&self.topology, initial)
-    }
-
+impl<T, R> Graph<T, R> {
     /// Creates an iterator over the graph.
     ///
     /// This iterator emits the node indices, which is exactly the same as
@@ -188,11 +141,94 @@ impl<T> Graph<T> {
     }
 }
 
+impl<T> Graph<T, Direct> {
+    /// Converts this graph into one with transitive reachability.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_graph::Graph;
+    ///
+    /// // Create graph builder and add nodes
+    /// let mut builder = Graph::builder();
+    /// let a = builder.add_node("a");
+    /// let b = builder.add_node("b");
+    /// let c = builder.add_node("c");
+    ///
+    /// // Create edges between nodes
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
+    ///
+    /// // Create graph from builder
+    /// let graph = builder.build().into_transitive();
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[must_use]
+    pub fn into_transitive(self) -> Graph<T, Transitive> {
+        Graph {
+            data: self.data,
+            topology: self.topology.into_transitive(),
+        }
+    }
+}
+
+impl<T> Graph<T, Transitive> {
+    /// Creates a topogical traversal starting from the given initial nodes.
+    ///
+    /// This method creates a topological traversal of the graph, which allows
+    /// to visit nodes in a topological order, i.e., visiting a node only after
+    /// all of its dependencies have been visited. The traversal is initialized
+    /// with the given initial nodes, which are the starting points.
+    ///
+    /// Note that an arbitrary number of parallel traversals can be created
+    /// from the same graph, as the underlying topology is shared between them.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// use zrx_graph::Graph;
+    ///
+    /// // Create graph builder and add nodes
+    /// let mut builder = Graph::builder();
+    /// let a = builder.add_node("a");
+    /// let b = builder.add_node("b");
+    /// let c = builder.add_node("c");
+    ///
+    /// // Create edges between nodes
+    /// builder.add_edge(a, b)?;
+    /// builder.add_edge(b, c)?;
+    ///
+    /// // Create graph from builder
+    /// let graph = builder.build().into_transitive();
+    ///
+    /// // Create topological traversal
+    /// let mut traversal = graph.traverse([a]);
+    /// while let Some(node) = traversal.take() {
+    ///     println!("{node:?}");
+    ///     traversal.complete(node)?;
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[inline]
+    pub fn traverse<I>(&self, initial: I) -> Traversal
+    where
+        I: AsRef<[usize]>,
+    {
+        Traversal::new(&self.topology, initial)
+    }
+}
+
 #[allow(clippy::must_use_candidate)]
-impl<T> Graph<T> {
+impl<T, R> Graph<T, R> {
     /// Returns a reference to the graph topology.
     #[inline]
-    pub fn topology(&self) -> &Topology {
+    pub fn topology(&self) -> &Topology<R> {
         &self.topology
     }
 
@@ -213,7 +249,7 @@ impl<T> Graph<T> {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<T> AsRef<[T]> for Graph<T> {
+impl<T, R> AsRef<[T]> for Graph<T, R> {
     /// Returns the graph data as a slice.
     #[inline]
     fn as_ref(&self) -> &[T] {
@@ -223,7 +259,7 @@ impl<T> AsRef<[T]> for Graph<T> {
 
 // ----------------------------------------------------------------------------
 
-impl<T> Index<usize> for Graph<T> {
+impl<T, R> Index<usize> for Graph<T, R> {
     type Output = T;
 
     /// Returns a reference to the node at the index.
@@ -266,7 +302,7 @@ impl<T> Index<usize> for Graph<T> {
     }
 }
 
-impl<T> IndexMut<usize> for Graph<T> {
+impl<T, R> IndexMut<usize> for Graph<T, R> {
     /// Returns a mutable reference to the node at the index.
     ///
     /// # Panics
@@ -342,7 +378,7 @@ impl<T> From<Builder<T>> for Graph<T> {
 
 // ----------------------------------------------------------------------------
 
-impl<T> IntoIterator for &Graph<T> {
+impl<T, R> IntoIterator for &Graph<T, R> {
     type Item = usize;
     type IntoIter = Range<usize>;
 

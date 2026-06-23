@@ -27,7 +27,7 @@
 
 use std::collections::BTreeSet;
 
-use crate::graph::topology::Distance;
+use crate::graph::topology::{Topology, Transitive};
 use crate::graph::Graph;
 
 // ----------------------------------------------------------------------------
@@ -36,8 +36,8 @@ use crate::graph::Graph;
 
 /// Iterator over common descendants of a set of nodes.
 pub struct CommonDescendants<'a> {
-    /// Distance matrix.
-    distance: &'a Distance,
+    /// Graph topology.
+    topology: &'a Topology<Transitive>,
     /// Set of common descendants.
     descendants: BTreeSet<usize>,
 }
@@ -46,7 +46,7 @@ pub struct CommonDescendants<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T> Graph<T, Transitive> {
     /// Creates an iterator over the common descendants of the set of nodes.
     ///
     /// # Panics
@@ -76,7 +76,7 @@ impl<T> Graph<T> {
     /// builder.add_edge(a, c)?;
     ///
     /// // Create graph from builder
-    /// let graph = builder.build();
+    /// let graph = builder.build().into_transitive();
     ///
     /// // Create iterator over common descendants
     /// for nodes in graph.common_descendants([a]) {
@@ -89,7 +89,6 @@ impl<T> Graph<T> {
     where
         N: AsRef<[usize]>,
     {
-        let distance = self.topology.distance();
         let nodes = nodes.as_ref();
 
         // Compute common descendants by ensuring that each node in the given
@@ -97,14 +96,14 @@ impl<T> Graph<T> {
         let mut descendants = BTreeSet::new();
         for descendant in self {
             let mut iter = nodes.iter();
-            if iter.all(|&node| distance[node][descendant] != u8::MAX) {
+            if iter.all(|&node| self.topology.is_reachable(node, descendant)) {
                 descendants.insert(descendant);
             }
         }
 
         // Create and return iterator
         CommonDescendants {
-            distance: self.topology.distance(),
+            topology: &self.topology,
             descendants,
         }
     }
@@ -131,7 +130,7 @@ impl Iterator for CommonDescendants<'_> {
         for &descendant in &self.descendants {
             let mut iter = self.descendants.iter();
             if !iter.any(|&node| {
-                node != descendant && self.distance[node][descendant] != u8::MAX
+                node != descendant && self.topology.is_reachable(node, descendant)
             }) {
                 layer.push(descendant);
             }
@@ -157,6 +156,7 @@ mod tests {
         #[test]
         fn handles_graph() {
             let graph = graph! {
+                transitive;
                 "a" => "d",
                 "b" => "d", "b" => "e",
                 "c" => "f", "c" => "g",
@@ -172,6 +172,7 @@ mod tests {
         #[test]
         fn handles_multi_graph() {
             let graph = graph! {
+                transitive;
                 "a" => "d",
                 "b" => "d", "b" => "e", "b" => "e",
                 "c" => "f", "c" => "g",

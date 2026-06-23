@@ -48,7 +48,7 @@ pub struct Paths<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, R> Graph<T, R> {
     /// Creates an iterator over the paths between the given nodes.
     ///
     /// # Panics
