@@ -274,10 +274,10 @@ impl Default for Builder<'_> {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Selector;
+    /// use zrx_id::selector::Builder;
     ///
     /// // Create selector builder
-    /// let builder = Selector::builder();
+    /// let builder = Builder::default();
     /// ```
     #[inline]
     fn default() -> Self {

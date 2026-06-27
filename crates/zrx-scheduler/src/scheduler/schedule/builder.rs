@@ -89,7 +89,7 @@ impl<I> Builder<I> {
     pub fn build(self) -> Schedule<I> {
         let len = self.graph.len();
         Schedule {
-            graph: self.graph.build(),
+            graph: self.graph.build().into_transitive(),
             storages: self.storages,
             frontiers: Frontiers::default(),
             queues: vec![VecDeque::new(); len],

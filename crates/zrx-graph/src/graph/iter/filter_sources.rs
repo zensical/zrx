@@ -25,7 +25,7 @@
 
 //! Iterator over sources in a set of nodes.
 
-use crate::graph::topology::Distance;
+use crate::graph::topology::{Topology, Transitive};
 use crate::graph::Graph;
 
 // ----------------------------------------------------------------------------
@@ -34,8 +34,8 @@ use crate::graph::Graph;
 
 /// Iterator over sources in a set of nodes.
 pub struct FilterSources<'a> {
-    /// Distance matrix.
-    distance: &'a Distance,
+    /// Graph topology.
+    topology: &'a Topology<Transitive>,
     /// Nodes to filter.
     nodes: Vec<usize>,
     /// Current index.
@@ -46,7 +46,7 @@ pub struct FilterSources<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T> Graph<T, Transitive> {
     /// Creates an iterator over the sources in the given set of nodes.
     ///
     /// This method creates a view over the provided set of nodes, representing
@@ -81,7 +81,7 @@ impl<T> Graph<T> {
     /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
-    /// let graph = builder.build();
+    /// let graph = builder.build().into_transitive();
     ///
     /// // Create iterator over sources
     /// for node in graph.filter_sources([b, c]) {
@@ -96,7 +96,7 @@ impl<T> Graph<T> {
         N: Into<Vec<usize>>,
     {
         FilterSources {
-            distance: self.topology.distance(),
+            topology: &self.topology,
             nodes: nodes.into(),
             index: 0,
         }
@@ -119,7 +119,7 @@ impl Iterator for FilterSources<'_> {
             // Emit the node if it's a source, which is true if it can't be
             // reached from any other node in the set through any path
             if !self.nodes.iter().any(|&ancestor| {
-                node != ancestor && self.distance[ancestor][node] != u8::MAX
+                node != ancestor && self.topology.has_path(ancestor, node)
             }) {
                 return Some(node);
             }
@@ -143,6 +143,7 @@ mod tests {
         #[test]
         fn handles_graph() {
             let graph = graph! {
+                transitive;
                 "a" => "b", "a" => "c",
                 "b" => "d", "b" => "e",
                 "c" => "f",
@@ -161,6 +162,7 @@ mod tests {
         #[test]
         fn handles_multi_graph() {
             let graph = graph! {
+                transitive;
                 "a" => "b", "a" => "c", "a" => "c",
                 "b" => "d", "b" => "e",
                 "c" => "f",

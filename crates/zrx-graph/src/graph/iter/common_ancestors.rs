@@ -27,7 +27,7 @@
 
 use std::collections::BTreeSet;
 
-use crate::graph::topology::Distance;
+use crate::graph::topology::{Topology, Transitive};
 use crate::graph::Graph;
 
 // ----------------------------------------------------------------------------
@@ -36,8 +36,8 @@ use crate::graph::Graph;
 
 /// Iterator over common ancestors of a set of nodes.
 pub struct CommonAncestors<'a> {
-    /// Distance matrix.
-    distance: &'a Distance,
+    /// Graph topology.
+    topology: &'a Topology<Transitive>,
     /// Set of common ancestors.
     ancestors: BTreeSet<usize>,
 }
@@ -46,7 +46,7 @@ pub struct CommonAncestors<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T> Graph<T, Transitive> {
     /// Creates an iterator over the common ancestors of the set of nodes.
     ///
     /// This method creates an iterator over the common ancestores of a given
@@ -83,7 +83,7 @@ impl<T> Graph<T> {
     /// builder.add_edge(a, c)?;
     ///
     /// // Create graph from builder
-    /// let graph = builder.build();
+    /// let graph = builder.build().into_transitive();
     ///
     /// // Create iterator over common ancestors
     /// for nodes in graph.common_ancestors([b, c]) {
@@ -96,7 +96,6 @@ impl<T> Graph<T> {
     where
         N: AsRef<[usize]>,
     {
-        let distance = self.topology.distance();
         let nodes = nodes.as_ref();
 
         // Compute common ancestors by ensuring that each node in the given set
@@ -104,14 +103,14 @@ impl<T> Graph<T> {
         let mut ancestors = BTreeSet::new();
         for ancestor in self {
             let mut iter = nodes.iter();
-            if iter.all(|&node| distance[ancestor][node] != u8::MAX) {
+            if iter.all(|&node| self.topology.has_path(ancestor, node)) {
                 ancestors.insert(ancestor);
             }
         }
 
         // Create and return iterator
         CommonAncestors {
-            distance: self.topology.distance(),
+            topology: &self.topology,
             ancestors,
         }
     }
@@ -138,7 +137,7 @@ impl Iterator for CommonAncestors<'_> {
         for &ancestor in &self.ancestors {
             let mut iter = self.ancestors.iter();
             if !iter.any(|&node| {
-                node != ancestor && self.distance[ancestor][node] != u8::MAX
+                node != ancestor && self.topology.has_path(ancestor, node)
             }) {
                 layer.push(ancestor);
             }
@@ -164,6 +163,7 @@ mod tests {
         #[test]
         fn handles_graph() {
             let graph = graph! {
+                transitive;
                 "a" => "d",
                 "b" => "d", "b" => "e",
                 "c" => "f", "c" => "g",
@@ -179,6 +179,7 @@ mod tests {
         #[test]
         fn handles_multi_graph() {
             let graph = graph! {
+                transitive;
                 "a" => "d",
                 "b" => "d", "b" => "e", "b" => "e",
                 "c" => "f", "c" => "g",

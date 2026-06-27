@@ -82,6 +82,8 @@ macro_rules! graph_builder {
 ///
 /// # Examples
 ///
+/// Create a graph:
+///
 /// ```
 /// use zrx_graph::graph;
 ///
@@ -91,8 +93,24 @@ macro_rules! graph_builder {
 ///     "b" => "c",
 /// };
 /// ```
+///
+/// Create a graph with transitive reachability:
+///
+/// ```
+/// use zrx_graph::graph;
+///
+/// // Create graph from pairs
+/// let graph = graph! {
+///     transitive;
+///     "a" => "b", "a" => "c",
+///     "b" => "c",
+/// };
+/// ```
 #[macro_export]
 macro_rules! graph {
+    (transitive; $($source:expr => $target:expr),+ $(,)?) => {{
+        $crate::graph!($($source => $target),+).into_transitive()
+    }};
     ($($source:expr => $target:expr),+ $(,)?) => {{
         $crate::graph_builder!($($source => $target),+).build()
     }};

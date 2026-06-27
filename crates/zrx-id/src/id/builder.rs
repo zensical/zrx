@@ -288,10 +288,10 @@ impl Default for Builder<'_> {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Id;
+    /// use zrx_id::Builder;
     ///
     /// // Create identifier builder
-    /// let builder = Id::builder();
+    /// let builder = Builder::default();
     /// ```
     #[inline]
     fn default() -> Self {

@@ -48,7 +48,7 @@ pub struct Ancestors<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, R> Graph<T, R> {
     /// Creates an iterator over the ancestors of the given node.
     ///
     /// # Panics

@@ -44,7 +44,7 @@ pub struct Sinks<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, R> Graph<T, R> {
     /// Creates an iterator over the sinks.
     ///
     /// This method returns an iterator over the sink node indices of the

@@ -44,7 +44,7 @@ use super::Edge;
 /// an adjacency list for the incoming or outgoing edges is constructed, since
 /// that's what we need when traversing the graph, and computing them once to
 /// clone them saves a lot of time.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Adjacency {
     /// Row pointer.
     rows: Vec<usize>,

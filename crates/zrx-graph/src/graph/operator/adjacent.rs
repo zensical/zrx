@@ -43,7 +43,7 @@ pub struct Adjacent<'a> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, R> Graph<T, R> {
     /// Retrieve a reference to a node and its adjacent nodes.
     ///
     /// # Examples

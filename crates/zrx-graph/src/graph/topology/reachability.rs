@@ -23,48 +23,46 @@
 
 // ----------------------------------------------------------------------------
 
-//! Map operator.
+//! Reachability.
 
-use crate::graph::Graph;
+use super::adjacency::Adjacency;
+
+mod distance;
+
+use distance::Distance;
+
+// ----------------------------------------------------------------------------
+// Structs
+// ----------------------------------------------------------------------------
+
+/// Direct reachability.
+#[derive(Debug)]
+pub struct Direct;
+
+// ----------------------------------------------------------------------------
+
+/// Transitive reachability.
+#[derive(Debug)]
+pub struct Transitive {
+    /// Distance matrix.
+    distance: Distance,
+}
 
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T, R> Graph<T, R> {
-    /// Maps the nodes to a different type.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::Graph;
-    ///
-    /// // Create graph builder and add nodes
-    /// let mut builder = Graph::builder();
-    /// let a = builder.add_node("a");
-    /// let b = builder.add_node("b");
-    /// let c = builder.add_node("c");
-    ///
-    /// // Create edges between nodes
-    /// builder.add_edge(a, b)?;
-    /// builder.add_edge(b, c)?;
-    ///
-    /// // Create graph from builder and map data
-    /// let graph = builder.build();
-    /// graph.map(str::to_uppercase);
-    /// # Ok(())
-    /// # }
-    /// ```
+impl Transitive {
+    /// Creates transitive reachability from the given adjacency list.
+    #[must_use]
+    pub fn new(adj: &Adjacency) -> Self {
+        Self { distance: Distance::new(adj) }
+    }
+
+    /// Returns whether there is a path from the source to the target.
     #[inline]
-    pub fn map<F, U>(self, f: F) -> Graph<U, R>
-    where
-        F: FnMut(T) -> U,
-    {
-        Graph {
-            data: self.data.into_iter().map(f).collect(),
-            topology: self.topology,
-        }
+    #[must_use]
+    pub fn has_path(&self, source: usize, target: usize) -> bool {
+        self.distance.has_path(source, target)
     }
 }

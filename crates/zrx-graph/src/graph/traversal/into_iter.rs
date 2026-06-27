@@ -70,7 +70,7 @@ impl IntoIterator for Traversal {
     /// builder.add_edge(b, c)?;
     ///
     /// // Create graph from builder
-    /// let graph = builder.build();
+    /// let graph = builder.build().into_transitive();
     ///
     /// // Create topological traversal
     /// for node in graph.traverse([a]) {

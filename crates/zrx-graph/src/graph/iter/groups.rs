@@ -43,7 +43,7 @@ pub struct Groups<K> {
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<T> Graph<T> {
+impl<T, R> Graph<T, R> {
     /// Creates an iterator over key-groups.
     ///
     /// # Examples
