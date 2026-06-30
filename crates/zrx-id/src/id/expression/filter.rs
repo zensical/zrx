@@ -27,7 +27,7 @@
 
 use slab::Slab;
 
-use super::matcher::Matcher;
+use crate::id::matcher::Matcher;
 
 mod builder;
 mod candidates;
@@ -65,7 +65,8 @@ pub use terms::Terms;
 /// ```
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_id::{selector, Expression, Filter, Id};
+/// use zrx_id::{selector, Expression, Id};
+/// use zrx_id::expression::Filter;
 ///
 /// // Create filter builder and insert expression
 /// let mut builder = Filter::builder();

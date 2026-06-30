@@ -29,10 +29,12 @@ use std::vec::IntoIter;
 
 mod builder;
 mod error;
+pub mod filter;
 mod operand;
 
 pub use builder::Builder;
 pub use error::{Error, Result};
+pub use filter::Filter;
 pub use operand::{Operand, Operator, Term};
 
 // ----------------------------------------------------------------------------

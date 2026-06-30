@@ -60,7 +60,7 @@ impl Filter {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Filter;
+    /// use zrx_id::expression::Filter;
     ///
     /// // Create filter builder
     /// let mut builder = Filter::builder();
@@ -79,7 +79,7 @@ impl Filter {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Filter;
+    /// use zrx_id::expression::Filter;
     ///
     /// // Create filter
     /// let filter = Filter::default();
@@ -114,7 +114,8 @@ impl Builder {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Expression, Filter};
+    /// use zrx_id::{selector, Expression};
+    /// use zrx_id::expression::Filter;
     ///
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
@@ -141,7 +142,8 @@ impl Builder {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Expression, Filter};
+    /// use zrx_id::{selector, Expression};
+    /// use zrx_id::expression::Filter;
     ///
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
@@ -166,14 +168,15 @@ impl Builder {
     ///
     /// Returns [`Error::Matcher`][] if the underlying matcher can't be built.
     ///
-    /// [`Error::Matcher`]: crate::id::filter::Error::Matcher
+    /// [`Error::Matcher`]: crate::id::expression::filter::Error::Matcher
     ///
     /// # Examples
     ///
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Expression, Filter};
+    /// use zrx_id::{selector, Expression};
+    /// use zrx_id::expression::Filter;
     ///
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();

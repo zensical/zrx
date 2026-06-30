@@ -30,7 +30,6 @@
 mod id;
 
 pub use id::expression::{self, Expression};
-pub use id::filter::{self, Filter};
 pub use id::format;
 pub use id::matcher::{self, Matcher, Matches};
 pub use id::selector::{self, Selector, TryToSelector};
