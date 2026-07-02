@@ -27,6 +27,8 @@
 
 use std::vec::IntoIter;
 
+use zrx_scheduler::Value;
+
 mod builder;
 mod error;
 pub mod filter;
@@ -114,6 +116,10 @@ impl Expression {
 
 // ----------------------------------------------------------------------------
 // Trait implementations
+// ----------------------------------------------------------------------------
+
+impl Value for Expression {}
+
 // ----------------------------------------------------------------------------
 
 impl<T> From<T> for Expression
