@@ -23,17 +23,48 @@
 
 // ----------------------------------------------------------------------------
 
-//! Identifier abstractions and utilities.
+//! Sequence element.
 
-#![allow(clippy::match_same_arms)]
+use std::fmt::{self, Debug};
 
-mod id;
+use crate::id::expression::Expression;
 
-pub use id::expression::{self, Expression};
-pub use id::format;
-pub use id::matcher;
-pub use id::selector::{self, Selector, TryToSelector};
-pub use id::sequence::{self, Sequence};
-pub use id::specificity::{self, Specificity};
-pub use id::uri;
-pub use id::{Builder, Error, Id, Result, TryToId};
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+/// Sequence element.
+#[derive(Clone, PartialEq, Eq)]
+pub enum Element {
+    /// Expression.
+    Expression(Expression),
+    /// Gap.
+    Gap,
+}
+
+// ----------------------------------------------------------------------------
+// Trait implementations
+// ----------------------------------------------------------------------------
+
+impl<T> From<T> for Element
+where
+    T: Into<Expression>,
+{
+    /// Creates an element from an expression.
+    #[inline]
+    fn from(expr: T) -> Self {
+        Element::Expression(expr.into())
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl Debug for Element {
+    /// Formats the element for debugging.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Element::Expression(expr) => Debug::fmt(expr, f),
+            Element::Gap => f.write_str("Gap"),
+        }
+    }
+}

@@ -23,17 +23,17 @@
 
 // ----------------------------------------------------------------------------
 
-//! Identifier abstractions and utilities.
+//! Condition segment.
 
-#![allow(clippy::match_same_arms)]
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
 
-mod id;
-
-pub use id::expression::{self, Expression};
-pub use id::format;
-pub use id::matcher;
-pub use id::selector::{self, Selector, TryToSelector};
-pub use id::sequence::{self, Sequence};
-pub use id::specificity::{self, Specificity};
-pub use id::uri;
-pub use id::{Builder, Error, Id, Result, TryToId};
+/// Condition segment.
+#[derive(Debug, PartialEq, Eq)]
+pub enum Segment {
+    /// Match one identifier at this slot.
+    Expression(usize),
+    /// Match any number of identifiers.
+    Gap,
+}

@@ -23,17 +23,35 @@
 
 // ----------------------------------------------------------------------------
 
-//! Identifier abstractions and utilities.
+//! Filter error.
 
-#![allow(clippy::match_same_arms)]
+use std::{num, result};
+use thiserror::Error;
 
-mod id;
+use crate::id;
+use crate::id::expression::filter;
 
-pub use id::expression::{self, Expression};
-pub use id::format;
-pub use id::matcher;
-pub use id::selector::{self, Selector, TryToSelector};
-pub use id::sequence::{self, Sequence};
-pub use id::specificity::{self, Specificity};
-pub use id::uri;
-pub use id::{Builder, Error, Id, Result, TryToId};
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+/// Filter error.
+#[derive(Debug, Error)]
+pub enum Error {
+    /// Numeric conversion error.
+    #[error(transparent)]
+    Numeric(#[from] num::TryFromIntError),
+    /// Identifier error.
+    #[error(transparent)]
+    Id(#[from] id::Error),
+    /// Expression filter error.
+    #[error(transparent)]
+    Filter(#[from] filter::Error),
+}
+
+// ----------------------------------------------------------------------------
+// Type aliases
+// ----------------------------------------------------------------------------
+
+/// Filter result.
+pub type Result<T = ()> = result::Result<T, Error>;
