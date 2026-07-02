@@ -170,7 +170,6 @@ impl Sequence {
     /// # }
     /// ```
     #[inline]
-    #[must_use]
     pub fn iter(&self) -> Iter<'_, Element> {
         self.elements.iter()
     }
@@ -275,7 +274,7 @@ where
     /// ```
     #[inline]
     fn from(value: &[E]) -> Self {
-        Self::from_iter(value.into_iter().cloned())
+        value.iter().cloned().collect()
     }
 }
 

@@ -94,6 +94,7 @@ use layout::Layout;
 /// # Ok(())
 /// # }
 /// ```
+#[allow(clippy::struct_field_names)]
 #[derive(Debug, Default)]
 pub struct Filter {
     /// Expression filter.
