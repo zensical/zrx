@@ -59,6 +59,14 @@ impl TryToId for Id {
     }
 }
 
+impl TryToId for &Id {
+    /// Attempts to convert to an identifier.
+    #[inline]
+    fn try_to_id(&self) -> Result<Cow<'_, Id>> {
+        TryToId::try_to_id(*self)
+    }
+}
+
 // ----------------------------------------------------------------------------
 // Blanket implementations
 // ----------------------------------------------------------------------------
