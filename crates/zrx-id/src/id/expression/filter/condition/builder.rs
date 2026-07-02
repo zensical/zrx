@@ -29,7 +29,8 @@ use crate::id::expression::{Expression, Operand, Operator, Term};
 use crate::id::matcher::Matches;
 
 use super::group::Group;
-use super::{Condition, Instruction};
+use super::instruction::Instruction;
+use super::Condition;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -75,6 +76,7 @@ impl Condition {
 
 impl Builder {
     /// Builds the condition.
+    #[must_use]
     pub fn build(self) -> Condition {
         let mut input = Vec::from([(self.group, None)]);
         let mut stack = Vec::new();

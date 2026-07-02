@@ -99,15 +99,13 @@ impl Filter {
 impl Builder {
     /// Inserts an expression into the filter and returns its index.
     ///
-    /// This method adds an [`Expression`][] to the filter builder, and returns
+    /// This method adds an [`Expression`] to the filter builder, and returns
     /// the index of the inserted condition, which can be used to remove it.
     ///
     /// Note that the expression is immediately converted into a [`Condition`]
     /// for performance reasons, which means it cannot be recovered. If we'd
     /// store expressions directly, removing or inserting new expressions into
     /// the filter would mandate recompilation of all expressions.
-    ///
-    /// [`Expression`]: crate::id::expression::Expression
     ///
     /// # Examples
     ///

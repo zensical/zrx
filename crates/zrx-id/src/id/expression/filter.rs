@@ -60,6 +60,14 @@ pub use terms::Terms;
 /// the condition set is the second stage, which checks whether the remaining
 /// expressions are actually satisfied by the identifier.
 ///
+/// Additionally, the [`Filter`] contains two indexing structures:
+///
+/// - [`Filter::negations`]: Contains the indices of all conditions that have
+///   at least one negation in ascending order for efficient pruning.
+///
+/// - [`Filter::mapping`]: Contains one item per term per condition, which maps
+///   the indices of terms matched by the matcher to the containing conditions.
+///
 /// # Examples
 ///
 /// ```

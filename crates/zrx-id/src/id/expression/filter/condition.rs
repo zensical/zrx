@@ -32,7 +32,7 @@ mod builder;
 mod group;
 mod instruction;
 
-pub use instruction::Instruction;
+use instruction::Instruction;
 
 // ----------------------------------------------------------------------------
 // Structs
