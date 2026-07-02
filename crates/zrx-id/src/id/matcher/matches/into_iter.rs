@@ -55,7 +55,7 @@ impl IntoIterator for Matches {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Matches;
+    /// use zrx_id::matcher::Matches;
     ///
     /// // Create match set from iterator
     /// let mut matches = Matches::from_iter([0, 1]);

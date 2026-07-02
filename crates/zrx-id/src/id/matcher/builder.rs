@@ -64,7 +64,7 @@ impl Matcher {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Matcher;
+    /// use zrx_id::matcher::Matcher;
     ///
     /// // Create matcher builder
     /// let mut builder = Matcher::builder();
@@ -100,7 +100,7 @@ impl Builder {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::Matcher;
+    /// use zrx_id::matcher::Matcher;
     ///
     /// // Create matcher builder with selector
     /// let mut builder = Matcher::builder().with(&"zrs:::::**/*.md:")?;
@@ -136,7 +136,7 @@ impl Builder {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::Matcher;
+    /// use zrx_id::matcher::Matcher;
     ///
     /// // Create matcher builder and add selector
     /// let mut builder = Matcher::builder();
@@ -176,7 +176,7 @@ impl Builder {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::Matcher;
+    /// use zrx_id::matcher::Matcher;
     ///
     /// // Create matcher builder and add selector
     /// let mut builder = Matcher::builder();

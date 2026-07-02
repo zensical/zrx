@@ -58,7 +58,7 @@ impl Matches {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Matches;
+    /// use zrx_id::matcher::Matches;
     ///
     /// // Create match set
     /// let matches = Matches::new();
@@ -73,7 +73,7 @@ impl Matches {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Matches;
+    /// use zrx_id::matcher::Matches;
     ///
     /// // Create match set with capacity
     /// let matches = Matches::with_capacity(128);
@@ -97,7 +97,7 @@ impl Matches {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Matches;
+    /// use zrx_id::matcher::Matches;
     ///
     /// // Create match set
     /// let matches = Matches::from_iter([1]);
@@ -117,7 +117,7 @@ impl Matches {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Matches;
+    /// use zrx_id::matcher::Matches;
     ///
     /// // Create match set
     /// let mut matches = Matches::new();
@@ -136,7 +136,7 @@ impl Matches {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Matches;
+    /// use zrx_id::matcher::Matches;
     ///
     /// // Create match set
     /// let mut matches = Matches::from_iter([0, 1, 2]);
@@ -155,7 +155,7 @@ impl Matches {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Matches;
+    /// use zrx_id::matcher::Matches;
     ///
     /// // Create two match sets
     /// let mut a = Matches::from_iter([0, 1]);
@@ -176,7 +176,7 @@ impl Matches {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Matches;
+    /// use zrx_id::matcher::Matches;
     ///
     /// // Create two match sets
     /// let mut a = Matches::from_iter([0, 1]);
@@ -197,7 +197,7 @@ impl Matches {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Matches;
+    /// use zrx_id::matcher::Matches;
     ///
     /// // Create two match sets
     /// let mut a = Matches::from_iter([0, 1]);
@@ -218,7 +218,7 @@ impl Matches {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Matches;
+    /// use zrx_id::matcher::Matches;
     ///
     /// // Create two match sets
     /// let mut a = Matches::from_iter([0, 1]);
@@ -274,7 +274,7 @@ impl FromIterator<usize> for Matches {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Matches;
+    /// use zrx_id::matcher::Matches;
     ///
     /// // Create match set from iterator
     /// let matches = Matches::from_iter([0, 1]);
@@ -300,7 +300,7 @@ impl Default for Matches {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Matches;
+    /// use zrx_id::matcher::Matches;
     ///
     /// // Create match set
     /// let matches = Matches::default();
