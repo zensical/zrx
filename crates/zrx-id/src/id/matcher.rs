@@ -65,7 +65,8 @@ pub use matches::Matches;
 /// ```
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_id::{Id, Matcher};
+/// use zrx_id::matcher::Matcher;
+/// use zrx_id::Id;
 ///
 /// // Create matcher builder and add selector
 /// let mut builder = Matcher::builder();
@@ -117,7 +118,8 @@ impl Matcher {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{Id, Matcher};
+    /// use zrx_id::matcher::Matcher;
+    /// use zrx_id::Id;
     ///
     /// // Create matcher builder and add selector
     /// let mut builder = Matcher::builder();
@@ -161,7 +163,8 @@ impl Matcher {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{Id, Matcher, Matches};
+    /// use zrx_id::matcher::{Matcher, Matches};
+    /// use zrx_id::Id;
     ///
     /// // Create matcher builder and add selector
     /// let mut builder = Matcher::builder();
@@ -242,7 +245,7 @@ impl FromStr for Matcher {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::Matcher;
+    /// use zrx_id::matcher::Matcher;
     ///
     /// // Create matcher from string
     /// let matcher: Matcher = "zrs:::::**/*.md:".parse()?;

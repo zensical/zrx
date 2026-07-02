@@ -29,7 +29,8 @@ use crate::id::expression::{Expression, Operand, Operator, Term};
 use crate::id::matcher::Matches;
 
 use super::group::Group;
-use super::{Condition, Instruction};
+use super::instruction::Instruction;
+use super::Condition;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -56,7 +57,7 @@ impl Condition {
     /// extracting all terms along the way. The resulting builder can then be
     /// transformed into a [`Condition`], which is used in a [`Filter`][].
     ///
-    /// [`Filter`]: crate::id::filter::Filter
+    /// [`Filter`]: crate::id::expression::filter::Filter
     #[inline]
     #[must_use]
     pub fn builder<T>(expr: T) -> Builder
@@ -75,6 +76,7 @@ impl Condition {
 
 impl Builder {
     /// Builds the condition.
+    #[must_use]
     pub fn build(self) -> Condition {
         let mut input = Vec::from([(self.group, None)]);
         let mut stack = Vec::new();
@@ -238,9 +240,9 @@ fn optimize_hoistable(group: Group) -> Group {
 mod tests {
 
     mod builder {
+        use crate::id::expression::filter::condition::group::Group;
+        use crate::id::expression::filter::Condition;
         use crate::id::expression::{Expression, Operator, Result, Term};
-        use crate::id::filter::condition::group::Group;
-        use crate::id::filter::Condition;
         use crate::selector;
 
         #[test]
@@ -302,9 +304,9 @@ mod tests {
     }
 
     mod optimize {
+        use crate::id::expression::filter::condition::group::Group;
+        use crate::id::expression::filter::Condition;
         use crate::id::expression::{Expression, Operator, Result};
-        use crate::id::filter::condition::group::Group;
-        use crate::id::filter::Condition;
         use crate::id::matcher::Matches;
         use crate::selector;
 

@@ -23,85 +23,60 @@
 
 // ----------------------------------------------------------------------------
 
-//! Consuming iterator implementation for [`Matches`].
+//! Layout builder.
 
-use super::Matches;
+use super::item::Item;
+use super::Layout;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Consuming iterator for [`Matches`].
+/// Layout builder.
 #[derive(Debug)]
-pub struct IntoIter {
-    /// Blocks of bits.
-    data: Vec<u64>,
-    /// Current block index.
-    index: usize,
-    /// Current block.
-    block: u64,
+pub struct Builder {
+    /// Layout items.
+    items: Vec<Item>,
+    /// Layout slots.
+    slots: usize,
 }
 
 // ----------------------------------------------------------------------------
-// Trait implementations
+// Implementations
 // ----------------------------------------------------------------------------
 
-impl IntoIterator for Matches {
-    type Item = usize;
-    type IntoIter = IntoIter;
-
-    /// Creates a consuming iterator over the match set.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_id::matcher::Matches;
-    ///
-    /// // Create match set from iterator
-    /// let mut matches = Matches::from_iter([0, 1]);
-    ///
-    /// // Create iterator over match set
-    /// for index in matches {
-    ///     println!("{index:?}");
-    /// }
-    /// ```
+impl Layout {
+    /// Creates a layout builder.
     #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        let block = self.data[0];
-        IntoIter {
-            data: self.data,
-            index: 0,
-            block,
+    #[must_use]
+    pub fn builder(capacity: usize) -> Builder {
+        Builder {
+            items: Vec::with_capacity(capacity),
+            slots: 0,
         }
     }
 }
 
 // ----------------------------------------------------------------------------
 
-impl Iterator for IntoIter {
-    type Item = usize;
+impl Builder {
+    /// Adds a condition and its expression slots.
+    #[inline]
+    pub fn add(&mut self, index: usize, slots: usize) {
+        let start = self.slots;
 
-    /// Returns the next match.
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            if self.block != 0 {
-                let num = self.block.trailing_zeros() as usize;
+        // Add the item and update the total number of slots
+        self.slots += slots;
+        self.items.push(Item::new(index, start..self.slots));
+    }
 
-                // Clear the lowest bit and return it
-                self.block &= self.block - 1;
-                return Some(self.index << 6 | num);
-            }
-
-            // Move to the next block
-            self.index += 1;
-
-            // If all blocks are exhausted, we're done
-            if self.index >= self.data.len() {
-                return None;
-            }
-
-            // Update the current block to the next block
-            self.block = self.data[self.index];
+    /// Builds the layout.
+    #[inline]
+    #[must_use]
+    pub fn build(self) -> Layout {
+        Layout {
+            items: self.items.into_boxed_slice(),
+            slots: self.slots,
         }
     }
 }

@@ -60,6 +60,16 @@ impl TryToSelector for Selector {
     }
 }
 
+impl TryToSelector for &Selector {
+    /// Attempts to convert to a selector.
+    #[inline]
+    fn try_to_selector(&self) -> Result<Cow<'_, Selector>> {
+        TryToSelector::try_to_selector(*self)
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 impl TryToSelector for Id {
     /// Attempts to convert to a selector.
     ///
@@ -77,13 +87,21 @@ impl TryToSelector for Id {
     ///
     /// // Create selector from identifier
     /// let id: Id = "zri:file:::docs:index.md:".parse()?;
-    /// let selector = (&id).try_to_selector()?;
+    /// let selector = id.try_to_selector()?;
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
     fn try_to_selector(&self) -> Result<Cow<'_, Selector>> {
         self.to_owned().try_into().map(Cow::Owned)
+    }
+}
+
+impl TryToSelector for &Id {
+    /// Attempts to convert to a selector.
+    #[inline]
+    fn try_to_selector(&self) -> Result<Cow<'_, Selector>> {
+        TryToSelector::try_to_selector(*self)
     }
 }
 

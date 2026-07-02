@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Consuming iterator implementation for [`Matches`].
+//! Iterator implementation for [`Matches`].
 
 use super::Matches;
 
@@ -31,11 +31,11 @@ use super::Matches;
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Consuming iterator for [`Matches`].
+/// Iterator for [`Matches`].
 #[derive(Debug)]
-pub struct IntoIter {
+pub struct Iter<'a> {
     /// Blocks of bits.
-    data: Vec<u64>,
+    data: &'a [u64],
     /// Current block index.
     index: usize,
     /// Current block.
@@ -43,14 +43,11 @@ pub struct IntoIter {
 }
 
 // ----------------------------------------------------------------------------
-// Trait implementations
+// Implementations
 // ----------------------------------------------------------------------------
 
-impl IntoIterator for Matches {
-    type Item = usize;
-    type IntoIter = IntoIter;
-
-    /// Creates a consuming iterator over the match set.
+impl Matches {
+    /// Creates an iterator over the match set.
     ///
     /// # Examples
     ///
@@ -58,18 +55,19 @@ impl IntoIterator for Matches {
     /// use zrx_id::matcher::Matches;
     ///
     /// // Create match set from iterator
-    /// let mut matches = Matches::from_iter([0, 1]);
+    /// let matches = Matches::from_iter([0, 1]);
     ///
     /// // Create iterator over match set
-    /// for index in matches {
+    /// for index in matches.iter() {
     ///     println!("{index:?}");
     /// }
     /// ```
     #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        let block = self.data[0];
-        IntoIter {
-            data: self.data,
+    #[must_use]
+    pub fn iter(&self) -> Iter<'_> {
+        let block = self.data.first().copied().unwrap_or(0);
+        Iter {
+            data: &self.data,
             index: 0,
             block,
         }
@@ -77,11 +75,40 @@ impl IntoIterator for Matches {
 }
 
 // ----------------------------------------------------------------------------
+// Trait implementations
+// ----------------------------------------------------------------------------
 
-impl Iterator for IntoIter {
+impl<'a> IntoIterator for &'a Matches {
+    type Item = usize;
+    type IntoIter = Iter<'a>;
+
+    /// Creates an iterator over the match set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use zrx_id::matcher::Matches;
+    ///
+    /// // Create match set from iterator
+    /// let matches = Matches::from_iter([0, 1]);
+    ///
+    /// // Create iterator over match set
+    /// for index in &matches {
+    ///     println!("{index:?}");
+    /// }
+    /// ```
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl Iterator for Iter<'_> {
     type Item = usize;
 
-    /// Returns the next match.
+    /// Returns the next item.
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             if self.block != 0 {

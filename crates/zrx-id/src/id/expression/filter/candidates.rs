@@ -70,14 +70,15 @@ impl Filter {
     ///
     /// Returns [`Error::Matcher`][] if the identifier is invalid.
     ///
-    /// [`Error::Matcher`]: crate::id::filter::Error::Matcher
+    /// [`Error::Matcher`]: crate::id::expression::filter::Error::Matcher
     ///
     /// # Examples
     ///
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Expression, Filter, Id};
+    /// use zrx_id::expression::Filter;
+    /// use zrx_id::{selector, Expression, Id};
     ///
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
@@ -193,8 +194,8 @@ impl Iterator for Candidates<'_> {
 mod tests {
 
     mod matches {
+        use crate::id::expression::filter::{Filter, Result};
         use crate::id::expression::Expression;
-        use crate::id::filter::{Filter, Result};
         use crate::selector;
 
         #[test]

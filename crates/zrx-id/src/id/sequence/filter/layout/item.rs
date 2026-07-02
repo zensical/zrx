@@ -23,17 +23,31 @@
 
 // ----------------------------------------------------------------------------
 
-//! Identifier abstractions and utilities.
+//! Layout item.
 
-#![allow(clippy::match_same_arms)]
+use std::ops::Range;
 
-mod id;
+// ----------------------------------------------------------------------------
+// Structs
+// ----------------------------------------------------------------------------
 
-pub use id::expression::{self, Expression};
-pub use id::format;
-pub use id::matcher;
-pub use id::selector::{self, Selector, TryToSelector};
-pub use id::sequence::{self, Sequence};
-pub use id::specificity::{self, Specificity};
-pub use id::uri;
-pub use id::{Builder, Error, Id, Result, TryToId};
+/// Layout item.
+#[derive(Clone, Debug)]
+pub struct Item {
+    /// Item index.
+    pub index: usize,
+    /// Item range of expressions.
+    pub range: Range<usize>,
+}
+
+// ----------------------------------------------------------------------------
+// Implementations
+// ----------------------------------------------------------------------------
+
+impl Item {
+    /// Creates a layout item.
+    #[must_use]
+    pub fn new(index: usize, range: Range<usize>) -> Self {
+        Self { index, range }
+    }
+}

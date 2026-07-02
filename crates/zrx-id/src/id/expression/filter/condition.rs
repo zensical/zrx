@@ -32,7 +32,7 @@ mod builder;
 mod group;
 mod instruction;
 
-pub use instruction::Instruction;
+use instruction::Instruction;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -133,8 +133,8 @@ impl Condition {
 mod tests {
 
     mod satisfies {
+        use crate::id::expression::filter::Condition;
         use crate::id::expression::{Expression, Result};
-        use crate::id::filter::Condition;
         use crate::id::matcher::Matches;
         use crate::selector;
 

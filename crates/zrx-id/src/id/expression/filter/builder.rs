@@ -60,7 +60,7 @@ impl Filter {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Filter;
+    /// use zrx_id::expression::Filter;
     ///
     /// // Create filter builder
     /// let mut builder = Filter::builder();
@@ -79,7 +79,7 @@ impl Filter {
     /// # Examples
     ///
     /// ```
-    /// use zrx_id::Filter;
+    /// use zrx_id::expression::Filter;
     ///
     /// // Create filter
     /// let filter = Filter::default();
@@ -99,7 +99,7 @@ impl Filter {
 impl Builder {
     /// Inserts an expression into the filter and returns its index.
     ///
-    /// This method adds an [`Expression`][] to the filter builder, and returns
+    /// This method adds an [`Expression`] to the filter builder, and returns
     /// the index of the inserted condition, which can be used to remove it.
     ///
     /// Note that the expression is immediately converted into a [`Condition`]
@@ -107,14 +107,13 @@ impl Builder {
     /// store expressions directly, removing or inserting new expressions into
     /// the filter would mandate recompilation of all expressions.
     ///
-    /// [`Expression`]: crate::id::expression::Expression
-    ///
     /// # Examples
     ///
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Expression, Filter};
+    /// use zrx_id::expression::Filter;
+    /// use zrx_id::{selector, Expression};
     ///
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
@@ -141,7 +140,8 @@ impl Builder {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Expression, Filter};
+    /// use zrx_id::expression::Filter;
+    /// use zrx_id::{selector, Expression};
     ///
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
@@ -166,14 +166,15 @@ impl Builder {
     ///
     /// Returns [`Error::Matcher`][] if the underlying matcher can't be built.
     ///
-    /// [`Error::Matcher`]: crate::id::filter::Error::Matcher
+    /// [`Error::Matcher`]: crate::id::expression::filter::Error::Matcher
     ///
     /// # Examples
     ///
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Expression, Filter};
+    /// use zrx_id::expression::Filter;
+    /// use zrx_id::{selector, Expression};
     ///
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();

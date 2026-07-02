@@ -23,17 +23,17 @@
 
 // ----------------------------------------------------------------------------
 
-//! Identifier abstractions and utilities.
+//! Filter binding.
 
-#![allow(clippy::match_same_arms)]
+// ----------------------------------------------------------------------------
+// Structs
+// ----------------------------------------------------------------------------
 
-mod id;
-
-pub use id::expression::{self, Expression};
-pub use id::format;
-pub use id::matcher;
-pub use id::selector::{self, Selector, TryToSelector};
-pub use id::sequence::{self, Sequence};
-pub use id::specificity::{self, Specificity};
-pub use id::uri;
-pub use id::{Builder, Error, Id, Result, TryToId};
+/// Filter binding.
+#[derive(Clone, Copy, Debug)]
+pub struct Binding {
+    /// Condition index.
+    pub condition: u32,
+    /// Condition slot index.
+    pub slot: u8,
+}
