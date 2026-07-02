@@ -32,6 +32,8 @@ use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
+use zrx_scheduler::Value;
+
 use super::expression::Term;
 use super::format::Format;
 use super::{Error, Id, Result};
@@ -182,6 +184,10 @@ impl Selector {
 
 // ----------------------------------------------------------------------------
 // Trait implementations
+// ----------------------------------------------------------------------------
+
+impl Value for Selector {}
+
 // ----------------------------------------------------------------------------
 
 impl AsRef<Format<7>> for Selector {
