@@ -318,5 +318,22 @@ mod tests {
             }
             Ok(())
         }
+
+        #[test]
+        fn handles_default() -> Result {
+            let mut builder = Filter::builder();
+            let _ = builder.insert(Expression::default());
+            let filter = builder.build()?;
+            for (id, check) in [
+                ("zri:file:::docs:index.md:", vec![0]),
+                ("zri:git:::docs:image.jpg:", vec![0]),
+            ] {
+                assert_eq!(
+                    filter.candidates(&id)?.collect::<Vec<_>>(), // fmt
+                    check
+                );
+            }
+            Ok(())
+        }
     }
 }
