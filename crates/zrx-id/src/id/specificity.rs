@@ -135,8 +135,8 @@ impl Specificity {
     /// Computes the sum of both specificities.
     #[inline]
     fn sum(self, other: Self) -> Self {
-        let Specificity(a1, b1, c1, l1) = self;
-        let Specificity(a2, b2, c2, l2) = other;
+        let Self(a1, b1, c1, l1) = self;
+        let Self(a2, b2, c2, l2) = other;
         Self(
             a1.saturating_add(a2),
             b1.saturating_add(b2),
@@ -157,6 +157,13 @@ impl Specificity {
         let mut spec = cmp::min(self, other);
         spec.3 = self.3.saturating_add(other.3);
         spec
+    }
+
+    /// Returns whether the specificity is zero.
+    #[inline]
+    fn is_zero(self) -> bool {
+        let Self(a, b, c, l) = self;
+        a | b | c | l == 0
     }
 }
 
@@ -229,16 +236,14 @@ impl Ord for Specificity {
     /// ```
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
-        let Specificity(a1, b1, c1, l1) = self;
-        let Specificity(a2, b2, c2, l2) = other;
+        let Self(a1, b1, c1, l1) = self;
+        let Self(a2, b2, c2, l2) = other;
 
-        // An all-zero specificity is the least specific and must always be the
-        // first in order, so check if this applies to any of the specificities
-        if a1 | b1 | c1 | l1 == 0 {
-            return Ordering::Less;
-        }
-        if a2 | b2 | c2 | l2 == 0 {
-            return Ordering::Greater;
+        // An all-zero specificity is always less specific than a non-zero
+        // specificity, but two all-zero specificities must compare equal
+        let ordering = other.is_zero().cmp(&self.is_zero());
+        if !ordering.is_eq() {
+            return ordering;
         }
 
         // Otherwise, compare each component, where `c` is reversed since fewer

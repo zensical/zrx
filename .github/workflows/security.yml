@@ -1,7 +1,7 @@
 # Copyright (c) 2025-2026 Zensical and contributors
 
 # SPDX-License-Identifier: MIT
-# All contributions are certified under the DCO
+# Third-party contributions licensed under DCO
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
@@ -21,19 +21,16 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-name: Check
+name: Security
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
 
 jobs:
-  clippy:
-    name: Clippy
+  audit:
+    name: Audit
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -41,27 +38,11 @@ jobs:
         with:
           ref: ${{ github.sha }}
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
 
-      - name: Run clippy
-        run: cargo clippy -- -D warnings
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
 
-  format:
-    name: Format
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.sha }}
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-
-      - name: Run rustfmt
-        run: find crates -name "*.rs" -exec rustfmt --check {} \;
+      - name: Audit dependencies
+        run: cargo audit
