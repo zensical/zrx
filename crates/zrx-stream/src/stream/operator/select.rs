@@ -28,7 +28,7 @@
 use std::marker::PhantomData;
 
 use zrx_scheduler::action::context::Binding;
-use zrx_scheduler::action::options::Interest;
+use zrx_scheduler::action::options::{Event, Interest};
 use zrx_scheduler::action::{Action, Context, Options};
 use zrx_scheduler::schedule::Subscriber;
 use zrx_scheduler::step::{IntoSteps, Scope};
@@ -105,6 +105,11 @@ where
         for scope in scopes {
             if inputs.contains_key(scope.key()) {
                 self.barriers.notify(scope.key());
+            } else {
+                // A removal reaches the action as a scope whose input value
+                // has already been withdrawn. Remove it from all barriers so
+                // stale membership cannot block or poison later advances.
+                self.barriers.handle(&Event::Remove(scope.key().clone()));
             }
         }
 
