@@ -34,6 +34,7 @@ mod condition;
 mod error;
 pub mod filter;
 mod operand;
+pub mod selection;
 
 pub use builder::Builder;
 pub use error::{Error, Result};

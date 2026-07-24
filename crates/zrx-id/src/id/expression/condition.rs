@@ -31,6 +31,7 @@ use crate::id::matcher::Matches;
 mod builder;
 mod group;
 mod instruction;
+mod selection;
 
 use instruction::Instruction;
 
