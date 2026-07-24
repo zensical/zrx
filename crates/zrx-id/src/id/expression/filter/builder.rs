@@ -27,10 +27,10 @@
 
 use slab::Slab;
 
+use crate::id::expression::condition::Condition;
 use crate::id::expression::{Expression, Operator, Term};
 use crate::id::matcher::Matcher;
 
-use super::condition::Condition;
 use super::error::Result;
 use super::Filter;
 

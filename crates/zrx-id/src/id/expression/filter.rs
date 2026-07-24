@@ -29,15 +29,15 @@ use slab::Slab;
 
 use crate::id::matcher::Matcher;
 
+use super::condition::Condition;
+
 mod builder;
 mod candidates;
-mod condition;
 mod error;
 mod terms;
 
 pub use builder::Builder;
 pub use candidates::Candidates;
-use condition::Condition;
 pub use error::{Error, Result};
 pub use terms::Terms;
 

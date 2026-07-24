@@ -30,6 +30,7 @@ use std::vec::IntoIter;
 use zrx_scheduler::Value;
 
 mod builder;
+mod condition;
 mod error;
 pub mod filter;
 mod operand;

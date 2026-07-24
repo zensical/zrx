@@ -28,11 +28,11 @@
 use slab::Slab;
 use std::iter::Peekable;
 
+use crate::id::expression::condition::Condition;
 use crate::id::matcher::matches::IntoIter;
 use crate::id::matcher::Matches;
 use crate::id::TryToId;
 
-use super::condition::Condition;
 use super::error::Result;
 use super::Filter;
 

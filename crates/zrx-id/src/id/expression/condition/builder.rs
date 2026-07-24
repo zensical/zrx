@@ -240,8 +240,8 @@ fn optimize_hoistable(group: Group) -> Group {
 mod tests {
 
     mod builder {
-        use crate::id::expression::filter::condition::group::Group;
-        use crate::id::expression::filter::Condition;
+        use crate::id::expression::condition::group::Group;
+        use crate::id::expression::condition::Condition;
         use crate::id::expression::{Expression, Operator, Result, Term};
         use crate::selector;
 
@@ -304,8 +304,8 @@ mod tests {
     }
 
     mod optimize {
-        use crate::id::expression::filter::condition::group::Group;
-        use crate::id::expression::filter::Condition;
+        use crate::id::expression::condition::group::Group;
+        use crate::id::expression::condition::Condition;
         use crate::id::expression::{Expression, Operator, Result};
         use crate::id::matcher::Matches;
         use crate::selector;
