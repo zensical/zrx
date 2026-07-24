@@ -34,12 +34,10 @@ use super::condition::Condition;
 mod builder;
 mod candidates;
 mod error;
-mod terms;
 
 pub use builder::Builder;
 pub use candidates::Candidates;
 pub use error::{Error, Result};
-pub use terms::Terms;
 
 // ----------------------------------------------------------------------------
 // Structs
