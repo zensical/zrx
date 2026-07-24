@@ -40,6 +40,7 @@ pub use builder::Builder;
 pub use error::{Error, Result};
 pub use filter::Filter;
 pub use operand::{Operand, Operator, Term};
+pub use selection::Selection;
 
 // ----------------------------------------------------------------------------
 // Structs
