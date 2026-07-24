@@ -68,10 +68,10 @@ impl Condition {
                     // the new result with the updated polarity
                     stack >>= 1;
                     stack = (stack << arity)
-                        | u64::from(match operator {
+                        | (u64::from(match operator {
                             Operator::Not => !last,
                             Operator::Any | Operator::All => last,
-                        }) * mask;
+                        }) * mask);
                 }
             }
         }
