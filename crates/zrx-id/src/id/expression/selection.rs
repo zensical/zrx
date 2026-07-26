@@ -38,11 +38,12 @@ use super::Expression;
 /// Selection.
 ///
 /// Selections are used to extract a positive set of [`Term`][] instances from
-/// an [`Expression`], yielding canonical [`Selector`] instances only. They are
-/// essential to construct a provider-side [`Filter`][], as providers do not
-/// perform [`Expression`] evaluation, only registration and matching.
+/// an [`Expression`], yielding canonical [`Selector`] instances only. Providers
+/// can combine those selectors into a single [`Matcher`][], which can be used
+/// to match against the [`Id`][] instances they manage and produce.
 ///
-/// [`Filter`]: crate::id::expression::Filter
+/// [`Id`]: crate::id::Id
+/// [`Matcher`]: crate::id::matcher::Matcher
 /// [`Term`]: crate::id::expression::Term
 pub struct Selection {
     /// Condition.
