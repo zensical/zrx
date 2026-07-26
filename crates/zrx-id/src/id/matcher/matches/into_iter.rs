@@ -67,7 +67,7 @@ impl IntoIterator for Matches {
     /// ```
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        let block = self.data[0];
+        let block = self.data.first().copied().unwrap_or(0);
         IntoIter {
             data: self.data,
             index: 0,
