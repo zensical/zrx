@@ -54,7 +54,11 @@ impl Iterator for Drain<'_> {
     /// Returns the next item.
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            let block = self.data[self.index];
+            let Some(&block) = self.data.get(self.index) else {
+                return None;
+            };
+
+            // Find lowest bit set in current block
             if block != 0 {
                 let num = block.trailing_zeros() as usize;
 
@@ -65,11 +69,6 @@ impl Iterator for Drain<'_> {
 
             // Move to the next block
             self.index += 1;
-
-            // If all blocks are exhausted, we're done
-            if self.index >= self.data.len() {
-                return None;
-            }
         }
     }
 }
@@ -79,6 +78,6 @@ impl Iterator for Drain<'_> {
 impl Drop for Drain<'_> {
     /// Removes all remaining items.
     fn drop(&mut self) {
-        self.data[self.index..].fill(0);
+        self.data.clear();
     }
 }

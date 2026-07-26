@@ -65,7 +65,7 @@ impl Items {
     #[inline]
     #[must_use]
     pub fn iter(&self) -> Iter<'_> {
-        let block = self.data[0];
+        let block = self.data.first().copied().unwrap_or(0);
         Iter {
             data: &self.data,
             index: 0,

@@ -46,7 +46,7 @@ pub use iter::Iter;
 ///
 /// Using a focused implementation allows us to optimize for our specific use
 /// case, and avoids yet another dependency to manage.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Items {
     /// Blocks of bits.
     data: Vec<u64>,
@@ -69,7 +69,7 @@ impl Items {
     /// ```
     #[must_use]
     pub fn new() -> Self {
-        Self::with_capacity(1)
+        Self::default()
     }
 
     /// Creates an item set with the given capacity.
@@ -88,15 +88,12 @@ impl Items {
         // 64, so that the bitset can be represented as a vector of 64-bit
         // blocks. It also means that the bitset can store at least the given
         // number of bits, but possibly more.
-        let blocks = capacity.div_ceil(64);
-        Self { data: vec![0; blocks] }
+        Self {
+            data: Vec::with_capacity(capacity.div_ceil(64)),
+        }
     }
 
     /// Returns whether the item set contains the given item.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is out of bounds.
     ///
     /// # Examples
     ///
@@ -113,7 +110,8 @@ impl Items {
     #[inline]
     #[must_use]
     pub fn contains(&self, index: usize) -> bool {
-        (self.data[index >> 6] & mask(index)) != 0
+        let opt = self.data.get(index >> 6);
+        opt.is_some_and(|&block| (block & mask(index)) != 0)
     }
 
     /// Inserts an item into the item set.
@@ -132,9 +130,9 @@ impl Items {
     /// ```
     #[inline]
     pub fn insert(&mut self, index: usize) -> bool {
-        let block = self.resolve(index);
-        if (self.data[block] & mask(index)) == 0 {
-            self.data[block] |= mask(index);
+        let group = self.resolve(index);
+        if (self.data[group] & mask(index)) == 0 {
+            self.data[group] |= mask(index);
             true
         } else {
             false
@@ -157,13 +155,22 @@ impl Items {
     /// ```
     #[inline]
     pub fn remove(&mut self, index: usize) -> bool {
-        let block = self.resolve(index);
-        if (self.data[block] & mask(index)) != 0 {
-            self.data[block] &= !mask(index);
-            true
-        } else {
-            false
+        let group = index >> 6;
+        let Some(block) = self.data.get_mut(group) else {
+            return false;
+        };
+
+        // Ensure presence of item before removing it
+        if (*block & mask(index)) == 0 {
+            return false;
         }
+
+        // Remove the item and truncate trailing blocks
+        *block &= !mask(index);
+        if *block == 0 && group + 1 == self.data.len() {
+            self.truncate();
+        }
+        true
     }
 
     /// Clears all items in the item set.
@@ -182,7 +189,7 @@ impl Items {
     /// ```
     #[inline]
     pub fn clear(&mut self) {
-        self.data.fill(0);
+        self.data.clear();
     }
 
     /// Computes the union with the given item set.
@@ -201,6 +208,7 @@ impl Items {
     /// assert_eq!(a, Items::from_iter([0, 1, 2]));
     /// ```
     pub fn union(&mut self, other: &Self) {
+        self.data.resize(other.data.len().max(self.data.len()), 0);
         for (a, b) in self.data.iter_mut().zip(&other.data) {
             *a |= *b;
         }
@@ -222,9 +230,13 @@ impl Items {
     /// assert_eq!(a, Items::from_iter([1]));
     /// ```
     pub fn intersect(&mut self, other: &Self) {
+        self.data.truncate(other.data.len());
         for (a, b) in self.data.iter_mut().zip(&other.data) {
             *a &= *b;
         }
+
+        // Truncate trailing blocks that contain no items
+        self.truncate();
     }
 
     /// Returns whether any of the given items is present.
@@ -245,7 +257,7 @@ impl Items {
     #[must_use]
     pub fn has_any(&self, other: &Self) -> bool {
         let mut iter = self.data.iter().zip(&other.data);
-        iter.any(|(a, b)| (*a & *b) != 0)
+        iter.any(|(&a, &b)| (a & b) != 0)
     }
 
     /// Returns whether the given items are all present.
@@ -265,8 +277,8 @@ impl Items {
     #[inline]
     #[must_use]
     pub fn has_all(&self, other: &Self) -> bool {
-        let mut iter = self.data.iter().zip(&other.data);
-        iter.all(|(a, b)| (*a & *b) == *b)
+        let mut iter = other.data.iter().enumerate();
+        iter.all(|(a, &b)| (self.data.get(a).unwrap_or(&0) & b) == b)
     }
 
     /// Resolve the block for the given item.
@@ -280,6 +292,12 @@ impl Items {
             self.data.resize(blocks, 0);
         }
         block
+    }
+
+    /// Truncates all trailing blocks that contain no items.
+    fn truncate(&mut self) {
+        let opt = self.data.iter().rposition(|&block| block != 0);
+        self.data.truncate(opt.map_or(0, |index| index + 1));
     }
 }
 
@@ -295,7 +313,7 @@ impl Items {
     /// Returns whether there are any items.
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.data.iter().all(|&block| block == 0)
+        self.data.is_empty()
     }
 }
 
@@ -324,24 +342,6 @@ impl FromIterator<usize> for Items {
             items.insert(index);
         }
         items
-    }
-}
-
-// ----------------------------------------------------------------------------
-
-impl Default for Items {
-    /// Creates an item set.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_store::stash::Items;
-    ///
-    /// // Create item set
-    /// let items = Items::default();
-    /// ```
-    fn default() -> Self {
-        Self::new()
     }
 }
 
