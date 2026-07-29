@@ -72,7 +72,7 @@ where
     /// let mut store = Indexed::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store {
     ///     println!("{key}: {value}");
     /// }

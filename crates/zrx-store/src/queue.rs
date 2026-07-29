@@ -77,7 +77,7 @@ pub use iter::{Iter, IterMut, Keys, Values};
 /// queue.insert("c", 3);
 /// queue.insert("d", 1);
 ///
-/// // Create iterator over the queue
+/// // Create iterator over queue
 /// for (key, value) in &queue {
 ///     println!("{key}: {value}");
 /// }
@@ -508,7 +508,7 @@ where
     /// let mut queue = Queue::default();
     /// queue.insert("key", 42);
     ///
-    /// // Create iterator over the queue
+    /// // Create iterator over queue
     /// for (key, value) in &queue {
     ///     println!("{key}: {value}");
     /// }
@@ -540,7 +540,7 @@ where
     /// let mut queue = Queue::default();
     /// queue.insert("key", 42);
     ///
-    /// // Create iterator over the queue
+    /// // Create iterator over queue
     /// for (key, value) in &mut queue {
     ///     println!("{key}: {value}");
     /// }

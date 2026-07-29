@@ -62,7 +62,7 @@ impl<K, V, S, C> IntoIterator for Ordered<K, V, S, C> {
     /// let mut store = Ordered::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store {
     ///     println!("{key}: {value}");
     /// }

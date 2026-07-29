@@ -84,12 +84,12 @@ impl<K, V, S, C> Indexed<K, V, S, C> {
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
-    /// store.insert("a", 42);
-    /// store.insert("b", 22);
-    /// store.insert("c", 32);
-    /// store.insert("d", 12);
+    /// store.insert("a", 4);
+    /// store.insert("b", 2);
+    /// store.insert("c", 3);
+    /// store.insert("d", 1);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store.range(2..4) {
     ///     println!("{key}: {value}");
     /// }
@@ -150,7 +150,7 @@ where
     /// let mut store = Indexed::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store.iter() {
     ///     println!("{key}: {value}");
     /// }
@@ -186,7 +186,7 @@ where
     /// let mut store = Indexed::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for key in store.keys() {
     ///     println!("{key}");
     /// }
@@ -219,7 +219,7 @@ where
     /// let mut store = Indexed::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for value in store.values() {
     ///     println!("{value}");
     /// }

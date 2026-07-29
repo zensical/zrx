@@ -75,7 +75,7 @@ pub use slots::{Slots, SlotsMut};
 /// let mut stash = Stash::default();
 /// stash.insert("key", 42);
 ///
-/// // Create iterator over the stash
+/// // Create iterator over stash
 /// for (key, value) in &stash {
 ///     println!("{key}: {value}");
 /// }
@@ -553,7 +553,7 @@ where
     /// let stash: Stash<_, _, HashMap<_, _>> =
     ///     items.into_iter().collect();
     ///
-    /// // Create iterator over the stash
+    /// // Create iterator over stash
     /// for (key, value) in &stash {
     ///     println!("{key}: {value}");
     /// }
@@ -592,7 +592,7 @@ where
     /// let mut stash = Stash::default();
     /// stash.insert("key", 42);
     ///
-    /// // Create iterator over the stash
+    /// // Create iterator over stash
     /// for (key, value) in &stash {
     ///     println!("{key}: {value}");
     /// }
@@ -624,7 +624,7 @@ where
     /// let mut stash = Stash::default();
     /// stash.insert("key", 42);
     ///
-    /// // Create iterator over the stash
+    /// // Create iterator over stash
     /// for (key, value) in &mut stash {
     ///     println!("{key}: {value}");
     /// }

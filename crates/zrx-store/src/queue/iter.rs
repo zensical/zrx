@@ -118,7 +118,7 @@ where
     /// let mut queue = Queue::default();
     /// queue.insert("key", 42);
     ///
-    /// // Create iterator over the queue
+    /// // Create iterator over queue
     /// for (key, value) in queue.iter() {
     ///     println!("{key}: {value}");
     /// }
@@ -154,7 +154,7 @@ where
     /// let mut queue = Queue::default();
     /// queue.insert("key", 42);
     ///
-    /// // Create iterator over the queue
+    /// // Create iterator over queue
     /// for (key, value) in queue.iter_mut() {
     ///     println!("{key}: {value}");
     /// }
@@ -189,7 +189,7 @@ where
     /// let mut queue = Queue::default();
     /// queue.insert("key", 42);
     ///
-    /// // Create iterator over the queue
+    /// // Create iterator over queue
     /// for key in queue.keys() {
     ///     println!("{key}");
     /// }
@@ -224,7 +224,7 @@ where
     /// let mut queue = Queue::default();
     /// queue.insert("key", 42);
     ///
-    /// // Create iterator over the queue
+    /// // Create iterator over queue
     /// for value in queue.values() {
     ///     println!("{value}");
     /// }

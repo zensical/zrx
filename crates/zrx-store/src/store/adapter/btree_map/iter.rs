@@ -58,7 +58,7 @@ where
     /// let mut store = BTreeMap::new();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store.iter() {
     ///     println!("{key}: {value}");
     /// }
@@ -90,7 +90,7 @@ where
     /// let mut store = BTreeMap::new();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store.iter_mut() {
     ///     println!("{key}: {value}");
     /// }
@@ -121,7 +121,7 @@ where
     /// let mut store = BTreeMap::new();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for key in store.keys() {
     ///     println!("{key}");
     /// }
@@ -153,7 +153,7 @@ where
     /// let mut store = BTreeMap::new();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for value in store.values() {
     ///     println!("{value}");
     /// }
@@ -186,7 +186,7 @@ where
     /// store.insert("a", 42);
     /// store.insert("b", 84);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store.range("b"..) {
     ///     println!("{key}: {value}");
     /// }

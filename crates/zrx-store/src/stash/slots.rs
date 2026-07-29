@@ -61,7 +61,7 @@ impl<K, V, S> Stash<K, V, S> {
     /// let mut stash = Stash::default();
     /// stash.insert("key", 42);
     ///
-    /// // Create iterator over the stash
+    /// // Create iterator over stash
     /// for (index, (key, value)) in stash.slots() {
     ///     println!("[{index}] {key}: {value}");
     /// }
@@ -83,7 +83,7 @@ impl<K, V, S> Stash<K, V, S> {
     /// let mut stash = Stash::default();
     /// stash.insert("key", 42);
     ///
-    /// // Create iterator over the stash
+    /// // Create iterator over stash
     /// for (index, (key, value)) in stash.slots_mut() {
     ///     println!("[{index}] {key}: {value}");
     /// }

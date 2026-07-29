@@ -94,7 +94,7 @@ pub use iter::{Iter, Keys, Values};
 /// store.insert("c", 3);
 /// store.insert("d", 1);
 ///
-/// // Create iterator over the store
+/// // Create iterator over store
 /// for (key, value) in &store {
 ///     println!("{key}: {value}");
 /// }
@@ -563,7 +563,7 @@ where
     /// let store: Indexed<_, _, HashMap<_, _>> =
     ///     items.into_iter().collect();
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store {
     ///     println!("{key}: {value}");
     /// }
@@ -602,7 +602,7 @@ where
     /// let mut store = Indexed::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in &store {
     ///     println!("{key}: {value}");
     /// }
