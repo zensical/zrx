@@ -76,7 +76,7 @@ impl Location {
     /// let location =
     ///     Location::new("path/to/file.rs", Position::new(0, 0));
     /// ```
-    #[inline]
+    #[must_use]
     pub fn new<U, L>(uri: U, location: L) -> Self
     where
         U: Into<String>,

@@ -135,7 +135,6 @@ where
     /// // Insert value
     /// store.insert("key", 42);
     /// ```
-    #[inline]
     #[must_use]
     pub fn new() -> Self
     where
