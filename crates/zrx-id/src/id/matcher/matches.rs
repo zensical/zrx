@@ -25,9 +25,11 @@
 
 //! Match set.
 
+mod drain;
 mod into_iter;
 mod iter;
 
+pub use drain::Drain;
 pub use into_iter::IntoIter;
 pub use iter::Iter;
 
