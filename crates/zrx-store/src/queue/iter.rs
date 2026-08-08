@@ -43,6 +43,7 @@ use super::Queue;
 // ----------------------------------------------------------------------------
 
 /// Iterator over the items of a [`Queue`].
+#[must_use]
 #[derive(Debug)]
 pub struct Iter<'a, K, V>
 where
@@ -57,6 +58,8 @@ where
 }
 
 /// Mutable iterator over the items of a [`Queue`].
+#[must_use]
+#[derive(Debug)]
 pub struct IterMut<'a, K, V>
 where
     K: Key,
@@ -70,6 +73,8 @@ where
 }
 
 /// Iterator over the keys of a [`Queue`].
+#[must_use]
+#[derive(Debug)]
 pub struct Keys<'a, K>
 where
     K: Key,
@@ -81,6 +86,8 @@ where
 }
 
 /// Iterator over the values of a [`Queue`].
+#[must_use]
+#[derive(Debug)]
 pub struct Values<'a, K, V>
 where
     K: Key,

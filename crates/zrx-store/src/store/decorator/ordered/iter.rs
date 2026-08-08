@@ -38,6 +38,7 @@ use super::Ordered;
 // ----------------------------------------------------------------------------
 
 /// Iterator over the items of an [`Ordered`] store.
+#[must_use]
 #[derive(Debug)]
 pub struct Iter<'a, K, V, C = Ascending> {
     /// Ordering of values.
@@ -45,6 +46,7 @@ pub struct Iter<'a, K, V, C = Ascending> {
 }
 
 /// Iterator over the keys of an [`Ordered`] store.
+#[must_use]
 #[derive(Debug)]
 pub struct Keys<'a, K, V, C = Ascending> {
     /// Ordering of values.
@@ -52,6 +54,7 @@ pub struct Keys<'a, K, V, C = Ascending> {
 }
 
 /// Iterator over the values of an [`Ordered`] store.
+#[must_use]
 #[derive(Debug)]
 pub struct Values<'a, K, V, C = Ascending> {
     /// Ordering of values.

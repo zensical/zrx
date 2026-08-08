@@ -50,7 +50,7 @@ impl<K, V> Store<K, V> for Slab<(K, V)> {
     /// use zrx_store::{Store, StoreMut};
     ///
     /// // Create store and initial state
-    /// let mut store = Slab::new();
+    /// let mut store = Slab::default();
     /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Obtain reference to value
@@ -77,7 +77,7 @@ impl<K, V> Store<K, V> for Slab<(K, V)> {
     /// use zrx_store::{Store, StoreMut};
     ///
     /// // Create store and initial state
-    /// let mut store = Slab::new();
+    /// let mut store = Slab::default();
     /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Ensure presence of key
@@ -114,7 +114,7 @@ where
     /// use zrx_store::StoreMut;
     ///
     /// // Create store
-    /// let mut store = Slab::new();
+    /// let mut store = Slab::default();
     ///
     /// // Insert value
     /// let value = StoreMut::insert(&mut store, "key", 42);
@@ -140,7 +140,7 @@ where
     /// use zrx_store::StoreMut;
     ///
     /// // Create store and initial state
-    /// let mut store = Slab::new();
+    /// let mut store = Slab::default();
     /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Remove and return value
@@ -165,7 +165,7 @@ where
     /// use zrx_store::StoreMut;
     ///
     /// // Create store and initial state
-    /// let mut store = Slab::new();
+    /// let mut store = Slab::default();
     /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Remove and return entry
@@ -192,10 +192,10 @@ where
     /// use zrx_store::StoreMut;
     ///
     /// // Create store and initial state
-    /// let mut store = Slab::new();
+    /// let mut store = Slab::default();
     /// StoreMut::insert(&mut store, "key", 42);
     ///
-    /// // Clear store
+    /// // Remove all items
     /// StoreMut::clear(&mut store);
     /// assert!(store.is_empty());
     /// ```
@@ -218,7 +218,7 @@ where
     /// use zrx_store::{StoreMut, StoreMutRef};
     ///
     /// // Create store and initial state
-    /// let mut store = Slab::new();
+    /// let mut store = Slab::default();
     /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Obtain mutable reference to value
@@ -245,7 +245,7 @@ where
     /// use zrx_store::StoreMutRef;
     ///
     /// // Create store
-    /// let mut store = Slab::new();
+    /// let mut store = Slab::default();
     /// # let _: Slab<(_, i32)> = store;
     ///
     /// // Obtain mutable reference to value

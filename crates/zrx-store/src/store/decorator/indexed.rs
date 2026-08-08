@@ -446,7 +446,7 @@ where
     /// let mut store = Indexed::default();
     /// store.insert("key", 42);
     ///
-    /// // Clear store
+    /// // Remove all items
     /// store.clear();
     /// assert!(store.is_empty());
     /// ```

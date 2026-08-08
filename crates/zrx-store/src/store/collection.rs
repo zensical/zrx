@@ -60,7 +60,7 @@ pub trait Collection<K, V>: Any + Debug {
     fn get(&self, key: &K) -> Option<&V>;
 
     /// Returns whether the collection contains the key.
-    fn contains_key(&self, id: &K) -> bool;
+    fn contains_key(&self, key: &K) -> bool;
 
     /// Returns the number of items in the collection.
     fn len(&self) -> usize;
@@ -152,14 +152,14 @@ where
 {
     /// Returns a reference to the value identified by the key.
     #[inline]
-    fn get(&self, id: &K) -> Option<&V> {
-        Store::get(self, id)
+    fn get(&self, key: &K) -> Option<&V> {
+        Store::get(self, key)
     }
 
     /// Returns whether the collection contains the key.
     #[inline]
-    fn contains_key(&self, id: &K) -> bool {
-        Store::contains_key(self, id)
+    fn contains_key(&self, key: &K) -> bool {
+        Store::contains_key(self, key)
     }
 
     /// Returns the number of items in the collection.

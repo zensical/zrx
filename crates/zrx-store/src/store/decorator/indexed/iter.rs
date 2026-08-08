@@ -40,6 +40,7 @@ use super::Indexed;
 // ----------------------------------------------------------------------------
 
 /// Iterator over the items of an [`Indexed`] store.
+#[must_use]
 #[derive(Debug)]
 pub struct Iter<'a, K, V, S = HashMap<K, V>> {
     /// Underlying store.
@@ -51,6 +52,7 @@ pub struct Iter<'a, K, V, S = HashMap<K, V>> {
 }
 
 /// Iterator over the values of an [`Indexed`] store.
+#[must_use]
 #[derive(Debug)]
 pub struct Values<'a, K, V, S = HashMap<K, V>> {
     /// Underlying store.

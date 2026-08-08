@@ -75,7 +75,7 @@ where
     /// use zrx_store::{Store, StoreMut};
     ///
     /// // Create store and initial state
-    /// let mut store = BTreeMap::new();
+    /// let mut store = BTreeMap::default();
     /// store.insert("key", 42);
     ///
     /// // Ensure presence of key
@@ -169,7 +169,7 @@ where
     /// use zrx_store::StoreMut;
     ///
     /// // Create store and initial state
-    /// let mut store = BTreeMap::new();
+    /// let mut store = BTreeMap::default();
     /// store.insert("key", 42);
     ///
     /// // Remove and return entry
@@ -197,7 +197,7 @@ where
     /// let mut store = BTreeMap::new();
     /// store.insert("key", 42);
     ///
-    /// // Clear store
+    /// // Remove all items
     /// store.clear();
     /// assert!(store.is_empty());
     /// ```

@@ -278,10 +278,8 @@ where
         K: Borrow<Q>,
         Q: Key,
     {
-        match self.store.get(key) {
-            Some(item) => self.items.get(*item.data()),
-            None => None,
-        }
+        let opt = self.store.get(key);
+        opt.and_then(|item| self.items.get(*item.data()))
     }
 
     /// Returns whether the queue contains the key.
@@ -413,7 +411,7 @@ where
     /// let mut queue = Queue::default();
     /// queue.insert("key", 42);
     ///
-    /// // Clear queue
+    /// // Remove all items
     /// queue.clear();
     /// assert!(queue.is_empty());
     /// ```
@@ -450,10 +448,8 @@ where
         K: Borrow<Q>,
         Q: Key,
     {
-        match self.store.get(key) {
-            Some(item) => self.items.get_mut(*item.data()),
-            None => None,
-        }
+        let opt = self.store.get(key);
+        opt.and_then(|item| self.items.get_mut(*item.data()))
     }
 
     /// Returns a mutable reference to the value or creates the default.

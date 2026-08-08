@@ -200,7 +200,7 @@ where
     /// let mut store = HashMap::new();
     /// store.insert("key", 42);
     ///
-    /// // Clear store
+    /// // Remove all items
     /// store.clear();
     /// assert!(store.is_empty());
     /// ```

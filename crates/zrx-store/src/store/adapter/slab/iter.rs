@@ -35,6 +35,7 @@ use crate::store::{StoreIterable, StoreIterableMut, StoreKeys, StoreValues};
 // ----------------------------------------------------------------------------
 
 /// Iterator over the items of a [`Slab`].
+#[must_use]
 #[derive(Debug)]
 pub struct Iter<'a, K, V> {
     /// Inner iterator.
@@ -42,6 +43,7 @@ pub struct Iter<'a, K, V> {
 }
 
 /// Mutable iterator over the items of a [`Slab`].
+#[must_use]
 #[derive(Debug)]
 pub struct IterMut<'a, K, V> {
     /// Inner iterator.
@@ -49,6 +51,7 @@ pub struct IterMut<'a, K, V> {
 }
 
 /// Iterator over the keys of a [`Slab`].
+#[must_use]
 #[derive(Debug)]
 pub struct Keys<'a, K, V> {
     /// Inner iterator.
@@ -56,6 +59,7 @@ pub struct Keys<'a, K, V> {
 }
 
 /// Iterator over the values of a [`Slab`].
+#[must_use]
 #[derive(Debug)]
 pub struct Values<'a, K, V> {
     /// Inner iterator.
@@ -84,10 +88,10 @@ where
     /// use zrx_store::{StoreIterable, StoreMut};
     ///
     /// // Create store and initial state
-    /// let mut store = Slab::new();
+    /// let mut store = Slab::default();
     /// StoreMut::insert(&mut store, "key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in StoreIterable::iter(&store) {
     ///     println!("{key}: {value}");
     /// }
@@ -116,10 +120,10 @@ where
     /// use zrx_store::{StoreIterableMut, StoreMut};
     ///
     /// // Create store and initial state
-    /// let mut store = Slab::new();
+    /// let mut store = Slab::default();
     /// StoreMut::insert(&mut store, "key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in StoreIterableMut::iter_mut(&mut store) {
     ///     println!("{key}: {value}");
     /// }
@@ -147,10 +151,10 @@ where
     /// use zrx_store::{StoreKeys, StoreMut};
     ///
     /// // Create store and initial state
-    /// let mut store = Slab::new();
+    /// let mut store = Slab::default();
     /// StoreMut::insert(&mut store, "key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for key in StoreKeys::keys(&store) {
     ///     println!("{key}");
     /// }
@@ -179,10 +183,10 @@ where
     /// use zrx_store::{StoreValues, StoreMut};
     ///
     /// // Create store and initial state
-    /// let mut store = Slab::new();
+    /// let mut store = Slab::default();
     /// StoreMut::insert(&mut store, "key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for key in StoreValues::values(&store) {
     ///     println!("{key}");
     /// }
