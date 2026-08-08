@@ -27,12 +27,11 @@
 
 use zrx_scheduler::action::options::Event;
 use zrx_scheduler::{Id, Key};
-use zrx_store::stash::Items;
 use zrx_store::{Stash, Store};
 
 use super::advance::Advance;
 use super::lifecycle::Lifecycle;
-use super::Barrier;
+use super::{Barrier, Slots};
 
 mod drain;
 
@@ -51,11 +50,11 @@ pub struct Barriers<I> {
     /// Inner set of barriers.
     inner: Stash<Key<I>, Barrier<I>>,
     /// All known scopes.
-    scopes: Stash<Key<I>, Items>,
+    scopes: Stash<Key<I>, Slots>,
     /// Global lifecycle.
     lifecycle: Lifecycle,
     /// Barrier indices that are fulfilled and pending drain.
-    fulfilled: Items,
+    fulfilled: Slots,
 }
 
 // ----------------------------------------------------------------------------
@@ -73,7 +72,7 @@ where
             inner: Stash::new(),
             scopes: Stash::new(),
             lifecycle: Lifecycle::default(),
-            fulfilled: Items::new(),
+            fulfilled: Slots::new(),
         }
     }
 
@@ -87,26 +86,31 @@ where
         let barrier = &mut self.inner[b];
         for (s, (scope, items)) in self.scopes.slots_mut() {
             if barrier.contains(scope) {
-                barrier.items.insert(s);
-                items.insert(b);
+                barrier.slots.insert(s, ());
+                items.insert(b, ());
             }
         }
 
         // The barrier may already be fulfilled if all matching scopes were
         // completed before it was registered
         if self.inner[b].is_complete(&self.lifecycle) {
-            self.fulfilled.insert(b);
+            self.fulfilled.insert(b, ());
         }
     }
 
     /// Removes a barrier from the barrier set.
     pub fn remove(&mut self, scope: &Key<I>) -> Option<Barrier<I>> {
         let b = self.inner.get(scope)?;
+        let scopes = self.inner[b].slots().keys().copied().collect::<Vec<_>>();
+        for s in scopes {
+            self.scopes[s].remove(&b);
+        }
+
         let (_, mut barrier) = self.inner.remove(b)?;
-        barrier.items.clear();
+        barrier.slots.clear();
 
         // If this barrier was pending, it no longer exists - remove it
-        self.fulfilled.remove(b);
+        self.fulfilled.remove(&b);
         Some(barrier)
     }
 
@@ -117,7 +121,7 @@ where
                 // We need to keep track of all scopes to account for late
                 // barrier registration - but we should not override seen items
                 let s = self.scopes.get(scope).unwrap_or_else(|| {
-                    self.scopes.insert(scope.clone(), Items::new())
+                    self.scopes.insert(scope.clone(), Slots::new())
                 });
                 if !self.lifecycle.submit(s) {
                     return;
@@ -126,15 +130,15 @@ where
                 // Full scan - scope is always new, seed the reverse index
                 for (b, (_, barrier)) in self.inner.slots_mut() {
                     if barrier.contains(scope) {
-                        self.scopes[s].insert(b);
+                        self.scopes[s].insert(b, ());
                         if barrier.insert(s)
                             && barrier.is_complete(&self.lifecycle)
                         {
-                            self.fulfilled.insert(b);
+                            self.fulfilled.insert(b, ());
                         } else {
                             // Barrier was pending but is no longer fulfilled -
                             // a new submitted scope invalidates it
-                            self.fulfilled.remove(b);
+                            self.fulfilled.remove(&b);
                         }
                     }
                 }
@@ -147,11 +151,11 @@ where
                     return;
                 }
 
-                for b in &self.scopes[s] {
-                    if self.inner[b].remove(s)
-                        && self.inner[b].is_complete(&self.lifecycle)
+                for (b, _) in &self.scopes[s] {
+                    if self.inner[*b].remove(s)
+                        && self.inner[*b].is_complete(&self.lifecycle)
                     {
-                        self.fulfilled.insert(b);
+                        self.fulfilled.insert(*b, ());
                     }
                 }
 
@@ -171,9 +175,9 @@ where
         self.lifecycle.complete(s);
 
         // Use reverse index - only visit barriers watching this scope
-        for b in &self.scopes[s] {
-            if self.inner[b].is_complete(&self.lifecycle) {
-                self.fulfilled.insert(b);
+        for (b, _) in &self.scopes[s] {
+            if self.inner[*b].is_complete(&self.lifecycle) {
+                self.fulfilled.insert(*b, ());
             }
         }
     }

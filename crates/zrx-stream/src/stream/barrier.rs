@@ -29,7 +29,7 @@ use std::fmt::{self, Debug};
 use std::sync::Arc;
 
 use zrx_scheduler::{Id, Key, Value};
-use zrx_store::stash::Items;
+use zrx_store::stash::{Map, Slot};
 
 pub mod advance;
 mod lifecycle;
@@ -38,6 +38,9 @@ pub mod set;
 pub use advance::Advance;
 use lifecycle::Lifecycle;
 pub use set::Barriers;
+
+/// Sidecar state keyed by stash slots.
+type Slots = Map<()>;
 
 // ----------------------------------------------------------------------------
 // Traits
@@ -58,8 +61,8 @@ trait BarrierFn<I>: Send + Sync {
 pub struct Barrier<I> {
     /// Barrier function.
     function: Arc<dyn BarrierFn<I>>,
-    /// Contained scopes.
-    items: Items,
+    /// Contained scope slots.
+    slots: Slots,
 }
 
 // ----------------------------------------------------------------------------
@@ -78,7 +81,7 @@ where
     {
         Self {
             function: Arc::new(f),
-            items: Items::new(),
+            slots: Slots::new(),
         }
     }
 
@@ -89,31 +92,31 @@ where
         self.function.contains(scope)
     }
 
-    /// Inserts the given index into the barrier.
+    /// Inserts the given slot into the barrier.
     #[inline]
-    fn insert(&mut self, index: usize) -> bool {
-        self.items.insert(index)
+    fn insert(&mut self, slot: Slot) -> bool {
+        self.slots.insert(slot, ()).is_none()
     }
 
-    /// Removes the given index from the barrier.
+    /// Removes the given slot from the barrier.
     #[inline]
-    fn remove(&mut self, index: usize) -> bool {
-        self.items.remove(index)
+    fn remove(&mut self, slot: Slot) -> bool {
+        self.slots.remove(&slot).is_some()
     }
 
     /// Returns `true` if the barrier is fulfilled.
     #[inline]
     fn is_complete(&self, lifecycle: &Lifecycle) -> bool {
-        lifecycle.is_complete(&self.items)
+        lifecycle.is_complete(&self.slots)
     }
 }
 
 #[allow(clippy::must_use_candidate)]
 impl<I> Barrier<I> {
-    /// Returns the items of the barrier.
+    /// Returns the scope slots of the barrier.
     #[inline]
-    pub fn items(&self) -> &Items {
-        &self.items
+    pub fn slots(&self) -> &Map<()> {
+        &self.slots
     }
 }
 
@@ -143,7 +146,7 @@ impl<I> Debug for Barrier<I> {
         let function = "Box<dyn BarrierFn>";
         f.debug_struct("Barrier")
             .field("function", &function)
-            .field("items", &self.items)
+            .field("slots", &self.slots)
             .finish()
     }
 }
