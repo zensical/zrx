@@ -70,7 +70,6 @@ impl<K, V, S> Stash<K, V, S> {
     /// }
     /// ```
     #[inline]
-    #[must_use]
     pub fn slots(&self) -> Slots<'_, K, V> {
         Slots { inner: self.items.iter() }
     }
@@ -92,7 +91,6 @@ impl<K, V, S> Stash<K, V, S> {
     /// }
     /// ```
     #[inline]
-    #[must_use]
     pub fn slots_mut(&mut self) -> SlotsMut<'_, K, V> {
         SlotsMut { inner: self.items.iter_mut() }
     }

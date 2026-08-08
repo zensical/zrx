@@ -151,7 +151,7 @@ where
                     return;
                 }
 
-                for (b, _) in &self.scopes[s] {
+                for (b, ()) in &self.scopes[s] {
                     if self.inner[*b].remove(s)
                         && self.inner[*b].is_complete(&self.lifecycle)
                     {
@@ -175,7 +175,7 @@ where
         self.lifecycle.complete(s);
 
         // Use reverse index - only visit barriers watching this scope
-        for (b, _) in &self.scopes[s] {
+        for (b, ()) in &self.scopes[s] {
             if self.inner[*b].is_complete(&self.lifecycle) {
                 self.fulfilled.insert(*b, ());
             }

@@ -79,6 +79,6 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         self.inner
             .next()
-            .and_then(|(slot, _)| self.stash.key(*slot))
+            .and_then(|(slot, ())| self.stash.key(*slot))
     }
 }

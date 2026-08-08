@@ -72,7 +72,6 @@ impl<T> Slab<T> {
     /// }
     /// ```
     #[inline]
-    #[must_use]
     pub fn iter(&self) -> Iter<'_, T> {
         Iter { inner: self.inner.iter() }
     }
@@ -94,7 +93,6 @@ impl<T> Slab<T> {
     /// }
     /// ```
     #[inline]
-    #[must_use]
     pub fn iter_mut(&mut self) -> IterMut<'_, T> {
         IterMut { inner: self.inner.iter_mut() }
     }
