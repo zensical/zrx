@@ -86,7 +86,7 @@ where
     /// let mut slab = Slab::default();
     /// let slot = slab.insert("key");
     ///
-    /// // Create associated map
+    /// // Create slab map
     /// let mut map = Map::default();
     /// map.insert(slot, 42);
     ///
@@ -111,7 +111,7 @@ where
     /// let mut slab = Slab::default();
     /// let slot = slab.insert("key");
     ///
-    /// // Create associated map
+    /// // Create slab map
     /// let mut map = Map::default();
     /// map.insert(slot, 42);
     ///
@@ -136,7 +136,7 @@ where
     /// let mut slab = Slab::default();
     /// let slot = slab.insert("key");
     ///
-    /// // Create associated map
+    /// // Create slab map
     /// let mut map = Map::default();
     /// map.insert(slot, 42);
     ///
@@ -161,7 +161,7 @@ where
     /// let mut slab = Slab::default();
     /// let slot = slab.insert("key");
     ///
-    /// // Create associated map
+    /// // Create slab map
     /// let mut map = Map::default();
     /// map.insert(slot, 42);
     ///

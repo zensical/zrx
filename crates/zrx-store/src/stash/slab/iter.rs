@@ -35,7 +35,7 @@ use super::{Entry, Slab};
 // ----------------------------------------------------------------------------
 
 /// Iterator over the items of a generational [`Slab`].
-
+#[must_use]
 #[derive(Debug)]
 pub struct Iter<'a, T> {
     /// Inner iterator.
@@ -43,7 +43,7 @@ pub struct Iter<'a, T> {
 }
 
 /// Mutable iterator over the items of a generational [`Slab`].
-
+#[must_use]
 #[derive(Debug)]
 pub struct IterMut<'a, T> {
     /// Inner iterator.

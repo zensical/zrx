@@ -33,6 +33,7 @@ use super::Stash;
 // ----------------------------------------------------------------------------
 
 /// Iterator over the slots of a [`Stash`].
+#[must_use]
 #[derive(Debug)]
 pub struct Slots<'a, K, V> {
     /// Inner iterator.
@@ -40,6 +41,7 @@ pub struct Slots<'a, K, V> {
 }
 
 /// Mutable iterator over the slots of a [`Stash`].
+#[must_use]
 #[derive(Debug)]
 pub struct SlotsMut<'a, K, V> {
     /// Inner iterator.

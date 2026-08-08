@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Generational map.
+//! Generational slab map.
 
 use std::mem;
 use std::num::NonZeroUsize;
@@ -42,7 +42,7 @@ pub use iter::{Iter, IterMut, Keys, Values};
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Generational map.
+/// Generational slab map.
 ///
 /// The map associates side data with a key that embeds a [`Slot`]. Its sparse
 /// index gives constant-time access by slab index, while dense entries retain
@@ -55,13 +55,13 @@ where
 {
     /// Underlying vector.
     inner: Vec<Entry<K, V>>,
-    /// Indices as a sparse vector.
-    indices: Vec<Option<NonZeroUsize>>,
+    /// Mapping from index to dense position.
+    positions: Vec<Option<NonZeroUsize>>,
 }
 
 // ----------------------------------------------------------------------------
 
-/// Generational map entry.
+/// Generational slab map entry.
 #[derive(Clone, Debug)]
 struct Entry<K, V> {
     /// Entry key.
@@ -78,7 +78,7 @@ impl<V, K> Map<V, K>
 where
     K: Key + AsRef<Slot>,
 {
-    /// Creates a generational map.
+    /// Creates a generational slab map.
     ///
     /// # Examples
     ///
@@ -89,7 +89,7 @@ where
     /// let mut slab = Slab::default();
     /// let slot = slab.insert("key");
     ///
-    /// // Create associated map
+    /// // Create slab map
     /// let mut map = Map::new();
     /// map.insert(slot, 42);
     /// ```
@@ -109,7 +109,7 @@ where
     /// let mut slab = Slab::default();
     /// let slot = slab.insert("key");
     ///
-    /// // Create associated map
+    /// // Create slab map
     /// let mut map = Map::default();
     /// map.insert(slot, 42);
     ///
@@ -120,8 +120,8 @@ where
     #[inline]
     #[must_use]
     pub fn get(&self, key: &K) -> Option<&V> {
-        let index = self.position(key)?;
-        Some(&self.inner[index].value)
+        let position = self.position(key)?;
+        Some(&self.inner[position].value)
     }
 
     /// Returns a mutable reference to the value identified by the key.
@@ -135,7 +135,7 @@ where
     /// let mut slab = Slab::default();
     /// let slot = slab.insert("key");
     ///
-    /// // Create associated map
+    /// // Create slab map
     /// let mut map = Map::default();
     /// map.insert(slot, 42);
     ///
@@ -146,8 +146,8 @@ where
     #[inline]
     #[must_use]
     pub fn get_mut(&mut self, key: &K) -> Option<&mut V> {
-        let index = self.position(key)?;
-        Some(&mut self.inner[index].value)
+        let position = self.position(key)?;
+        Some(&mut self.inner[position].value)
     }
 
     /// Returns whether the map contains the key.
@@ -161,7 +161,7 @@ where
     /// let mut slab = Slab::default();
     /// let slot = slab.insert("key");
     ///
-    /// // Create associated map
+    /// // Create slab map
     /// let mut map = Map::default();
     /// map.insert(slot, 42);
     ///
@@ -193,7 +193,7 @@ where
     /// let mut slab = Slab::default();
     /// let slot = slab.insert("key");
     ///
-    /// // Create associated map
+    /// // Create slab map
     /// let mut map = Map::default();
     ///
     /// // Insert value
@@ -202,8 +202,8 @@ where
     #[inline]
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         let index = key.as_ref().index();
-        if let Some(index) = self.resolve(index) {
-            let entry = &mut self.inner[index];
+        if let Some(position) = self.resolve(index) {
+            let entry = &mut self.inner[position];
             assert!(entry.key == key, "invariant");
 
             // Insert and return prior value
@@ -211,13 +211,13 @@ where
         }
 
         // Grow vector if necessary to accommodate the new index
-        if self.indices.len() <= index {
-            self.indices.resize(index + 1, None);
+        if self.positions.len() <= index {
+            self.positions.resize(index + 1, None);
         }
 
         // Insert new entry and associate it with the key's index
         self.inner.push(Entry { key, value });
-        self.indices[index] = Some(encode(self.inner.len() - 1));
+        self.positions[index] = Some(encode(self.inner.len() - 1));
         None
     }
 
@@ -237,31 +237,37 @@ where
     ///
     /// // Create slab
     /// let mut slab = Slab::default();
-    /// let slot = slab.insert("key");
+    /// let a = slab.insert("a");
+    /// let b = slab.insert("b");
     ///
     /// // Create associated map
     /// let mut map = Map::default();
-    /// map.insert(slot, 42);
+    /// map.insert(a, 42);
+    /// map.insert(b, 84);
     ///
     /// // Remove and return value
-    /// let value = map.remove(&slot);
+    /// let value = map.remove(&a);
     /// assert_eq!(value, Some(42));
+    ///
+    /// // Obtain reference to value
+    /// let value = map.get(&b);
+    /// assert_eq!(value, Some(&84));
     /// ```
     #[inline]
     pub fn remove(&mut self, key: &K) -> Option<V> {
         let index = key.as_ref().index();
-        self.resolve(index).map(|index| {
-            let entry = &self.inner[index];
+        self.resolve(index).map(|position| {
+            let entry = &self.inner[position];
             assert!(&entry.key == key, "invariant");
 
             // Remove index association for the removed entry
-            self.indices[index] = None;
+            self.positions[index] = None;
 
             // Remove entry and update index association for swapped entry
-            let Entry { value, .. } = self.inner.swap_remove(index);
-            if let Some(entry) = self.inner.get(index) {
+            let Entry { value, .. } = self.inner.swap_remove(position);
+            if let Some(entry) = self.inner.get(position) {
                 let index = entry.key.as_ref().index();
-                self.indices[index] = Some(encode(index));
+                self.positions[index] = Some(encode(position));
             }
 
             // Return prior value
@@ -280,7 +286,7 @@ where
     /// let mut slab = Slab::default();
     /// let slot = slab.insert("key");
     ///
-    /// // Create associated map
+    /// // Create slab map
     /// let mut map = Map::new();
     /// map.insert(slot, 42);
     ///
@@ -291,18 +297,18 @@ where
     #[inline]
     pub fn clear(&mut self) {
         self.inner.clear();
-        self.indices.clear();
+        self.positions.clear();
     }
 
     /// Returns the position of the given key.
     fn position(&self, key: &K) -> Option<usize> {
-        let index = self.resolve(key.as_ref().index())?;
-        (&self.inner[index].key == key).then_some(index)
+        let position = self.resolve(key.as_ref().index())?;
+        (&self.inner[position].key == key).then_some(position)
     }
 
     /// Returns the position of the given index.
     fn resolve(&self, index: usize) -> Option<usize> {
-        self.indices.get(index).copied().flatten().map(decode)
+        self.positions.get(index).copied().flatten().map(decode)
     }
 }
 
@@ -346,7 +352,7 @@ where
     /// let mut slab = Slab::default();
     /// let slot = slab.insert("key");
     ///
-    /// // Create associated map
+    /// // Create slab map
     /// let mut map = Map::new();
     /// map.insert(slot, 42);
     ///
@@ -379,7 +385,7 @@ where
     /// let mut slab = Slab::default();
     /// let slot = slab.insert("key");
     ///
-    /// // Create associated map
+    /// // Create slab map
     /// let mut map = Map::new();
     /// map.insert(slot, 42);
     ///
@@ -400,7 +406,7 @@ impl<V, K> Default for Map<V, K>
 where
     K: Key + AsRef<Slot>,
 {
-    /// Creates a generational map.
+    /// Creates a generational slab map.
     ///
     /// # Examples
     ///
@@ -411,7 +417,7 @@ where
     /// let mut slab = Slab::default();
     /// let slot = slab.insert("key");
     ///
-    /// // Create associated map
+    /// // Create slab map
     /// let mut map = Map::default();
     /// map.insert(slot, 42);
     /// ```
@@ -419,7 +425,7 @@ where
     fn default() -> Self {
         Self {
             inner: Vec::default(),
-            indices: Vec::default(),
+            positions: Vec::default(),
         }
     }
 }
@@ -428,14 +434,14 @@ where
 // Functions
 // ----------------------------------------------------------------------------
 
-/// Encodes a dense index to sparse storage.
+/// Encodes a dense to sparse index.
 #[inline]
 fn encode(index: usize) -> NonZeroUsize {
     let index = index.checked_add(1).expect("invariant");
     NonZeroUsize::new(index).expect("invariant")
 }
 
-/// Decodes a sparse index to dense storage.
+/// Decodes a sparse to dense index.
 #[inline]
 fn decode(index: NonZeroUsize) -> usize {
     index.get() - 1

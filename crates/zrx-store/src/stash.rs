@@ -55,14 +55,11 @@ pub use slots::{Slots, SlotsMut};
 /// built on a generational [`Slab`], together with a [`Store`] that provides
 /// the underlying item storage.
 ///
-/// Iteration happens on the underlying [`Slab`], which means that the order of
-/// items is stable, but not sorted by key. This ensures, that iteration is not
-/// affected by insertions and removals, and cache efficient, since no lookups
-/// need to be performed on the underlying [`Store`] to obtain the items. Note
-/// that the store iterator traits do not allow to return slots for the items,
-/// only references to keys and values. In case slots are required, the stash
-/// can be iterated with [`Stash::slots`] or [`Stash::slots_mut`], since those
-/// return both, slots and references to keys and values.
+/// Iteration follows underlying slab index order, which is not sorted by key.
+/// Removed indices may be reused by later insertions. Iteration is cache
+/// efficient because it does not look up items in the underlying [`Store`].
+/// Store iterator traits return only references to keys and values; use
+/// [`Stash::slots`] or [`Stash::slots_mut`] when slots are required.
 ///
 /// # Examples
 ///
