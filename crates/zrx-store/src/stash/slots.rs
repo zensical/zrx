@@ -23,8 +23,9 @@
 
 // ----------------------------------------------------------------------------
 
-//! Iterator implementations for [`Stash`].
+//! Iterator implementations for [`Stash`] slots.
 
+use super::slab::{self, Slot};
 use super::Stash;
 
 // ----------------------------------------------------------------------------
@@ -62,8 +63,8 @@ impl<K, V, S> Stash<K, V, S> {
     /// stash.insert("key", 42);
     ///
     /// // Create iterator over stash
-    /// for (index, (key, value)) in stash.slots() {
-    ///     println!("[{index}] {key}: {value}");
+    /// for (slot, (key, value)) in stash.slots() {
+    ///     println!("[{slot}] {key}: {value}");
     /// }
     /// ```
     #[inline]
@@ -84,8 +85,8 @@ impl<K, V, S> Stash<K, V, S> {
     /// stash.insert("key", 42);
     ///
     /// // Create iterator over stash
-    /// for (index, (key, value)) in stash.slots_mut() {
-    ///     println!("[{index}] {key}: {value}");
+    /// for (slot, (key, value)) in stash.slots_mut() {
+    ///     println!("[{slot}] {key}: {value}");
     /// }
     /// ```
     #[inline]
@@ -100,13 +101,13 @@ impl<K, V, S> Stash<K, V, S> {
 // ----------------------------------------------------------------------------
 
 impl<'a, K, V> Iterator for Slots<'a, K, V> {
-    type Item = (usize, (&'a K, &'a V));
+    type Item = (Slot, (&'a K, &'a V));
 
     /// Returns the next item.
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let opt = self.inner.next();
-        opt.map(|(index, (key, value))| (index, (key, value)))
+        opt.map(|(slot, (key, value))| (slot, (key, value)))
     }
 
     /// Returns the bounds on the remaining length of the iterator.
@@ -127,13 +128,13 @@ impl<K, V> ExactSizeIterator for Slots<'_, K, V> {
 // ----------------------------------------------------------------------------
 
 impl<'a, K, V> Iterator for SlotsMut<'a, K, V> {
-    type Item = (usize, (&'a K, &'a mut V));
+    type Item = (Slot, (&'a K, &'a mut V));
 
     /// Returns the next item.
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let opt = self.inner.next();
-        opt.map(|(index, (key, value))| (index, (&*key, value)))
+        opt.map(|(slot, (key, value))| (slot, (&*key, value)))
     }
 
     /// Returns the bounds on the remaining length of the iterator.
