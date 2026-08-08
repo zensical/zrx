@@ -44,7 +44,7 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: 1.97.1
 
       - name: Run clippy
         run: cargo clippy -- -D warnings
@@ -61,7 +61,24 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: 1.97.1
 
       - name: Run rustfmt
         run: find crates -name "*.rs" -exec rustfmt --check {} \;
+
+  version:
+    name: MSRV
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.86.0
+
+      - name: Check workspace
+        run: cargo check --workspace
