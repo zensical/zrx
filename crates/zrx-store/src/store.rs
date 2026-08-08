@@ -384,25 +384,3 @@ where
     /// Creates a store with the given comparator.
     fn with_comparator(comparator: C) -> Self;
 }
-
-// ----------------------------------------------------------------------------
-
-/// Creates a store from an iterator.
-pub trait StoreFromIterator<K, V>: FromIterator<(K, V)> {}
-
-/// Creates an iterator over the items of the store.
-pub trait StoreIntoIterator<K, V>: IntoIterator<Item = (K, V)> {}
-
-// ----------------------------------------------------------------------------
-// Blanket implementations
-// ----------------------------------------------------------------------------
-
-#[rustfmt::skip]
-impl<K, V, T> StoreFromIterator<K, V> for T
-where
-    T: FromIterator<(K, V)> {}
-
-#[rustfmt::skip]
-impl<K, V, T> StoreIntoIterator<K, V> for T
-where
-    T: IntoIterator<Item = (K, V)> {}
