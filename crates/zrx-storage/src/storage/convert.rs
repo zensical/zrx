@@ -261,7 +261,7 @@ where
     /// let iter: Vec<&dyn Any> = vec![&a, &b];
     ///
     /// // Obtain storage references
-    /// let storages = <[i32]>::try_as_storages(iter)?;
+    /// let storages = <Vec<i32>>::try_as_storages(iter)?;
     /// # let _: Vec<&Storage<&str, _>> = storages;
     /// # Ok(())
     /// # }
