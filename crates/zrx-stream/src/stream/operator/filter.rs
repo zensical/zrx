@@ -84,7 +84,7 @@ where
     A: Arguments,
 {
     type Inputs = (T,);
-    type Output<'a> = T;
+    type Output = T;
 
     /// Executes the operator.
     fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {

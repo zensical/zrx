@@ -86,7 +86,7 @@ where
     T: Value,
 {
     type Inputs = (T,);
-    type Output<'a> = Vec<(Key<I>, T)>;
+    type Output = Vec<(Key<I>, T)>;
 
     /// Executes the operator.
     fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {

@@ -105,7 +105,7 @@ where
     /// Input storages.
     pub inputs: Inputs<'a, I, C::Inputs>,
     /// Output storage.
-    pub output: Output<'a, I, C::Output<'a>>,
+    pub output: Output<'a, I, C::Output>,
 }
 
 // ----------------------------------------------------------------------------

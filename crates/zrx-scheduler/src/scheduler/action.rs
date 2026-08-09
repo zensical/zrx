@@ -27,7 +27,7 @@
 
 use zrx_storage::convert::{TryAsStorageMut, TryAsStorages};
 
-use super::signal::{Key, Value};
+use super::signal::Key;
 use super::step::IntoSteps;
 
 pub mod context;
@@ -71,9 +71,7 @@ pub use options::Options;
 /// through the implementation of the [`Tag`][] trait.
 ///
 /// Note that actions themselves cannot be dyn-compatible, as they require the
-/// [`Sized`] bound to pass `Self` to [`Context`] and [`IntoEffects`]. Also note
-/// that the [`Action::Output`] associated type must be generic over a lifetime,
-/// as this is necessary to derive the output type from the input types.
+/// [`Sized`] bound to pass `Self` to [`Context`] and [`IntoEffects`].
 ///
 /// [`Scheduler`]: crate::scheduler::Scheduler
 /// [`Storage`]: zrx_storage::Storage
@@ -82,9 +80,9 @@ pub use options::Options;
 /// [`Timer`]: crate::scheduler::effect::Timer
 pub trait Action<I>: Sized {
     /// Input types of action.
-    type Inputs: Value + TryAsStorages<Key<I>>;
+    type Inputs: TryAsStorages<Key<I>>;
     /// Output type of action.
-    type Output<'a>: Value + TryAsStorageMut<Key<I>>;
+    type Output: TryAsStorageMut<Key<I>>;
 
     /// Executes the action.
     ///

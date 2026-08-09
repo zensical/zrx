@@ -54,7 +54,7 @@ use super::Builder;
 /// converted into a [`Subscriber`] with default options.
 ///
 /// [`Sequence`]: crate::scheduler::action::Sequence
-pub struct Subscriber<'a, I, A>
+pub struct Subscriber<I, A>
 where
     A: Action<I>,
 {
@@ -63,14 +63,14 @@ where
     /// Action options.
     options: Options,
     /// Action storage.
-    storage: Option<Storage<Key<I>, A::Output<'a>>>,
+    storage: Option<Storage<Key<I>, A::Output>>,
 }
 
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<'a, I, A> Subscriber<'a, I, A>
+impl<I, A> Subscriber<I, A>
 where
     A: Action<I>,
 {
@@ -97,7 +97,7 @@ where
     #[must_use]
     pub fn with_storage<S>(mut self, storage: S) -> Self
     where
-        S: Collection<Key<I>, A::Output<'a>>,
+        S: Collection<Key<I>, A::Output>,
     {
         self.storage = Some(Storage::new(storage));
         self
@@ -130,10 +130,10 @@ where
     /// to make sure the graph does not contain stale node references.
     ///
     /// [`Error::Graph`]: super::error::Error::Graph
-    pub fn add<'a, N, S, A>(&mut self, nodes: N, subscriber: S) -> Result<usize>
+    pub fn add<N, S, A>(&mut self, nodes: N, subscriber: S) -> Result<usize>
     where
         N: IntoIterator<Item = usize>,
-        S: Into<Subscriber<'a, I, A>>,
+        S: Into<Subscriber<I, A>>,
         A: Action<I> + 'static,
     {
         let Subscriber { action, options, storage } = subscriber.into();
@@ -142,7 +142,7 @@ where
         // Create target node for subscriber, creating a descriptor for matching
         // nodes during graph construction, and a worker for action execution
         let target = self.graph.add_node(Node::new(
-            Descriptor::of::<A::Output<'a>>(),
+            Descriptor::of::<A::Output>(),
             Worker::new(handler),
         ));
 
@@ -190,7 +190,7 @@ where
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I, A> From<A> for Subscriber<'_, I, A>
+impl<I, A> From<A> for Subscriber<I, A>
 where
     A: Action<I>,
 {

@@ -48,7 +48,7 @@ where
     S: TryAsStorageMut<Key<I>>,
 {
     /// Conversion target.
-    target: S::Target<'a>,
+    target: &'a mut Storage<Key<I>, S>,
 }
 
 // ----------------------------------------------------------------------------
@@ -68,7 +68,7 @@ where
     ///
     /// [`Error::Storage`]: crate::scheduler::action::context::Error::Storage
     #[inline]
-    pub fn output(&mut self) -> Result<Output<'_, I, C::Output<'_>>> {
+    pub fn output(&mut self) -> Result<Output<'_, I, C::Output>> {
         Output::new(self.output.as_mut())
     }
 }
