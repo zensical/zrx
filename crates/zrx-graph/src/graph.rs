@@ -88,7 +88,7 @@ use traversal::Traversal;
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Graph<T, R = Direct> {
     /// Graph data.
     data: Vec<T>,
@@ -422,6 +422,20 @@ impl<T, R> IntoIterator for &Graph<T, R> {
 }
 
 // ----------------------------------------------------------------------------
+
+impl<T, R> Clone for Graph<T, R>
+where
+    T: Clone,
+{
+    /// Clones the graph.
+    #[inline]
+    fn clone(&self) -> Self {
+        Self {
+            data: self.data.clone(),
+            topology: self.topology.clone(),
+        }
+    }
+}
 
 impl<T> Default for Graph<T> {
     /// Creates an empty graph.
