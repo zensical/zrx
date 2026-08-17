@@ -178,7 +178,15 @@ where
     fn update_position(
         &mut self, key: &K, value: &V,
     ) -> Result<Range<usize>, Range<usize>> {
-        self.position(key, value).map(|n| n..n + 1).map_err(|n| {
+        let position = self.position(key, value);
+        if let Ok(n) = position {
+            if self.store.get(key).expect("invariant") != value {
+                return Err(n..n + 1);
+            }
+        }
+
+        // The entry is either unchanged or has a new position in the ordering
+        position.map(|n| n..n + 1).map_err(|n| {
             let prior = self.store.get(key);
 
             // At this point, we know that the key-value pair either does not
