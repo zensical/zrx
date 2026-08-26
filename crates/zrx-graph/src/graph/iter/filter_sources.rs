@@ -25,8 +25,8 @@
 
 //! Iterator over sources in a set of nodes.
 
-use crate::graph::topology::{Topology, Transitive};
 use crate::graph::Graph;
+use crate::graph::topology::{Topology, Transitive};
 
 // ----------------------------------------------------------------------------
 // Structs

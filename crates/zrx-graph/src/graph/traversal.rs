@@ -29,8 +29,8 @@ use ahash::HashSet;
 use std::collections::VecDeque;
 use std::mem;
 
-use super::topology::{Topology, Transitive};
 use super::Graph;
+use super::topology::{Topology, Transitive};
 
 mod error;
 mod into_iter;

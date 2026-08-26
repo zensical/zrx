@@ -111,8 +111,8 @@ impl<T, R> Graph<T, R> {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::topology::Adjacency;
     /// use zrx_graph::Graph;
+    /// use zrx_graph::topology::Adjacency;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();
@@ -273,8 +273,8 @@ impl<T, R> Index<usize> for Graph<T, R> {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::topology::Adjacency;
     /// use zrx_graph::Graph;
+    /// use zrx_graph::topology::Adjacency;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();
@@ -314,8 +314,8 @@ impl<T, R> IndexMut<usize> for Graph<T, R> {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::topology::Adjacency;
     /// use zrx_graph::Graph;
+    /// use zrx_graph::topology::Adjacency;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();
@@ -392,8 +392,8 @@ impl<T, R> IntoIterator for &Graph<T, R> {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::topology::Adjacency;
     /// use zrx_graph::Graph;
+    /// use zrx_graph::topology::Adjacency;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();

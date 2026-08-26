@@ -136,8 +136,8 @@ impl Topology<Direct> {
     /// builder.add_edge(b, c)?;
     ///
     /// // Create transitive topology
-    /// let topology = Topology::new(builder.len(), builder.edges())
-    ///     .into_transitive();
+    /// let topology =
+    ///     Topology::new(builder.len(), builder.edges()).into_transitive();
     /// # Ok(())
     /// # }
     /// ```

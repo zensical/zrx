@@ -25,8 +25,8 @@
 
 //! Iterator over paths between two nodes.
 
-use crate::graph::topology::Adjacency;
 use crate::graph::Graph;
+use crate::graph::topology::Adjacency;
 
 // ----------------------------------------------------------------------------
 // Structs
