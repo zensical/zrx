@@ -110,8 +110,8 @@ pub type Result<T = ()> = result::Result<T, Error>;
 /// # Examples
 ///
 /// ```
-/// use zrx_scheduler::step::error::catch;
 /// use zrx_scheduler::step::Error;
+/// use zrx_scheduler::step::error::catch;
 ///
 /// // Define function that panics
 /// let res = catch(|| {

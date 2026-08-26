@@ -33,8 +33,8 @@ use zrx_storage::convert::TryAsStorages;
 use crate::scheduler::action::Action;
 use crate::scheduler::signal::Key;
 
-use super::error::Result;
 use super::Context;
+use super::error::Result;
 
 // ----------------------------------------------------------------------------
 // Structs

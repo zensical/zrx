@@ -32,8 +32,8 @@ use zrx_storage::set::{View, ViewMut};
 
 use crate::scheduler::engine::Tag;
 
-use super::options::Event;
 use super::Action;
+use super::options::Event;
 
 mod builder;
 mod error;

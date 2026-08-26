@@ -31,7 +31,7 @@ use zrx_storage::Storages;
 
 use crate::action::options::{Event, Interest};
 use crate::scheduler::action::graph::{self, Graph};
-use crate::scheduler::action::{context, Context, Result};
+use crate::scheduler::action::{Context, Result, context};
 use crate::scheduler::signal::{Id, Key};
 use crate::scheduler::step::{Scope, Steps};
 

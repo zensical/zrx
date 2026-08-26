@@ -25,7 +25,7 @@
 
 //! Task queue.
 
-use crossbeam::channel::{bounded, Receiver, Sender};
+use crossbeam::channel::{Receiver, Sender, bounded};
 use std::collections::VecDeque;
 use std::fmt::Debug;
 use std::panic::AssertUnwindSafe;

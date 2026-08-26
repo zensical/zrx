@@ -30,9 +30,9 @@ use std::fmt::Debug;
 
 use zrx_storage::Storages;
 
+use super::Schedule;
 use super::frontier::Frontiers;
 use super::graph;
-use super::Schedule;
 
 mod error;
 mod subscriber;

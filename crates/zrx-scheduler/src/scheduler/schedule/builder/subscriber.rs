@@ -33,9 +33,9 @@ use crate::scheduler::action::{Action, Options};
 use crate::scheduler::signal::Diff;
 use crate::scheduler::signal::{Id, Key, Value};
 
+use super::Builder;
 use super::error::Result;
 use super::graph::{Descriptor, Handler, Node, Source, Worker};
-use super::Builder;
 
 // ----------------------------------------------------------------------------
 // Structs
