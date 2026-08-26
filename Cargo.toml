@@ -40,14 +40,14 @@ pedantic = { level = "warn", priority = -1 }
 [workspace.dependencies]
 zrx-diagnostic = { version = "0.0.2", path = "crates/zrx-diagnostic" }
 zrx-executor = { version = "0.0.6", path = "crates/zrx-executor" }
-zrx-graph = { version = "0.0.13", path = "crates/zrx-graph" }
-zrx-id = { version = "0.0.22", path = "crates/zrx-id" }
-zrx-module = { version = "0.0.10", path = "crates/zrx-module" }
+zrx-graph = { version = "0.0.14", path = "crates/zrx-graph" }
+zrx-id = { version = "0.0.23", path = "crates/zrx-id" }
+zrx-module = { version = "0.0.11", path = "crates/zrx-module" }
 zrx-path = { version = "0.0.1", path = "crates/zrx-path" }
-zrx-scheduler = { version = "0.0.22", path = "crates/zrx-scheduler" }
-zrx-storage = { version = "0.0.4", path = "crates/zrx-storage" }
-zrx-store = { version = "0.0.10", path = "crates/zrx-store" }
-zrx-stream = { version = "0.0.23", path = "crates/zrx-stream" }
+zrx-scheduler = { version = "0.0.23", path = "crates/zrx-scheduler" }
+zrx-storage = { version = "0.0.5", path = "crates/zrx-storage" }
+zrx-store = { version = "0.0.11", path = "crates/zrx-store" }
+zrx-stream = { version = "0.0.24", path = "crates/zrx-stream" }
 
 ahash = "0.8.12"
 anyhow = "1.0.103"
