@@ -27,6 +27,6 @@
 
 mod module;
 
+pub use module::Module;
 pub use module::context::{self, Context};
 pub use module::error::{self, Error, Result};
-pub use module::Module;
