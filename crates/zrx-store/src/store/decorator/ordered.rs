@@ -63,8 +63,8 @@ pub use iter::{Iter, Keys, Values};
 /// # Examples
 ///
 /// ```
-/// use zrx_store::decorator::Ordered;
 /// use zrx_store::StoreMut;
+/// use zrx_store::decorator::Ordered;
 ///
 /// // Create store and initial state
 /// let mut store = Ordered::default();
@@ -104,8 +104,8 @@ where
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store
     /// let mut store = Ordered::<_, _, HashMap<_, _>>::new();
@@ -226,8 +226,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store
     /// let mut store = Ordered::default();
@@ -256,8 +256,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store and initial state
     /// let mut store = Ordered::default();
@@ -283,8 +283,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store and initial state
     /// let mut store = Ordered::default();
@@ -347,7 +347,7 @@ where
     /// use zrx_store::{StoreMut, StoreWithComparator};
     ///
     /// // Create store
-    /// let mut store: Ordered::<_, _, HashMap<_, _>, _> =
+    /// let mut store: Ordered<_, _, HashMap<_, _>, _> =
     ///     Ordered::with_comparator(Descending);
     ///
     /// // Insert value
@@ -376,8 +376,8 @@ where
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create a vector of key-value pairs
     /// let items = vec![
@@ -424,8 +424,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store and initial state
     /// let mut store = Ordered::default();
@@ -460,8 +460,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store
     /// let mut store = Ordered::default();

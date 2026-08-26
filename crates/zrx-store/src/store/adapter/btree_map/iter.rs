@@ -42,7 +42,8 @@ where
     K: Key,
     V: Value,
 {
-    type Iter<'a> = btree_map::Iter<'a, K, V>
+    type Iter<'a>
+        = btree_map::Iter<'a, K, V>
     where
         Self: 'a;
 
@@ -74,7 +75,8 @@ where
     K: Key,
     V: Value,
 {
-    type IterMut<'a> = btree_map::IterMut<'a, K, V>
+    type IterMut<'a>
+        = btree_map::IterMut<'a, K, V>
     where
         Self: 'a;
 
@@ -105,7 +107,8 @@ impl<K, V> StoreKeys<K, V> for BTreeMap<K, V>
 where
     K: Key,
 {
-    type Keys<'a> = btree_map::Keys<'a, K, V>
+    type Keys<'a>
+        = btree_map::Keys<'a, K, V>
     where
         Self: 'a;
 
@@ -137,7 +140,8 @@ where
     K: Key,
     V: Value,
 {
-    type Values<'a> = btree_map::Values<'a, K, V>
+    type Values<'a>
+        = btree_map::Values<'a, K, V>
     where
         Self: 'a;
 
@@ -169,7 +173,8 @@ where
     K: Key,
     V: Value,
 {
-    type Range<'a> = btree_map::Range<'a, K, V>
+    type Range<'a>
+        = btree_map::Range<'a, K, V>
     where
         Self: 'a;
 

@@ -35,8 +35,8 @@ use crate::store::{
     StoreIterable, StoreIterableMut, StoreKeys, StoreMut, StoreValues,
 };
 
-use super::item::Item;
 use super::Queue;
+use super::item::Item;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -110,7 +110,8 @@ where
     V: Value,
     S: StoreIterable<K, Item>,
 {
-    type Iter<'a> = Iter<'a, K, V>
+    type Iter<'a>
+        = Iter<'a, K, V>
     where
         Self: 'a;
 
@@ -146,7 +147,8 @@ where
     V: Value,
     S: StoreMut<K, Item> + StoreIterable<K, Item>,
 {
-    type IterMut<'a> = IterMut<'a, K, V>
+    type IterMut<'a>
+        = IterMut<'a, K, V>
     where
         Self: 'a;
 
@@ -181,7 +183,8 @@ where
     K: Key,
     S: StoreIterable<K, Item>,
 {
-    type Keys<'a> = Keys<'a, K>
+    type Keys<'a>
+        = Keys<'a, K>
     where
         Self: 'a;
 
@@ -216,7 +219,8 @@ where
     V: Value,
     S: StoreValues<K, Item>,
 {
-    type Values<'a> = Values<'a, K, V>
+    type Values<'a>
+        = Values<'a, K, V>
     where
         Self: 'a;
 

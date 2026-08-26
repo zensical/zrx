@@ -120,8 +120,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::stash::Slot;
     /// use zrx_store::Stash;
+    /// use zrx_store::stash::Slot;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();

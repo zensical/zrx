@@ -25,8 +25,8 @@
 
 //! Iterator implementations for [`Stash`] slots.
 
-use super::slab::{self, Slot};
 use super::Stash;
+use super::slab::{self, Slot};
 
 // ----------------------------------------------------------------------------
 // Structs

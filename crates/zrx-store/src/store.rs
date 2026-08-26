@@ -371,7 +371,7 @@ where
 /// use zrx_store::{StoreMut, StoreWithComparator};
 ///
 /// // Create store
-/// let mut store: Ordered::<_, _, HashMap<_, _>, _> =
+/// let mut store: Ordered<_, _, HashMap<_, _>, _> =
 ///     Ordered::with_comparator(Descending);
 ///
 /// // Insert value

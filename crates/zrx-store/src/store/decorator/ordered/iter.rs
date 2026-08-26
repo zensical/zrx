@@ -71,7 +71,8 @@ where
     V: Value,
     S: Store<K, V>,
 {
-    type Iter<'a> = Iter<'a, K, V, C>
+    type Iter<'a>
+        = Iter<'a, K, V, C>
     where
         Self: 'a;
 
@@ -103,7 +104,8 @@ where
     K: Key,
     S: Store<K, V>,
 {
-    type Keys<'a> = Keys<'a, K, V, C>
+    type Keys<'a>
+        = Keys<'a, K, V, C>
     where
         Self: 'a;
 
@@ -136,7 +138,8 @@ where
     V: Value,
     S: Store<K, V>,
 {
-    type Values<'a> = Values<'a, K, V, C>
+    type Values<'a>
+        = Values<'a, K, V, C>
     where
         Self: 'a;
 

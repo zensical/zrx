@@ -75,7 +75,8 @@ where
     K: Key,
     V: Value,
 {
-    type Iter<'a> = Iter<'a, K, V>
+    type Iter<'a>
+        = Iter<'a, K, V>
     where
         Self: 'a;
 
@@ -107,7 +108,8 @@ where
     K: Key,
     V: Value,
 {
-    type IterMut<'a> = IterMut<'a, K, V>
+    type IterMut<'a>
+        = IterMut<'a, K, V>
     where
         Self: 'a;
 
@@ -138,7 +140,8 @@ impl<K, V> StoreKeys<K, V> for Slab<(K, V)>
 where
     K: Key,
 {
-    type Keys<'a> = Keys<'a, K, V>
+    type Keys<'a>
+        = Keys<'a, K, V>
     where
         Self: 'a;
 
@@ -170,7 +173,8 @@ where
     K: Key,
     V: Value,
 {
-    type Values<'a> = Values<'a, K, V>
+    type Values<'a>
+        = Values<'a, K, V>
     where
         Self: 'a;
 
@@ -180,7 +184,7 @@ where
     ///
     /// ```
     /// use slab::Slab;
-    /// use zrx_store::{StoreValues, StoreMut};
+    /// use zrx_store::{StoreMut, StoreValues};
     ///
     /// // Create store and initial state
     /// let mut store = Slab::default();

@@ -136,7 +136,8 @@ where
     V: Value,
     S: Store<K, V>,
 {
-    type Iter<'a> = Iter<'a, K, V, S>
+    type Iter<'a>
+        = Iter<'a, K, V, S>
     where
         Self: 'a;
 
@@ -145,8 +146,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::StoreIterable;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -172,7 +173,8 @@ where
     K: Key,
     S: Store<K, V>,
 {
-    type Keys<'a> = Keys<'a, K>
+    type Keys<'a>
+        = Keys<'a, K>
     where
         Self: 'a;
 
@@ -181,8 +183,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::StoreKeys;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -205,7 +207,8 @@ where
     V: Value,
     S: Store<K, V>,
 {
-    type Values<'a> = Values<'a, K, V, S>
+    type Values<'a>
+        = Values<'a, K, V, S>
     where
         Self: 'a;
 
@@ -214,8 +217,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::StoreValues;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();

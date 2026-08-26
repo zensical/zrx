@@ -84,8 +84,8 @@ pub use iter::{Iter, Keys, Values};
 /// # Examples
 ///
 /// ```
-/// use zrx_store::decorator::Indexed;
 /// use zrx_store::StoreMut;
+/// use zrx_store::decorator::Indexed;
 ///
 /// // Create store and initial state
 /// let mut store = Indexed::default();
@@ -179,10 +179,10 @@ where
         &mut self, key: &K, value: &V,
     ) -> Result<Range<usize>, Range<usize>> {
         let position = self.position(key, value);
-        if let Ok(n) = position {
-            if self.store.get(key).expect("invariant") != value {
-                return Err(n..n + 1);
-            }
+        if let Ok(n) = position
+            && self.store.get(key).expect("invariant") != value
+        {
+            return Err(n..n + 1);
         }
 
         // The entry is either unchanged or has a new position in the ordering
@@ -296,8 +296,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::Store;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -321,8 +321,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::Store;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -360,8 +360,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store
     /// let mut store = Indexed::default();
@@ -387,8 +387,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -417,8 +417,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -479,12 +479,12 @@ where
     ///
     /// ```
     /// use std::collections::HashMap;
+    /// use zrx_store::StoreWithComparator;
     /// use zrx_store::comparator::Descending;
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreWithComparator;
     ///
     /// // Create store
-    /// let mut store: Indexed::<_, _, HashMap<_, _>, _> =
+    /// let mut store: Indexed<_, _, HashMap<_, _>, _> =
     ///     Indexed::with_comparator(Descending);
     ///
     /// // Insert value

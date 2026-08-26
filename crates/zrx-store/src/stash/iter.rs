@@ -30,8 +30,8 @@ use crate::store::{
     Store, StoreIterable, StoreIterableMut, StoreKeys, StoreMut, StoreValues,
 };
 
-use super::slab::{self, Slot};
 use super::Stash;
+use super::slab::{self, Slot};
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -79,7 +79,8 @@ where
     V: Value,
     S: Store<K, Slot>,
 {
-    type Iter<'a> = Iter<'a, K, V>
+    type Iter<'a>
+        = Iter<'a, K, V>
     where
         Self: 'a;
 
@@ -111,7 +112,8 @@ where
     V: Value,
     S: StoreMut<K, Slot>,
 {
-    type IterMut<'a> = IterMut<'a, K, V>
+    type IterMut<'a>
+        = IterMut<'a, K, V>
     where
         Self: 'a;
 
@@ -142,7 +144,8 @@ where
     K: Key,
     S: Store<K, Slot>,
 {
-    type Keys<'a> = Keys<'a, K, V>
+    type Keys<'a>
+        = Keys<'a, K, V>
     where
         Self: 'a;
 
@@ -174,7 +177,8 @@ where
     V: Value,
     S: Store<K, Slot>,
 {
-    type Values<'a> = Values<'a, K, V>
+    type Values<'a>
+        = Values<'a, K, V>
     where
         Self: 'a;
 

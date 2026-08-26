@@ -29,8 +29,8 @@ use ahash::HashMap;
 use std::marker::PhantomData;
 use std::vec;
 
-use crate::store::item::Key;
 use crate::store::StoreMut;
+use crate::store::item::Key;
 
 use super::Indexed;
 

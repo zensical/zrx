@@ -41,7 +41,8 @@ where
     V: Value,
     S: BuildHasher,
 {
-    type Iter<'a> = hash_map::Iter<'a, K, V>
+    type Iter<'a>
+        = hash_map::Iter<'a, K, V>
     where
         Self: 'a;
 
@@ -74,7 +75,8 @@ where
     V: Value,
     S: BuildHasher,
 {
-    type IterMut<'a> = hash_map::IterMut<'a, K, V>
+    type IterMut<'a>
+        = hash_map::IterMut<'a, K, V>
     where
         Self: 'a;
 
@@ -106,7 +108,8 @@ where
     K: Key,
     S: BuildHasher,
 {
-    type Keys<'a> = hash_map::Keys<'a, K, V>
+    type Keys<'a>
+        = hash_map::Keys<'a, K, V>
     where
         Self: 'a;
 
@@ -139,7 +142,8 @@ where
     V: Value,
     S: BuildHasher,
 {
-    type Values<'a> = hash_map::Values<'a, K, V>
+    type Values<'a>
+        = hash_map::Values<'a, K, V>
     where
         Self: 'a;
 

@@ -56,8 +56,8 @@ impl<K, V, S, C> IntoIterator for Ordered<K, V, S, C> {
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store and initial state
     /// let mut store = Ordered::default();

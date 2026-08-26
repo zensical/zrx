@@ -198,7 +198,6 @@ where
     /// // Obtain minimum deadline of all items
     /// let deadline = queue.deadline();
     /// assert!(deadline < Some(Instant::now()));
-    ///
     #[inline]
     pub fn deadline(&self) -> Option<Instant> {
         self.store.iter().next().map(|(_, item)| item.deadline())
