@@ -28,10 +28,10 @@
 use std::array;
 use std::borrow::Cow;
 
+use super::Format;
 use super::encoding::encode;
 use super::error::{Error, Result};
 use super::path::validate;
-use super::Format;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -80,7 +80,7 @@ impl<const N: usize> Format<N> {
     /// use zrx_id::format::Format;
     ///
     /// // Create formatted string from string
-    /// let format: Format::<3> = "a:b:c".parse()?;
+    /// let format: Format<3> = "a:b:c".parse()?;
     ///
     /// // Create formatted string builder
     /// let mut builder = format.to_builder();
@@ -216,8 +216,8 @@ impl<'a, const N: usize> Builder<'a, N> {
             // we can be sure that the encoding is already correct, if any, and
             // can thus skip encoding and validation
             if let (None, Some(format)) = (opt.as_ref(), self.source) {
-                let p = format.spans[index].start as usize;
-                let q = format.spans[index].end as usize;
+                let p = usize::from(format.spans[index].start);
+                let q = usize::from(format.spans[index].end);
 
                 // Write component from formatted string source and compute the
                 // ending position of the current component

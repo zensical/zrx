@@ -25,8 +25,8 @@
 
 //! Layout builder.
 
-use super::item::Item;
 use super::Layout;
+use super::item::Item;
 
 // ----------------------------------------------------------------------------
 // Structs

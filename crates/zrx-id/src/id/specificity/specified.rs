@@ -28,8 +28,8 @@
 use std::cmp::Ordering;
 use std::ops::Deref;
 
-use super::convert::ToSpecificity;
 use super::Specificity;
+use super::convert::ToSpecificity;
 
 // ----------------------------------------------------------------------------
 // Structs

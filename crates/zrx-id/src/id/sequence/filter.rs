@@ -75,13 +75,11 @@ use layout::Layout;
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
 /// use zrx_id::sequence::Filter;
-/// use zrx_id::{selector, Id, Sequence};
+/// use zrx_id::{Id, Sequence, selector};
 ///
 /// // Create filter builder and insert sequence
 /// let mut builder = Filter::builder();
-/// builder.insert(Sequence::suffix(
-///     selector!(location = "**/*.md")?,
-/// ));
+/// builder.insert(Sequence::suffix(selector!(location = "**/*.md")?));
 ///
 /// // Create filter from builder
 /// let filter = builder.build()?;

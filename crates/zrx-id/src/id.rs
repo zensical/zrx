@@ -203,8 +203,8 @@ impl Id {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::uri::Uri;
     /// use zrx_id::Id;
+    /// use zrx_id::uri::Uri;
     ///
     /// // Create identifier from string
     /// let id: Id = "zri:file:::docs:index.md:".parse()?;

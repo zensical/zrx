@@ -65,8 +65,8 @@ pub use matches::Matches;
 /// ```
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_id::matcher::Matcher;
 /// use zrx_id::Id;
+/// use zrx_id::matcher::Matcher;
 ///
 /// // Create matcher builder and add selector
 /// let mut builder = Matcher::builder();
@@ -118,8 +118,8 @@ impl Matcher {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::matcher::Matcher;
     /// use zrx_id::Id;
+    /// use zrx_id::matcher::Matcher;
     ///
     /// // Create matcher builder and add selector
     /// let mut builder = Matcher::builder();
@@ -163,8 +163,8 @@ impl Matcher {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::matcher::{Matcher, Matches};
     /// use zrx_id::Id;
+    /// use zrx_id::matcher::{Matcher, Matches};
     ///
     /// // Create matcher builder and add selector
     /// let mut builder = Matcher::builder();

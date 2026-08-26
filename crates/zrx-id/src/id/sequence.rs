@@ -68,7 +68,7 @@ pub use filter::Filter;
 /// ```
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_id::{selector, Sequence};
+/// use zrx_id::{Sequence, selector};
 ///
 /// // Create sequence
 /// let sequence = Sequence::from([
@@ -96,12 +96,10 @@ impl Sequence {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Sequence};
+    /// use zrx_id::{Sequence, selector};
     ///
     /// // Create sequence for a prefix
-    /// let sequence = Sequence::prefix([
-    ///     selector!(location = "zensical.toml")?,
-    /// ]);
+    /// let sequence = Sequence::prefix([selector!(location = "zensical.toml")?]);
     /// # Ok(())
     /// # }
     /// ```
@@ -125,12 +123,10 @@ impl Sequence {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Sequence};
+    /// use zrx_id::{Sequence, selector};
     ///
     /// // Create sequence for a suffix
-    /// let sequence = Sequence::suffix([
-    ///     selector!(location = "**/*.md")?,
-    /// ]);
+    /// let sequence = Sequence::suffix([selector!(location = "**/*.md")?]);
     /// # Ok(())
     /// # }
     /// ```
@@ -154,7 +150,7 @@ impl Sequence {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Sequence};
+    /// use zrx_id::{Sequence, selector};
     ///
     /// // Create sequence
     /// let sequence = Sequence::from([
@@ -209,12 +205,10 @@ where
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Sequence};
+    /// use zrx_id::{Sequence, selector};
     ///
     /// // Create sequence
-    /// let sequence = Sequence::from(
-    ///     selector!(location = "zensical.toml")?,
-    /// );
+    /// let sequence = Sequence::from(selector!(location = "zensical.toml")?);
     /// # Ok(())
     /// # }
     /// ```
@@ -235,7 +229,7 @@ where
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Sequence};
+    /// use zrx_id::{Sequence, selector};
     ///
     /// // Create sequence
     /// let sequence = Sequence::from([
@@ -262,13 +256,15 @@ where
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Sequence};
+    /// use zrx_id::{Sequence, selector};
     ///
     /// // Create sequence
-    /// let sequence = Sequence::from(&[
-    ///     selector!(location = "zensical.toml")?,
-    ///     selector!(location = "**/*.md")?,
-    /// ][..]);
+    /// let sequence = Sequence::from(
+    ///     &[
+    ///         selector!(location = "zensical.toml")?,
+    ///         selector!(location = "**/*.md")?,
+    ///     ][..],
+    /// );
     /// # Ok(())
     /// # }
     /// ```
@@ -289,7 +285,7 @@ where
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Sequence};
+    /// use zrx_id::{Sequence, selector};
     ///
     /// // Create sequence
     /// let sequence = Sequence::from(vec![
@@ -318,7 +314,7 @@ where
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Sequence};
+    /// use zrx_id::{Sequence, selector};
     ///
     /// // Create sequence from iterator
     /// let sequence = Sequence::from_iter([
@@ -351,7 +347,7 @@ impl<'a> IntoIterator for &'a Sequence {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Sequence};
+    /// use zrx_id::{Sequence, selector};
     ///
     /// // Create sequence
     /// let sequence = Sequence::from([
@@ -383,7 +379,7 @@ impl IntoIterator for Sequence {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Sequence};
+    /// use zrx_id::{Sequence, selector};
     ///
     /// // Create sequence
     /// let sequence = Sequence::from([

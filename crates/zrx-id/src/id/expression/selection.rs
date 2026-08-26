@@ -28,8 +28,8 @@
 use crate::id::matcher::matches::IntoIter;
 use crate::id::selector::Selector;
 
-use super::condition::Condition;
 use super::Expression;
+use super::condition::Condition;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -71,7 +71,7 @@ impl Expression {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Expression};
+    /// use zrx_id::{Expression, selector};
     ///
     /// // Create expression
     /// let expr = Expression::any(|expr| {

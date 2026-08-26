@@ -25,9 +25,9 @@
 
 //! Expression builder.
 
+use super::Expression;
 use super::error::Result;
 use super::operand::{Operand, Operator, TryIntoOperand};
-use super::Expression;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -60,7 +60,7 @@ impl Expression {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Expression};
+    /// use zrx_id::{Expression, selector};
     ///
     /// // Create expression
     /// let expr = Expression::any(|expr| {
@@ -95,7 +95,7 @@ impl Expression {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Expression};
+    /// use zrx_id::{Expression, selector};
     ///
     /// // Create expression
     /// let expr = Expression::all(|expr| {
@@ -130,15 +130,14 @@ impl Expression {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Expression};
+    /// use zrx_id::{Expression, selector};
     ///
     /// // Create expression
     /// let expr = Expression::all(|expr| {
     ///     expr.with(selector!(location = "**/*.md")?)?
     ///         .with(Expression::not(|expr| {
     ///             expr.with(selector!(provider = "file")?)
-    ///         })
-    ///     )
+    ///         }))
     /// })?;
     /// # Ok(())
     /// # }
@@ -172,7 +171,7 @@ impl Builder {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Expression};
+    /// use zrx_id::{Expression, selector};
     ///
     /// // Create expression
     /// let expr = Expression::any(|expr| {

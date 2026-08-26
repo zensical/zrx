@@ -25,7 +25,7 @@
 
 //! Encoding.
 
-use percent_encoding::{percent_decode, percent_encode, AsciiSet, CONTROLS};
+use percent_encoding::{AsciiSet, CONTROLS, percent_decode, percent_encode};
 use std::borrow::Cow;
 
 // ----------------------------------------------------------------------------

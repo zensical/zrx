@@ -27,8 +27,8 @@
 
 use std::fmt::{self, Debug, Display};
 
-use crate::id::selector::Selector;
 use crate::id::Id;
+use crate::id::selector::Selector;
 
 // ----------------------------------------------------------------------------
 // Enums

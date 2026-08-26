@@ -72,7 +72,7 @@ pub use error::{Error, Result};
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
 /// use zrx_id::expression::Filter;
-/// use zrx_id::{selector, Expression, Id};
+/// use zrx_id::{Expression, Id, selector};
 ///
 /// // Create filter builder and insert expression
 /// let mut builder = Filter::builder();

@@ -28,13 +28,13 @@
 use slab::Slab;
 use std::iter::Peekable;
 
-use crate::id::expression::condition::Condition;
-use crate::id::matcher::matches::IntoIter;
-use crate::id::matcher::Matches;
 use crate::id::TryToId;
+use crate::id::expression::condition::Condition;
+use crate::id::matcher::Matches;
+use crate::id::matcher::matches::IntoIter;
 
-use super::error::Result;
 use super::Filter;
+use super::error::Result;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -78,7 +78,7 @@ impl Filter {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use zrx_id::expression::Filter;
-    /// use zrx_id::{selector, Expression, Id};
+    /// use zrx_id::{Expression, Id, selector};
     ///
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
@@ -194,8 +194,8 @@ impl Iterator for Candidates<'_> {
 mod tests {
 
     mod matches {
-        use crate::id::expression::filter::{Filter, Result};
         use crate::id::expression::Expression;
+        use crate::id::expression::filter::{Filter, Result};
         use crate::selector;
 
         #[test]

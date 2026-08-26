@@ -29,9 +29,9 @@ use globset::{Glob, GlobBuilder};
 
 use crate::id::selector::TryToSelector;
 
+use super::Matcher;
 use super::component;
 use super::error::Result;
-use super::Matcher;
 
 // ----------------------------------------------------------------------------
 // Structs

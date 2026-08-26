@@ -28,8 +28,8 @@
 use crate::id::expression::Operator;
 use crate::id::matcher::Matches;
 
-use super::instruction::Instruction;
 use super::Condition;
+use super::instruction::Instruction;
 
 // ----------------------------------------------------------------------------
 // Implementations

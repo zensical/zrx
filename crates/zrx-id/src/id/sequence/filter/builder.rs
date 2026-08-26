@@ -30,11 +30,11 @@ use slab::Slab;
 use crate::id::expression::filter;
 use crate::id::sequence::Sequence;
 
+use super::Filter;
 use super::binding::Binding;
 use super::condition::Condition;
 use super::error::Result;
 use super::layout::Layout;
-use super::Filter;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -114,7 +114,7 @@ impl Builder {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use zrx_id::sequence::Filter;
-    /// use zrx_id::{selector, Sequence};
+    /// use zrx_id::{Sequence, selector};
     ///
     /// // Create filter builder and insert sequence
     /// let mut builder = Filter::builder();
@@ -142,7 +142,7 @@ impl Builder {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use zrx_id::sequence::Filter;
-    /// use zrx_id::{selector, Sequence};
+    /// use zrx_id::{Sequence, selector};
     ///
     /// // Create filter builder and insert sequence
     /// let mut builder = Filter::builder();
@@ -175,7 +175,7 @@ impl Builder {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use zrx_id::sequence::Filter;
-    /// use zrx_id::{selector, Sequence};
+    /// use zrx_id::{Sequence, selector};
     ///
     /// // Create filter builder and insert sequence
     /// let mut builder = Filter::builder();

@@ -65,15 +65,14 @@ pub use selection::Selection;
 /// ```
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_id::{selector, Expression};
+/// use zrx_id::{Expression, selector};
 ///
 /// // Create expression
 /// let expr = Expression::all(|expr| {
 ///     expr.with(selector!(location = "**/*.md")?)?
 ///         .with(Expression::not(|expr| {
 ///             expr.with(selector!(provider = "file")?)
-///         })
-///     )
+///         }))
 /// })?;
 /// # Ok(())
 /// # }
@@ -153,7 +152,7 @@ impl IntoIterator for Expression {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::{selector, Expression};
+    /// use zrx_id::{Expression, selector};
     ///
     /// // Create expression
     /// let expr = Expression::any(|expr| {

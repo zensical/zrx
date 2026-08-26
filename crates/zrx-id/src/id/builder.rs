@@ -29,9 +29,9 @@ use ahash::AHasher;
 use std::borrow::Cow;
 use std::hash::{Hash, Hasher};
 
+use super::Id;
 use super::error::{Error, Result};
 use super::format::{self, Format};
-use super::Id;
 
 // ----------------------------------------------------------------------------
 // Structs

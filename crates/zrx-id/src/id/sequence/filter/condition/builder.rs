@@ -28,8 +28,8 @@
 use crate::id::expression::Expression;
 use crate::id::sequence::{Element, Sequence};
 
-use super::segment::Segment;
 use super::Condition;
+use super::segment::Segment;
 
 // ----------------------------------------------------------------------------
 // Structs
