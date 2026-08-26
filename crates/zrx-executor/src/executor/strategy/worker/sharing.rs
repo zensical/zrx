@@ -25,16 +25,16 @@
 
 //! Work-sharing execution strategy.
 
-use crossbeam::channel::{bounded, Sender};
+use crossbeam::channel::{Sender, bounded};
 use std::fmt::{self, Debug};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread::{self, Builder, JoinHandle};
 use std::{cmp, panic};
 
+use crate::executor::Result;
 use crate::executor::strategy::Strategy;
 use crate::executor::task::Task;
-use crate::executor::Result;
 
 // ----------------------------------------------------------------------------
 // Structs

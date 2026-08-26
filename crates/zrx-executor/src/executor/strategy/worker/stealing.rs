@@ -28,8 +28,8 @@
 use crossbeam::deque::{Injector, Steal, Stealer, Worker};
 use std::fmt::{self, Debug};
 use std::iter::repeat_with;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread::{self, Builder, JoinHandle};
 use std::{cmp, panic};
 
