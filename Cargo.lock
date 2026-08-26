@@ -350,7 +350,7 @@ dependencies = [
 
 [[package]]
 name = "zrx"
-version = "0.0.26"
+version = "0.0.27"
 dependencies = [
  "zrx-diagnostic",
  "zrx-executor",
@@ -378,7 +378,7 @@ dependencies = [
 
 [[package]]
 name = "zrx-graph"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "ahash",
  "thiserror",
@@ -386,7 +386,7 @@ dependencies = [
 
 [[package]]
 name = "zrx-id"
-version = "0.0.22"
+version = "0.0.23"
 dependencies = [
  "ahash",
  "globset",
@@ -399,7 +399,7 @@ dependencies = [
 
 [[package]]
 name = "zrx-module"
-version = "0.0.10"
+version = "0.0.11"
 dependencies = [
  "thiserror",
  "zrx-id",
@@ -412,7 +412,7 @@ version = "0.0.1"
 
 [[package]]
 name = "zrx-scheduler"
-version = "0.0.22"
+version = "0.0.23"
 dependencies = [
  "ahash",
  "anyhow",
@@ -429,7 +429,7 @@ dependencies = [
 
 [[package]]
 name = "zrx-storage"
-version = "0.0.4"
+version = "0.0.5"
 dependencies = [
  "ahash",
  "slab",
@@ -439,7 +439,7 @@ dependencies = [
 
 [[package]]
 name = "zrx-store"
-version = "0.0.10"
+version = "0.0.11"
 dependencies = [
  "ahash",
  "slab",
@@ -447,7 +447,7 @@ dependencies = [
 
 [[package]]
 name = "zrx-stream"
-version = "0.0.23"
+version = "0.0.24"
 dependencies = [
  "anyhow",
  "thiserror",
