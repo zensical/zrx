@@ -34,8 +34,8 @@ use zrx_scheduler::schedule::Subscriber;
 use zrx_scheduler::step::{IntoSteps, Scope};
 use zrx_scheduler::{Id, Key, Value};
 
-use crate::stream::barrier::{Barrier, Barriers};
 use crate::stream::Stream;
+use crate::stream::barrier::{Barrier, Barriers};
 
 use super::Operator;
 

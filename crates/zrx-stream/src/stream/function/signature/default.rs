@@ -27,9 +27,9 @@
 
 use std::fmt::Display;
 
+use zrx_scheduler::Key;
 use zrx_scheduler::step::error::IntoResult;
 use zrx_scheduler::step::{Result, Scope};
-use zrx_scheduler::Key;
 
 use crate::stream::function::arguments::{ForId, ForKey, ForScope, ForValue};
 use crate::stream::function::catch;

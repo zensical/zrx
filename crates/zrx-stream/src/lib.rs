@@ -27,12 +27,12 @@
 
 mod stream;
 
+pub use stream::Stream;
 pub use stream::barrier::{self, Barrier};
 pub use stream::combinator::StreamTupleExt;
 pub use stream::function;
 pub use stream::operator;
 pub use stream::workflow::{self, Workflow};
-pub use stream::Stream;
 
 // ----------------------------------------------------------------------------
 // Re-exports

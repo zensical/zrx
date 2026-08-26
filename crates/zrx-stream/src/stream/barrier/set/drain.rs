@@ -28,8 +28,8 @@
 use std::mem;
 
 use zrx_scheduler::{Id, Key};
-use zrx_store::stash::slab::map;
 use zrx_store::Stash;
+use zrx_store::stash::slab::map;
 
 use crate::stream::barrier::{Barrier, Slots};
 

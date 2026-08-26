@@ -31,9 +31,9 @@
 
 use std::marker::PhantomData;
 
+use zrx_scheduler::Id;
 use zrx_scheduler::action::Action;
 use zrx_scheduler::schedule::Subscriber;
-use zrx_scheduler::Id;
 
 use super::Stream;
 
