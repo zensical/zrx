@@ -46,8 +46,8 @@ pub trait FullJoin<'a, K> {
     /// # Examples
     ///
     /// ```
-    /// use zrx_storage::accessor::FullJoin;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::accessor::FullJoin;
     ///
     /// // Create storages from iterators
     /// let a = Storage::from_iter([("key", 42)]);

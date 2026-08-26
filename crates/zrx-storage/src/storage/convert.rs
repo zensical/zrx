@@ -101,8 +101,8 @@ pub trait TryAsStorages<K>: Value {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use std::any::Any;
-    /// use zrx_storage::convert::TryAsStorages;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::convert::TryAsStorages;
     ///
     /// // Create storages from iterators
     /// let a = Storage::from_iter([("key", 42)]);
@@ -145,8 +145,8 @@ where
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use std::any::Any;
-    /// use zrx_storage::convert::TryAsStorage;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::convert::TryAsStorage;
     ///
     /// // Create storage and initial state
     /// let mut storage = Storage::default();
@@ -186,8 +186,8 @@ where
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use std::any::Any;
-    /// use zrx_storage::convert::TryAsStorageMut;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::convert::TryAsStorageMut;
     ///
     /// // Create storage and initial state
     /// let mut storage = Storage::default();
@@ -250,8 +250,8 @@ where
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use std::any::Any;
-    /// use zrx_storage::convert::TryAsStorages;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::convert::TryAsStorages;
     ///
     /// // Create storages from iterators
     /// let a = Storage::from_iter([("key", 42)]);

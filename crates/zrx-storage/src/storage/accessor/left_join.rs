@@ -46,8 +46,8 @@ pub trait LeftJoin<'a, K> {
     /// # Examples
     ///
     /// ```
-    /// use zrx_storage::accessor::LeftJoin;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::accessor::LeftJoin;
     ///
     /// // Create storages from iterators
     /// let a = Storage::from_iter([("key", 42)]);

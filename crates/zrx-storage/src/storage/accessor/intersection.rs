@@ -59,8 +59,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_storage::accessor::Intersection;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::accessor::Intersection;
     ///
     /// // Create storages from iterators
     /// let a = Storage::from_iter([("key", 42)]);

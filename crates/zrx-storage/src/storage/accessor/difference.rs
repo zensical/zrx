@@ -61,8 +61,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_storage::accessor::Difference;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::accessor::Difference;
     ///
     /// // Create storages from iterators
     /// let a = Storage::from_iter([("a", 42)]);
