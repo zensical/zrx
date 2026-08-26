@@ -27,9 +27,9 @@
 
 use zrx_scheduler::{Id, Value};
 
+use crate::stream::Stream;
 use crate::stream::operator::Join;
 use crate::stream::operator::Operator;
-use crate::stream::Stream;
 
 // ----------------------------------------------------------------------------
 // Traits

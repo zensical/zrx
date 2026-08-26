@@ -23,14 +23,14 @@
 
 // ----------------------------------------------------------------------------
 
-//! Consuming iterator implementation for [`Indexed`].
+//! Consuming iterator implementations for [`Indexed`].
 
 use ahash::HashMap;
 use std::marker::PhantomData;
 use std::vec;
 
-use crate::store::item::Key;
 use crate::store::StoreMut;
+use crate::store::item::Key;
 
 use super::Indexed;
 
@@ -39,6 +39,7 @@ use super::Indexed;
 // ----------------------------------------------------------------------------
 
 /// Consuming iterator over an [`Indexed`] store.
+#[must_use]
 #[derive(Debug)]
 pub struct IntoIter<K, V, S = HashMap<K, V>> {
     /// Underlying store.
@@ -72,7 +73,7 @@ where
     /// let mut store = Indexed::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store {
     ///     println!("{key}: {value}");
     /// }

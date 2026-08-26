@@ -29,8 +29,8 @@ use ahash::AHasher;
 use std::borrow::Cow;
 use std::hash::{Hash, Hasher};
 
-use crate::id::format::{self, Format};
 use crate::id::Result;
+use crate::id::format::{self, Format};
 
 use super::Selector;
 

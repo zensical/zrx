@@ -27,8 +27,8 @@
 
 use std::collections::btree_map::{self, BTreeMap};
 
-use crate::graph::topology::{Topology, Transitive};
 use crate::graph::Graph;
+use crate::graph::topology::{Topology, Transitive};
 
 // ----------------------------------------------------------------------------
 // Structs

@@ -25,11 +25,13 @@
 
 //! Drain iterator implementation for [`Barriers`].
 
-use zrx_scheduler::{Id, Key};
-use zrx_store::stash::{items, Items};
-use zrx_store::Stash;
+use std::mem;
 
-use crate::stream::barrier::Barrier;
+use zrx_scheduler::{Id, Key};
+use zrx_store::Stash;
+use zrx_store::stash::slab::map;
+
+use crate::stream::barrier::{Barrier, Slots};
 
 use super::{Advance, Barriers};
 
@@ -42,9 +44,9 @@ pub struct Drain<'a, I> {
     /// Inner set of barriers.
     inner: &'a Stash<Key<I>, Barrier<I>>,
     /// All known scopes.
-    scopes: &'a Stash<Key<I>, Items>,
+    scopes: &'a Stash<Key<I>, Slots>,
     /// Drain iterator over fulfilled barriers.
-    items: items::Drain<'a>,
+    slots: map::IntoIter<zrx_store::stash::Slot, ()>,
 }
 
 // ----------------------------------------------------------------------------
@@ -66,7 +68,7 @@ where
         Drain {
             inner: &self.inner,
             scopes: &self.scopes,
-            items: self.fulfilled.drain(),
+            slots: mem::take(&mut self.fulfilled).into_iter(),
         }
     }
 }
@@ -83,11 +85,11 @@ where
 
     /// Returns the next barrier advancement.
     fn next(&mut self) -> Option<Self::Item> {
-        let index = self.items.next()?;
-        let barrier = &self.inner[index];
+        let (slot, ()) = self.slots.next()?;
+        let barrier = &self.inner[slot];
         Some(Advance::new(
-            self.inner.key(index).expect("invariant"),
-            barrier.items(),
+            self.inner.key(slot).expect("invariant"),
+            barrier.slots(),
             self.scopes,
         ))
     }

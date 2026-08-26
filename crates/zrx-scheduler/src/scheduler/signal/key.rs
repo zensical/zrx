@@ -58,10 +58,7 @@ pub use id::Id;
 ///
 /// // Create and transform key
 /// let key = Key::from_iter([1, 2, 3]);
-/// assert_eq!(
-///     key.rotate_left(1),
-///     Key::from_iter([2, 3, 1])
-/// );
+/// assert_eq!(key.rotate_left(1), Key::from_iter([2, 3, 1]));
 /// ```
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Key<I> {
@@ -148,10 +145,7 @@ where
     ///
     /// // Create and transform key
     /// let key = Key::from_iter([1, 2, 3]);
-    /// assert_eq!(
-    ///     key.reverse(),
-    ///     Key::from_iter([3, 2, 1])
-    /// );
+    /// assert_eq!(key.reverse(), Key::from_iter([3, 2, 1]));
     /// ```
     #[must_use]
     pub fn reverse(&self) -> Self {
@@ -172,10 +166,7 @@ where
     ///
     /// // Create and transform key
     /// let key = Key::from_iter([1, 2, 3]);
-    /// assert_eq!(
-    ///     key.rotate_left(1),
-    ///     Key::from_iter([2, 3, 1])
-    /// );
+    /// assert_eq!(key.rotate_left(1), Key::from_iter([2, 3, 1]));
     /// ```
     #[must_use]
     pub fn rotate_left(&self, n: usize) -> Self {
@@ -196,10 +187,7 @@ where
     ///
     /// // Create and transform key
     /// let key = Key::from_iter([1, 2, 3]);
-    /// assert_eq!(
-    ///     key.rotate_right(1),
-    ///     Key::from_iter([3, 1, 2])
-    /// );
+    /// assert_eq!(key.rotate_right(1), Key::from_iter([3, 1, 2]));
     /// ```
     #[inline]
     #[must_use]

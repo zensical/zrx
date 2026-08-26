@@ -35,14 +35,15 @@ use crate::store::{
     StoreIterable, StoreIterableMut, StoreKeys, StoreMut, StoreValues,
 };
 
-use super::item::Item;
 use super::Queue;
+use super::item::Item;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
 /// Iterator over the items of a [`Queue`].
+#[must_use]
 #[derive(Debug)]
 pub struct Iter<'a, K, V>
 where
@@ -57,6 +58,8 @@ where
 }
 
 /// Mutable iterator over the items of a [`Queue`].
+#[must_use]
+#[derive(Debug)]
 pub struct IterMut<'a, K, V>
 where
     K: Key,
@@ -70,6 +73,8 @@ where
 }
 
 /// Iterator over the keys of a [`Queue`].
+#[must_use]
+#[derive(Debug)]
 pub struct Keys<'a, K>
 where
     K: Key,
@@ -81,6 +86,8 @@ where
 }
 
 /// Iterator over the values of a [`Queue`].
+#[must_use]
+#[derive(Debug)]
 pub struct Values<'a, K, V>
 where
     K: Key,
@@ -103,7 +110,8 @@ where
     V: Value,
     S: StoreIterable<K, Item>,
 {
-    type Iter<'a> = Iter<'a, K, V>
+    type Iter<'a>
+        = Iter<'a, K, V>
     where
         Self: 'a;
 
@@ -118,7 +126,7 @@ where
     /// let mut queue = Queue::default();
     /// queue.insert("key", 42);
     ///
-    /// // Create iterator over the queue
+    /// // Create iterator over queue
     /// for (key, value) in queue.iter() {
     ///     println!("{key}: {value}");
     /// }
@@ -139,7 +147,8 @@ where
     V: Value,
     S: StoreMut<K, Item> + StoreIterable<K, Item>,
 {
-    type IterMut<'a> = IterMut<'a, K, V>
+    type IterMut<'a>
+        = IterMut<'a, K, V>
     where
         Self: 'a;
 
@@ -154,7 +163,7 @@ where
     /// let mut queue = Queue::default();
     /// queue.insert("key", 42);
     ///
-    /// // Create iterator over the queue
+    /// // Create iterator over queue
     /// for (key, value) in queue.iter_mut() {
     ///     println!("{key}: {value}");
     /// }
@@ -174,7 +183,8 @@ where
     K: Key,
     S: StoreIterable<K, Item>,
 {
-    type Keys<'a> = Keys<'a, K>
+    type Keys<'a>
+        = Keys<'a, K>
     where
         Self: 'a;
 
@@ -189,7 +199,7 @@ where
     /// let mut queue = Queue::default();
     /// queue.insert("key", 42);
     ///
-    /// // Create iterator over the queue
+    /// // Create iterator over queue
     /// for key in queue.keys() {
     ///     println!("{key}");
     /// }
@@ -209,7 +219,8 @@ where
     V: Value,
     S: StoreValues<K, Item>,
 {
-    type Values<'a> = Values<'a, K, V>
+    type Values<'a>
+        = Values<'a, K, V>
     where
         Self: 'a;
 
@@ -224,7 +235,7 @@ where
     /// let mut queue = Queue::default();
     /// queue.insert("key", 42);
     ///
-    /// // Create iterator over the queue
+    /// // Create iterator over queue
     /// for value in queue.values() {
     ///     println!("{value}");
     /// }

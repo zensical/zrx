@@ -23,7 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Consuming iterator implementation for [`Ordered`].
+//! Consuming iterator implementations for [`Ordered`].
 
 use std::collections::btree_set;
 
@@ -36,6 +36,7 @@ use super::Ordered;
 // ----------------------------------------------------------------------------
 
 /// Consuming iterator over an [`Ordered`] store.
+#[must_use]
 #[derive(Debug)]
 pub struct IntoIter<K, V, C = Ascending> {
     /// Ordering of values.
@@ -55,14 +56,14 @@ impl<K, V, S, C> IntoIterator for Ordered<K, V, S, C> {
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store and initial state
     /// let mut store = Ordered::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store {
     ///     println!("{key}: {value}");
     /// }

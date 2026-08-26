@@ -27,12 +27,12 @@
 
 use slab::Slab;
 
+use crate::id::expression::condition::Condition;
 use crate::id::expression::{Expression, Operator, Term};
 use crate::id::matcher::Matcher;
 
-use super::condition::Condition;
-use super::error::Result;
 use super::Filter;
+use super::error::Result;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -113,7 +113,7 @@ impl Builder {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use zrx_id::expression::Filter;
-    /// use zrx_id::{selector, Expression};
+    /// use zrx_id::{Expression, selector};
     ///
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
@@ -141,7 +141,7 @@ impl Builder {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use zrx_id::expression::Filter;
-    /// use zrx_id::{selector, Expression};
+    /// use zrx_id::{Expression, selector};
     ///
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();
@@ -174,7 +174,7 @@ impl Builder {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use zrx_id::expression::Filter;
-    /// use zrx_id::{selector, Expression};
+    /// use zrx_id::{Expression, selector};
     ///
     /// // Create filter builder and insert expression
     /// let mut builder = Filter::builder();

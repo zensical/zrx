@@ -29,17 +29,15 @@ use slab::Slab;
 
 use crate::id::matcher::Matcher;
 
+use super::condition::Condition;
+
 mod builder;
 mod candidates;
-mod condition;
 mod error;
-mod terms;
 
 pub use builder::Builder;
 pub use candidates::Candidates;
-use condition::Condition;
 pub use error::{Error, Result};
-pub use terms::Terms;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -74,7 +72,7 @@ pub use terms::Terms;
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
 /// use zrx_id::expression::Filter;
-/// use zrx_id::{selector, Expression, Id};
+/// use zrx_id::{Expression, Id, selector};
 ///
 /// // Create filter builder and insert expression
 /// let mut builder = Filter::builder();

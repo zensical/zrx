@@ -31,7 +31,7 @@ use std::cmp::Ordering;
 use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::ops::Range;
-use std::str::{from_utf8_unchecked, FromStr};
+use std::str::{FromStr, from_utf8_unchecked};
 
 mod builder;
 mod encoding;
@@ -139,8 +139,8 @@ impl<const N: usize> Format<N> {
     /// ```
     #[must_use]
     pub fn get(&self, index: usize) -> Cow<'_, str> {
-        let p = self.spans[index].start as usize;
-        let q = self.spans[index].end as usize;
+        let p = usize::from(self.spans[index].start);
+        let q = usize::from(self.spans[index].end);
         if self.flags & (1 << index) == 0 {
             // SAFETY: The value is guaranteed to be valid UTF-8, as it was
             // created from a valid UTF-8 string. Additionally, the value is
@@ -205,7 +205,7 @@ impl<const N: usize> FromStr for Format<N> {
     /// use zrx_id::format::Format;
     ///
     /// // Create formatted string from string
-    /// let format: Format::<3> = "a:b:c".parse()?;
+    /// let format: Format<3> = "a:b:c".parse()?;
     /// assert_eq!(format.as_str(), "a:b:c");
     /// # Ok(())
     /// # }
@@ -245,10 +245,11 @@ impl<const N: usize> FromStr for Format<N> {
                 // as percent-encoded. Otherwise, proceed without modification.
                 '%' if flags & shift == 0 => {
                     let bytes = value.as_bytes();
-                    if let Some(&[b1, b2]) = bytes.get(i + 1..i + 3) {
-                        if b1.is_ascii_hexdigit() && b2.is_ascii_hexdigit() {
-                            flags |= shift;
-                        }
+                    if let Some(&[b1, b2]) = bytes.get(i + 1..i + 3)
+                        && b1.is_ascii_hexdigit()
+                        && b2.is_ascii_hexdigit()
+                    {
+                        flags |= shift;
                     }
                 }
 
@@ -297,8 +298,8 @@ impl<const N: usize> PartialEq for Format<N> {
     /// use zrx_id::format::Format;
     ///
     /// // Create and compare formatted strings
-    /// let a: Format::<3> = "a:b:c".parse()?;
-    /// let b: Format::<3> = "a:b:c".parse()?;
+    /// let a: Format<3> = "a:b:c".parse()?;
+    /// let b: Format<3> = "a:b:c".parse()?;
     /// assert_eq!(a, b);
     /// # Ok(())
     /// # }
@@ -324,8 +325,8 @@ impl<const N: usize> PartialOrd for Format<N> {
     /// use zrx_id::format::Format;
     ///
     /// // Create and compare formatted strings
-    /// let a: Format::<3> = "b:c:d".parse()?;
-    /// let b: Format::<3> = "a:b:c".parse()?;
+    /// let a: Format<3> = "b:c:d".parse()?;
+    /// let b: Format<3> = "a:b:c".parse()?;
     /// assert!(a > b);
     /// # Ok(())
     /// # }
@@ -347,8 +348,8 @@ impl<const N: usize> Ord for Format<N> {
     /// use zrx_id::format::Format;
     ///
     /// // Create and compare formatted strings
-    /// let a: Format::<3> = "b:c:d".parse()?;
-    /// let b: Format::<3> = "a:b:c".parse()?;
+    /// let a: Format<3> = "b:c:d".parse()?;
+    /// let b: Format<3> = "a:b:c".parse()?;
     /// assert!(a > b);
     /// # Ok(())
     /// # }

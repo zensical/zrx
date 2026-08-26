@@ -63,7 +63,6 @@ impl Range {
     ///     Position::new(4, 0)
     /// );
     /// ```
-    #[inline]
     #[must_use]
     pub fn new<S, E>(start: S, end: E) -> Self
     where

@@ -26,8 +26,10 @@
 //! Iterator implementation for [`Advance`].
 
 use zrx_scheduler::{Id, Key};
-use zrx_store::stash::{items, Items};
 use zrx_store::Stash;
+use zrx_store::stash::slab::map;
+
+use crate::stream::barrier::Slots;
 
 use super::Advance;
 
@@ -38,9 +40,9 @@ use super::Advance;
 /// Iterator for [`Advance`].
 pub struct Iter<'a, I> {
     /// Inner iterator.
-    inner: items::Iter<'a>,
+    inner: map::Iter<'a, zrx_store::stash::Slot, ()>,
     /// All known scopes.
-    stash: &'a Stash<Key<I>, Items>,
+    stash: &'a Stash<Key<I>, Slots>,
 }
 
 // ----------------------------------------------------------------------------
@@ -56,7 +58,7 @@ where
     #[must_use]
     pub fn iter(&self) -> Iter<'a, I> {
         Iter {
-            inner: self.items.iter(),
+            inner: self.slots.iter(),
             stash: self.scopes,
         }
     }
@@ -75,6 +77,8 @@ where
     /// Returns the next scope.
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().and_then(|index| self.stash.key(index))
+        self.inner
+            .next()
+            .and_then(|(slot, ())| self.stash.key(*slot))
     }
 }

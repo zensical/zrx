@@ -15,93 +15,93 @@
 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
 
 // ----------------------------------------------------------------------------
 
-//! Consuming iterator implementation for [`Items`].
+//! Consuming iterator implementations for [`Map`].
 
-use super::Items;
+use std::vec;
+
+use crate::store::item::Key;
+
+use super::{Entry, Map, Slot};
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Consuming iterator for [`Items`].
+/// Consuming iterator over a [`Map`].
+#[must_use]
 #[derive(Debug)]
-pub struct IntoIter {
-    /// Blocks of bits.
-    data: Vec<u64>,
-    /// Current block index.
-    index: usize,
-    /// Current block.
-    block: u64,
+pub struct IntoIter<K, V> {
+    /// Inner iterator.
+    inner: vec::IntoIter<Entry<K, V>>,
 }
 
 // ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl IntoIterator for Items {
-    type Item = usize;
-    type IntoIter = IntoIter;
+impl<K, V> IntoIterator for Map<V, K>
+where
+    K: Key + AsRef<Slot>,
+{
+    type Item = (K, V);
+    type IntoIter = IntoIter<K, V>;
 
-    /// Creates a consuming iterator over the item set.
+    /// Creates a consuming iterator over the map.
     ///
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::stash::Items;
+    /// use zrx_store::stash::{Map, Slab};
     ///
-    /// // Create item set from iterator
-    /// let mut items = Items::from_iter([0, 1]);
+    /// // Create slab
+    /// let mut slab = Slab::default();
+    /// let slot = slab.insert("key");
     ///
-    /// // Create iterator over item set
-    /// for index in items {
-    ///     println!("{index:?}");
+    /// // Create slab map
+    /// let mut map = Map::default();
+    /// map.insert(slot, 42);
+    ///
+    /// // Create iterator over map
+    /// for (slot, value) in map {
+    ///     println!("{slot}: {value}");
     /// }
     /// ```
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        let block = self.data[0];
-        IntoIter {
-            data: self.data,
-            index: 0,
-            block,
-        }
+        IntoIter { inner: self.inner.into_iter() }
     }
 }
 
 // ----------------------------------------------------------------------------
 
-impl Iterator for IntoIter {
-    type Item = usize;
+impl<K, V> Iterator for IntoIter<K, V> {
+    type Item = (K, V);
 
     /// Returns the next item.
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            if self.block != 0 {
-                let num = self.block.trailing_zeros() as usize;
+        self.inner.next().map(|Entry { key, value }| (key, value))
+    }
 
-                // Clear the lowest bit and return it
-                self.block &= self.block - 1;
-                return Some(self.index << 6 | num);
-            }
+    /// Returns the bounds on the remaining length of the iterator.
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
 
-            // Move to the next block
-            self.index += 1;
-
-            // If all blocks are exhausted, we're done
-            if self.index >= self.data.len() {
-                return None;
-            }
-
-            // Update the current block to the next block
-            self.block = self.data[self.index];
-        }
+impl<K, V> ExactSizeIterator for IntoIter<K, V> {
+    /// Returns the exact remaining length of the iterator.
+    #[inline]
+    fn len(&self) -> usize {
+        self.inner.len()
     }
 }

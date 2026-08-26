@@ -26,8 +26,9 @@
 //! Barrier advancement.
 
 use zrx_scheduler::{Id, Key};
-use zrx_store::stash::Items;
 use zrx_store::Stash;
+
+use super::Slots;
 
 mod iter;
 
@@ -43,9 +44,9 @@ pub struct Advance<'a, I> {
     /// Barrier scope for identification.
     key: &'a Key<I>,
     /// Contained scopes.
-    items: &'a Items,
+    slots: &'a Slots,
     /// All known scopes.
-    scopes: &'a Stash<Key<I>, Items>,
+    scopes: &'a Stash<Key<I>, Slots>,
 }
 
 // ----------------------------------------------------------------------------
@@ -56,9 +57,9 @@ impl<'a, I> Advance<'a, I> {
     /// Converts the barrier advancement into an event.
     #[must_use]
     pub fn new(
-        key: &'a Key<I>, items: &'a Items, scopes: &'a Stash<Key<I>, Items>,
+        key: &'a Key<I>, slots: &'a Slots, scopes: &'a Stash<Key<I>, Slots>,
     ) -> Self {
-        Self { key, items, scopes }
+        Self { key, slots, scopes }
     }
 }
 

@@ -48,8 +48,8 @@ pub trait AntiJoin<'a, K> {
     /// # Examples
     ///
     /// ```
-    /// use zrx_storage::accessor::AntiJoin;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::accessor::AntiJoin;
     ///
     /// // Create storages from iterators
     /// let a = Storage::from_iter([("a", 42)]);

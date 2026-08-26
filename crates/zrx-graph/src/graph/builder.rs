@@ -27,9 +27,9 @@
 
 use std::ops::{Index, Range};
 
+use super::Graph;
 use super::error::{Error, Result};
 use super::topology::Topology;
-use super::Graph;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -169,8 +169,8 @@ impl<T> Builder<T> {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::topology::Adjacency;
     /// use zrx_graph::Graph;
+    /// use zrx_graph::topology::Adjacency;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();
@@ -274,8 +274,8 @@ impl<T> Index<usize> for Builder<T> {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::topology::Adjacency;
     /// use zrx_graph::Graph;
+    /// use zrx_graph::topology::Adjacency;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();
@@ -316,8 +316,8 @@ impl<T> IntoIterator for &Builder<T> {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::topology::Adjacency;
     /// use zrx_graph::Graph;
+    /// use zrx_graph::topology::Adjacency;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();

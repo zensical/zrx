@@ -94,8 +94,7 @@ impl<T> Item<T> {
     }
 }
 
-// ----------------------------------------------------------------------------
-
+#[allow(clippy::must_use_candidate)]
 impl<T> Item<T> {
     /// Returns the deadline.
     #[inline]

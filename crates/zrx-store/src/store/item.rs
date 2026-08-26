@@ -49,7 +49,7 @@ use std::hash::Hash;
 ///
 /// [`Borrow`]: std::borrow::Borrow
 /// [`Store`]: crate::store::Store
-pub trait Key: Clone + Debug + Eq + Hash + Ord + 'static {}
+pub trait Key: Clone + Debug + Eq + Hash + Ord + Sized + 'static {}
 
 /// Store value.
 ///
@@ -65,7 +65,7 @@ pub trait Key: Clone + Debug + Eq + Hash + Ord + 'static {}
 ///
 /// [`Store`]: crate::store::Store
 /// [`StoreMut::insert`]: crate::store::StoreMut::insert
-pub trait Value: Debug + Eq + 'static {}
+pub trait Value: Debug + Eq + Sized + 'static {}
 
 // ----------------------------------------------------------------------------
 // Blanket implementations

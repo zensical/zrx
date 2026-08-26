@@ -40,13 +40,7 @@ use super::{Error, Result, Storage};
 ///
 /// This trait implements conversion of an [`Any`] reference to an immutable
 /// [`Storage`] reference, which is used as the inputs of a scheduler action.
-///
-/// __Warning__: Implementation requires the use of generic associated types,
-/// as lifetimes need to be passed through the conversion process.
 pub trait TryAsStorage<K>: Value {
-    /// Target type of conversion.
-    type Target<'a>: Debug;
-
     /// Attempts to convert into a storage reference.
     ///
     /// # Errors
@@ -55,20 +49,14 @@ pub trait TryAsStorage<K>: Value {
     /// is intended to be used in a low-level context, orchestrating conversion
     /// of storages within actions, the errors just carry enough information so
     /// the reason of the failure can be determined during development.
-    fn try_as_storage(item: &dyn Any) -> Result<Self::Target<'_>>;
+    fn try_as_storage(item: &dyn Any) -> Result<&Storage<K, Self>>;
 }
 
 /// Attempt conversion into a mutable [`Storage`] reference.
 ///
 /// This trait implements conversion of a mutable [`Any`] reference to a mutable
 /// [`Storage`] reference, which is used as the output of a scheduler action.
-///
-/// __Warning__: Implementation requires the use of generic associated types,
-/// as lifetimes need to be passed through the conversion process.
 pub trait TryAsStorageMut<K>: Value {
-    /// Target type of conversion.
-    type Target<'a>: Debug;
-
     /// Attempts to convert into a mutable storage reference.
     ///
     /// # Errors
@@ -77,7 +65,7 @@ pub trait TryAsStorageMut<K>: Value {
     /// is intended to be used in a low-level context, orchestrating conversion
     /// of storages within actions, the errors just carry enough information so
     /// the reason of the failure can be determined during development.
-    fn try_as_storage_mut(item: &mut dyn Any) -> Result<Self::Target<'_>>;
+    fn try_as_storage_mut(item: &mut dyn Any) -> Result<&mut Storage<K, Self>>;
 }
 
 // ----------------------------------------------------------------------------
@@ -89,7 +77,7 @@ pub trait TryAsStorageMut<K>: Value {
 ///
 /// __Warning__: Implementation requires the use of generic associated types,
 /// as lifetimes need to be passed through the conversion process.
-pub trait TryAsStorages<K> {
+pub trait TryAsStorages<K>: Value {
     /// Target type of conversion.
     type Target<'a>: Debug;
 
@@ -113,8 +101,8 @@ pub trait TryAsStorages<K> {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use std::any::Any;
-    /// use zrx_storage::convert::TryAsStorages;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::convert::TryAsStorages;
     ///
     /// // Create storages from iterators
     /// let a = Storage::from_iter([("key", 42)]);
@@ -143,8 +131,6 @@ where
     K: Key,
     V: Value,
 {
-    type Target<'a> = &'a Storage<K, V>;
-
     /// Attempts to convert into a storage reference.
     ///
     /// # Errors
@@ -159,8 +145,8 @@ where
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use std::any::Any;
-    /// use zrx_storage::convert::TryAsStorage;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::convert::TryAsStorage;
     ///
     /// // Create storage and initial state
     /// let mut storage = Storage::default();
@@ -176,7 +162,7 @@ where
     /// # }
     /// ```
     #[inline]
-    fn try_as_storage(item: &dyn Any) -> Result<Self::Target<'_>> {
+    fn try_as_storage(item: &dyn Any) -> Result<&Storage<K, Self>> {
         item.downcast_ref().ok_or(Error::Downcast)
     }
 }
@@ -186,8 +172,6 @@ where
     K: Key,
     V: Value,
 {
-    type Target<'a> = &'a mut Storage<K, V>;
-
     /// Attempts to convert into a mutable storage reference.
     ///
     /// # Errors
@@ -202,8 +186,8 @@ where
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use std::any::Any;
-    /// use zrx_storage::convert::TryAsStorageMut;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::convert::TryAsStorageMut;
     ///
     /// // Create storage and initial state
     /// let mut storage = Storage::default();
@@ -219,7 +203,7 @@ where
     /// # }
     /// ```
     #[inline]
-    fn try_as_storage_mut(item: &mut dyn Any) -> Result<Self::Target<'_>> {
+    fn try_as_storage_mut(item: &mut dyn Any) -> Result<&mut Storage<K, Self>> {
         item.downcast_mut().ok_or(Error::Downcast)
     }
 }
@@ -245,12 +229,12 @@ where
     }
 }
 
-impl<K, V> TryAsStorages<K> for [V]
+impl<K, V> TryAsStorages<K> for Vec<V>
 where
     K: Key,
     V: TryAsStorage<K>,
 {
-    type Target<'a> = Vec<V::Target<'a>>;
+    type Target<'a> = Vec<&'a Storage<K, V>>;
 
     /// Attempts to convert into a sequence of storage references.
     ///
@@ -266,8 +250,8 @@ where
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use std::any::Any;
-    /// use zrx_storage::convert::TryAsStorages;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::convert::TryAsStorages;
     ///
     /// // Create storages from iterators
     /// let a = Storage::from_iter([("key", 42)]);
@@ -277,7 +261,7 @@ where
     /// let iter: Vec<&dyn Any> = vec![&a, &b];
     ///
     /// // Obtain storage references
-    /// let storages = <[i32]>::try_as_storages(iter)?;
+    /// let storages = <Vec<i32>>::try_as_storages(iter)?;
     /// # let _: Vec<&Storage<&str, _>> = storages;
     /// # Ok(())
     /// # }
@@ -304,7 +288,7 @@ macro_rules! impl_try_as_storages_for_tuple {
             $($V: TryAsStorage<K>,)+
         {
             #[allow(unused_parens)]
-            type Target<'a> = ($($V::Target<'a>),+);
+            type Target<'a> = ($(&'a Storage<K, $V>),+);
 
             #[inline]
             fn try_as_storages<'a, T>(iter: T) -> Result<Self::Target<'a>>

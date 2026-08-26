@@ -27,6 +27,6 @@ struct_lit_width = 30
 
 # -----------------------------------------------------------------------------
 
-# Set the 2021 edition for consistency, which is necessary, since `rustfmt`
-# and `rust-analyzer` currently behave differently causing jumpy formatting
-style_edition = "2021"
+# Use the workspace language and formatting editions
+edition = "2024"
+style_edition = "2024"

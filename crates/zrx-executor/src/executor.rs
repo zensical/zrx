@@ -109,8 +109,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_executor::strategy::WorkSharing;
     /// use zrx_executor::Executor;
+    /// use zrx_executor::strategy::WorkSharing;
     ///
     /// // Create executor with strategy
     /// let executor = Executor::new(WorkSharing::default());
@@ -187,8 +187,7 @@ where
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_executor::task::Tasks;
-    /// use zrx_executor::Executor;
+    /// use zrx_executor::{Executor, Tasks};
     ///
     /// // Create executor and submit task
     /// let executor = Executor::default();
@@ -322,8 +321,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_executor::strategy::WorkSharing;
     /// use zrx_executor::Executor;
+    /// use zrx_executor::strategy::WorkSharing;
     ///
     /// // Get number of workers
     /// let executor = Executor::new(WorkSharing::new(1));

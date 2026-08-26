@@ -28,14 +28,14 @@
 use std::any::Any;
 use std::ops::{Deref, DerefMut};
 
-use zrx_storage::convert::TryAsStorageMut;
 use zrx_storage::Storage;
+use zrx_storage::convert::TryAsStorageMut;
 
 use crate::scheduler::action::Action;
 use crate::scheduler::signal::{Id, Key, Value};
 
-use super::error::Result;
 use super::Context;
+use super::error::Result;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -48,7 +48,7 @@ where
     S: TryAsStorageMut<Key<I>>,
 {
     /// Conversion target.
-    target: S::Target<'a>,
+    target: &'a mut Storage<Key<I>, S>,
 }
 
 // ----------------------------------------------------------------------------
@@ -68,7 +68,7 @@ where
     ///
     /// [`Error::Storage`]: crate::scheduler::action::context::Error::Storage
     #[inline]
-    pub fn output(&mut self) -> Result<Output<'_, I, C::Output<'_>>> {
+    pub fn output(&mut self) -> Result<Output<'_, I, C::Output>> {
         Output::new(self.output.as_mut())
     }
 }

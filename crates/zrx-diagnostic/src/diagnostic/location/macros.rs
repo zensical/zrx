@@ -71,7 +71,7 @@ macro_rules! location {
 /// # Examples
 ///
 /// ```
-/// use zrx_diagnostic::{caller, Location};
+/// use zrx_diagnostic::{Location, caller};
 ///
 /// // Define function printing location
 /// #[track_caller]

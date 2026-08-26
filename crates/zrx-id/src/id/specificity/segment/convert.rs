@@ -29,9 +29,9 @@ use std::iter::Peekable;
 
 use crate::id::specificity::tokens::{AsTokens, Token, Tokens};
 
+use super::Segment;
 use super::atom::{Atom, Character, Wildcard};
 use super::set::Segments;
-use super::Segment;
 
 // ----------------------------------------------------------------------------
 // Traits

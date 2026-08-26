@@ -66,8 +66,8 @@ impl Adjacency {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::topology::Adjacency;
     /// use zrx_graph::Graph;
+    /// use zrx_graph::topology::Adjacency;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();
@@ -99,8 +99,8 @@ impl Adjacency {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::topology::Adjacency;
     /// use zrx_graph::Graph;
+    /// use zrx_graph::topology::Adjacency;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();
@@ -200,8 +200,8 @@ impl Adjacency {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::topology::Adjacency;
     /// use zrx_graph::Graph;
+    /// use zrx_graph::topology::Adjacency;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();
@@ -267,8 +267,8 @@ impl Index<usize> for Adjacency {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::topology::Adjacency;
     /// use zrx_graph::Graph;
+    /// use zrx_graph::topology::Adjacency;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();
@@ -310,8 +310,8 @@ impl IntoIterator for &Adjacency {
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_graph::topology::Adjacency;
     /// use zrx_graph::Graph;
+    /// use zrx_graph::topology::Adjacency;
     ///
     /// // Create graph builder and add nodes
     /// let mut builder = Graph::builder();

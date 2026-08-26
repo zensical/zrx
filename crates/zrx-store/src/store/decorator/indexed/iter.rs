@@ -40,6 +40,7 @@ use super::Indexed;
 // ----------------------------------------------------------------------------
 
 /// Iterator over the items of an [`Indexed`] store.
+#[must_use]
 #[derive(Debug)]
 pub struct Iter<'a, K, V, S = HashMap<K, V>> {
     /// Underlying store.
@@ -51,6 +52,7 @@ pub struct Iter<'a, K, V, S = HashMap<K, V>> {
 }
 
 /// Iterator over the values of an [`Indexed`] store.
+#[must_use]
 #[derive(Debug)]
 pub struct Values<'a, K, V, S = HashMap<K, V>> {
     /// Underlying store.
@@ -84,12 +86,12 @@ impl<K, V, S, C> Indexed<K, V, S, C> {
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
-    /// store.insert("a", 42);
-    /// store.insert("b", 22);
-    /// store.insert("c", 32);
-    /// store.insert("d", 12);
+    /// store.insert("a", 4);
+    /// store.insert("b", 2);
+    /// store.insert("c", 3);
+    /// store.insert("d", 1);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store.range(2..4) {
     ///     println!("{key}: {value}");
     /// }
@@ -134,7 +136,8 @@ where
     V: Value,
     S: Store<K, V>,
 {
-    type Iter<'a> = Iter<'a, K, V, S>
+    type Iter<'a>
+        = Iter<'a, K, V, S>
     where
         Self: 'a;
 
@@ -143,14 +146,14 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::StoreIterable;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store.iter() {
     ///     println!("{key}: {value}");
     /// }
@@ -170,7 +173,8 @@ where
     K: Key,
     S: Store<K, V>,
 {
-    type Keys<'a> = Keys<'a, K>
+    type Keys<'a>
+        = Keys<'a, K>
     where
         Self: 'a;
 
@@ -179,14 +183,14 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::StoreKeys;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for key in store.keys() {
     ///     println!("{key}");
     /// }
@@ -203,7 +207,8 @@ where
     V: Value,
     S: Store<K, V>,
 {
-    type Values<'a> = Values<'a, K, V, S>
+    type Values<'a>
+        = Values<'a, K, V, S>
     where
         Self: 'a;
 
@@ -212,14 +217,14 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::StoreValues;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for value in store.values() {
     ///     println!("{value}");
     /// }

@@ -31,6 +31,7 @@ use crate::id::matcher::Matches;
 mod builder;
 mod group;
 mod instruction;
+mod selection;
 
 use instruction::Instruction;
 
@@ -133,7 +134,7 @@ impl Condition {
 mod tests {
 
     mod satisfies {
-        use crate::id::expression::filter::Condition;
+        use crate::id::expression::condition::Condition;
         use crate::id::expression::{Expression, Result};
         use crate::id::matcher::Matches;
         use crate::selector;

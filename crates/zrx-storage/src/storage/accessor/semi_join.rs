@@ -48,8 +48,8 @@ pub trait SemiJoin<'a, K> {
     /// # Examples
     ///
     /// ```
-    /// use zrx_storage::accessor::SemiJoin;
     /// use zrx_storage::Storage;
+    /// use zrx_storage::accessor::SemiJoin;
     ///
     /// // Create storages from iterators
     /// let a = Storage::from_iter([("key", 42)]);

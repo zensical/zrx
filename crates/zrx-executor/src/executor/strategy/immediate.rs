@@ -27,9 +27,9 @@
 
 use std::fmt::{self, Debug};
 
+use crate::executor::Result;
 use crate::executor::strategy::Strategy;
 use crate::executor::task::Task;
-use crate::executor::Result;
 
 // ----------------------------------------------------------------------------
 // Structs

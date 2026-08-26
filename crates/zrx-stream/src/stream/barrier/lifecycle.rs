@@ -25,7 +25,9 @@
 
 //! Barrier lifecycle.
 
-use zrx_store::stash::Items;
+use zrx_store::stash::Slot;
+
+use super::Slots;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -38,9 +40,9 @@ use zrx_store::stash::Items;
 #[derive(Clone, Debug, Default)]
 pub struct Lifecycle {
     /// Submitted scopes.
-    submitted: Items,
+    submitted: Slots,
     /// Completed scopes.
-    completed: Items,
+    completed: Slots,
 }
 
 // ----------------------------------------------------------------------------
@@ -48,37 +50,38 @@ pub struct Lifecycle {
 // ----------------------------------------------------------------------------
 
 impl Lifecycle {
-    /// Submits a scope index.
+    /// Submits a scope slot.
     ///
     /// Returns `false` if the scope was already submitted (idempotency guard).
-    pub fn submit(&mut self, index: usize) -> bool {
-        self.submitted.insert(index)
+    pub fn submit(&mut self, slot: Slot) -> bool {
+        self.submitted.insert(slot, ()).is_none()
     }
 
-    /// Withdraws a submitted scope index (e.g. cancelled or removed).
+    /// Withdraws a submitted scope slot (e.g. cancelled or removed).
     ///
     /// Returns `false` if the scope was not submitted.
-    pub fn withdraw(&mut self, index: usize) -> bool {
-        if !self.submitted.remove(index) {
+    pub fn withdraw(&mut self, slot: Slot) -> bool {
+        if self.submitted.remove(&slot).is_none() {
             return false;
         }
-        self.completed.remove(index);
+        self.completed.remove(&slot);
         true
     }
 
-    /// Completes a scope index, moving it from submitted to completed.
+    /// Completes a scope slot, moving it from submitted to completed.
     ///
     /// Returns `false` if the scope was already completed (idempotency guard).
-    pub fn complete(&mut self, index: usize) -> bool {
-        self.submitted.remove(index);
-        self.completed.insert(index)
+    pub fn complete(&mut self, slot: Slot) -> bool {
+        self.submitted.remove(&slot);
+        self.completed.insert(slot, ()).is_none()
     }
 
     /// Returns `true` if a barrier with the given item set is fulfilled.
     ///
     /// Fulfilled means no matching scopes are still submitted, and at least
     /// one is completed.
-    pub fn is_complete(&self, items: &Items) -> bool {
-        !items.has_any(&self.submitted) && items.has_any(&self.completed)
+    pub fn is_complete(&self, slots: &Slots) -> bool {
+        !slots.keys().any(|slot| self.submitted.contains_key(slot))
+            && slots.keys().any(|slot| self.completed.contains_key(slot))
     }
 }

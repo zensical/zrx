@@ -47,6 +47,7 @@ pub struct Signal {
 
 impl Signal {
     /// Creates a signal.
+    #[must_use]
     pub fn new() -> Self {
         Self {
             mutex: Mutex::new(false),

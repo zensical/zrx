@@ -32,8 +32,8 @@ use zrx_storage::set::{View, ViewMut};
 
 use crate::scheduler::engine::Tag;
 
-use super::options::Event;
 use super::Action;
+use super::options::Event;
 
 mod builder;
 mod error;
@@ -105,7 +105,7 @@ where
     /// Input storages.
     pub inputs: Inputs<'a, I, C::Inputs>,
     /// Output storage.
-    pub output: Output<'a, I, C::Output<'a>>,
+    pub output: Output<'a, I, C::Output>,
 }
 
 // ----------------------------------------------------------------------------

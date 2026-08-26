@@ -25,8 +25,8 @@
 
 //! Frontier.
 
-use zrx_graph::traversal::Result;
 use zrx_graph::Traversal;
+use zrx_graph::traversal::Result;
 
 use crate::scheduler::signal::{Id, Key};
 

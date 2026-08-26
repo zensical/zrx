@@ -27,13 +27,13 @@
 
 use slab::Slab;
 
-use crate::id::matcher::matches::IntoIter;
 use crate::id::TryToId;
+use crate::id::matcher::matches::IntoIter;
 
+use super::Filter;
 use super::condition::Condition;
 use super::error::Result;
 use super::layout::{Item, Positions};
-use super::Filter;
 
 // ----------------------------------------------------------------------------
 // Structs
@@ -75,13 +75,11 @@ impl Filter {
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// use zrx_id::sequence::Filter;
-    /// use zrx_id::{selector, Id, Sequence};
+    /// use zrx_id::{Id, Sequence, selector};
     ///
     /// // Create filter builder and insert sequence
     /// let mut builder = Filter::builder();
-    /// builder.insert(Sequence::suffix(
-    ///     selector!(location = "**/*.md")?,
-    /// ));
+    /// builder.insert(Sequence::suffix(selector!(location = "**/*.md")?));
     ///
     /// // Create filter from builder
     /// let filter = builder.build()?;
@@ -118,7 +116,7 @@ impl Filter {
 
                 // Retrieve binding condition and slot index
                 let condition = binding.condition as usize;
-                let slot = binding.slot as usize;
+                let slot = usize::from(binding.slot);
 
                 // Add condition to matches if it hasn't been added yet
                 if current != Some(condition) {

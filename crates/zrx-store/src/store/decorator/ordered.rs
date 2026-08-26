@@ -63,8 +63,8 @@ pub use iter::{Iter, Keys, Values};
 /// # Examples
 ///
 /// ```
-/// use zrx_store::decorator::Ordered;
 /// use zrx_store::StoreMut;
+/// use zrx_store::decorator::Ordered;
 ///
 /// // Create store and initial state
 /// let mut store = Ordered::default();
@@ -73,7 +73,7 @@ pub use iter::{Iter, Keys, Values};
 /// store.insert("c", 3);
 /// store.insert("d", 1);
 ///
-/// // Create iterator over the store
+/// // Create iterator over store
 /// for (key, value) in &store {
 ///     println!("{key}: {value}");
 /// }
@@ -104,8 +104,8 @@ where
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store
     /// let mut store = Ordered::<_, _, HashMap<_, _>>::new();
@@ -113,7 +113,6 @@ where
     /// // Insert value
     /// store.insert("key", 42);
     /// ```
-    #[inline]
     #[must_use]
     pub fn new() -> Self
     where
@@ -227,8 +226,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store
     /// let mut store = Ordered::default();
@@ -257,8 +256,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store and initial state
     /// let mut store = Ordered::default();
@@ -284,8 +283,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store and initial state
     /// let mut store = Ordered::default();
@@ -318,7 +317,7 @@ where
     /// let mut store = Ordered::default();
     /// store.insert("key", 42);
     ///
-    /// // Clear store
+    /// // Remove all items
     /// store.clear();
     /// assert!(store.is_empty());
     /// ```
@@ -348,7 +347,7 @@ where
     /// use zrx_store::{StoreMut, StoreWithComparator};
     ///
     /// // Create store
-    /// let mut store: Ordered::<_, _, HashMap<_, _>, _> =
+    /// let mut store: Ordered<_, _, HashMap<_, _>, _> =
     ///     Ordered::with_comparator(Descending);
     ///
     /// // Insert value
@@ -377,8 +376,8 @@ where
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create a vector of key-value pairs
     /// let items = vec![
@@ -392,7 +391,7 @@ where
     /// let store: Ordered<_, _, HashMap<_, _>> =
     ///     items.into_iter().collect();
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store {
     ///     println!("{key}: {value}");
     /// }
@@ -425,14 +424,14 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store and initial state
     /// let mut store = Ordered::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in &store {
     ///     println!("{key}: {value}");
     /// }
@@ -461,8 +460,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Ordered;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Ordered;
     ///
     /// // Create store
     /// let mut store = Ordered::default();

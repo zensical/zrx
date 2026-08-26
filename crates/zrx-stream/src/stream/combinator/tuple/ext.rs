@@ -25,8 +25,8 @@
 
 //! Stream tuple extensions.
 
-use crate::stream::combinator::convert::IntoStreamTuple;
 use crate::stream::Stream;
+use crate::stream::combinator::convert::IntoStreamTuple;
 
 use super::convert::IntoJoin;
 

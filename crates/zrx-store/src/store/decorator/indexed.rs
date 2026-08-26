@@ -84,8 +84,8 @@ pub use iter::{Iter, Keys, Values};
 /// # Examples
 ///
 /// ```
-/// use zrx_store::decorator::Indexed;
 /// use zrx_store::StoreMut;
+/// use zrx_store::decorator::Indexed;
 ///
 /// // Create store and initial state
 /// let mut store = Indexed::default();
@@ -94,7 +94,7 @@ pub use iter::{Iter, Keys, Values};
 /// store.insert("c", 3);
 /// store.insert("d", 1);
 ///
-/// // Create iterator over the store
+/// // Create iterator over store
 /// for (key, value) in &store {
 ///     println!("{key}: {value}");
 /// }
@@ -135,7 +135,6 @@ where
     /// // Insert value
     /// store.insert("key", 42);
     /// ```
-    #[inline]
     #[must_use]
     pub fn new() -> Self
     where
@@ -179,7 +178,15 @@ where
     fn update_position(
         &mut self, key: &K, value: &V,
     ) -> Result<Range<usize>, Range<usize>> {
-        self.position(key, value).map(|n| n..n + 1).map_err(|n| {
+        let position = self.position(key, value);
+        if let Ok(n) = position
+            && self.store.get(key).expect("invariant") != value
+        {
+            return Err(n..n + 1);
+        }
+
+        // The entry is either unchanged or has a new position in the ordering
+        position.map(|n| n..n + 1).map_err(|n| {
             let prior = self.store.get(key);
 
             // At this point, we know that the key-value pair either does not
@@ -289,8 +296,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::Store;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -314,8 +321,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::Store;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -353,8 +360,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store
     /// let mut store = Indexed::default();
@@ -380,8 +387,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -410,8 +417,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::decorator::Indexed;
     /// use zrx_store::StoreMut;
+    /// use zrx_store::decorator::Indexed;
     ///
     /// // Create store and initial state
     /// let mut store = Indexed::default();
@@ -447,7 +454,7 @@ where
     /// let mut store = Indexed::default();
     /// store.insert("key", 42);
     ///
-    /// // Clear store
+    /// // Remove all items
     /// store.clear();
     /// assert!(store.is_empty());
     /// ```
@@ -472,12 +479,12 @@ where
     ///
     /// ```
     /// use std::collections::HashMap;
+    /// use zrx_store::StoreWithComparator;
     /// use zrx_store::comparator::Descending;
     /// use zrx_store::decorator::Indexed;
-    /// use zrx_store::StoreWithComparator;
     ///
     /// // Create store
-    /// let mut store: Indexed::<_, _, HashMap<_, _>, _> =
+    /// let mut store: Indexed<_, _, HashMap<_, _>, _> =
     ///     Indexed::with_comparator(Descending);
     ///
     /// // Insert value
@@ -564,7 +571,7 @@ where
     /// let store: Indexed<_, _, HashMap<_, _>> =
     ///     items.into_iter().collect();
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store {
     ///     println!("{key}: {value}");
     /// }
@@ -603,7 +610,7 @@ where
     /// let mut store = Indexed::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in &store {
     ///     println!("{key}: {value}");
     /// }

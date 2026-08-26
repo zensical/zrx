@@ -260,10 +260,8 @@ impl FromStr for Selector {
 
 // ----------------------------------------------------------------------------
 
-impl TryFrom<Id> for Selector {
-    type Error = Error;
-
-    /// Attempts to create a selector from an identifier.
+impl From<Id> for Selector {
+    /// Creates a selector from an identifier.
     ///
     /// An [`Id`] can be converted into a [`Selector`] because all identifiers
     /// are also valid selectors, as they represent exact matches. However, the
@@ -279,13 +277,14 @@ impl TryFrom<Id> for Selector {
     ///
     /// // Create selector from identifier
     /// let id: Id = "zri:file:::docs:index.md:".parse()?;
-    /// let selector: Selector = id.try_into()?;
+    /// let selector: Selector = id.into();
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
-    fn try_from(id: Id) -> Result<Self> {
-        let format = id.format.to_builder().with(0, "zrs").build()?;
+    fn from(id: Id) -> Self {
+        let format = id.format.to_builder().with(0, "zrs");
+        let format = format.build().expect("invariant");
 
         // Precompute hash for fast hashing
         let hash = {
@@ -295,14 +294,12 @@ impl TryFrom<Id> for Selector {
         };
 
         // No errors occurred
-        Ok(Self { format, hash })
+        Self { format, hash }
     }
 }
 
-impl TryFrom<Term> for Selector {
-    type Error = Error;
-
-    /// Attempts to create a selector from a term.
+impl From<Term> for Selector {
+    /// Creates a selector from a term.
     ///
     /// # Examples
     ///
@@ -312,17 +309,17 @@ impl TryFrom<Term> for Selector {
     /// use zrx_id::expression::Term;
     /// use zrx_id::{Id, Selector};
     ///
-    /// // Create selector from identifier
+    /// // Create selector from term
     /// let id: Id = "zri:file:::docs:index.md:".parse()?;
-    /// let selector: Selector = Term::from(id).try_into()?;
+    /// let selector: Selector = Term::from(id).into();
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
-    fn try_from(term: Term) -> Result<Self> {
+    fn from(term: Term) -> Self {
         match term {
-            Term::Id(id) => id.try_into(),
-            Term::Selector(selector) => Ok(selector),
+            Term::Id(id) => id.into(),
+            Term::Selector(selector) => selector,
         }
     }
 }

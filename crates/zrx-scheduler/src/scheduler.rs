@@ -47,8 +47,8 @@ use router::Router;
 use schedule::Schedule;
 use session::Session;
 use signal::{Id, Value};
-use step::effect::timer::{IntoDuration, IntoInstant};
 use step::effect::Effect;
+use step::effect::timer::{IntoDuration, IntoInstant};
 use step::{Step, Steps};
 
 // ----------------------------------------------------------------------------

@@ -1,14 +1,14 @@
 // ----------------------------------------------------------------------------
 
-//! Drain iterator implementation for [`Items`].
+//! Drain iterator implementation for [`Matches`].
 
-use super::Items;
+use super::Matches;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Drain iterator for [`Items`].
+/// Drain iterator for [`Matches`].
 #[derive(Debug)]
 pub struct Drain<'a> {
     /// Blocks of bits.
@@ -21,22 +21,22 @@ pub struct Drain<'a> {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl Items {
-    /// Creates a drain iterator over the item set.
+impl Matches {
+    /// Creates a drain iterator over the match set.
     ///
-    /// Removes all items from the set as they are yielded. If the iterator
-    /// is dropped before exhaustion, remaining items are also removed.
+    /// Removes all matches from the set as they are yielded. If the iterator
+    /// is dropped before exhaustion, remaining matches are also removed.
     ///
     /// # Examples
     ///
     /// ```
-    /// use zrx_store::stash::Items;
+    /// use zrx_id::matcher::Matches;
     ///
-    /// // Create item set from iterator
-    /// let mut items = Items::from_iter([0, 1, 2]);
+    /// // Create match set from iterator
+    /// let mut matches = Matches::from_iter([0, 1, 2]);
     ///
-    /// // Create iterator over item set
-    /// for index in items.drain() {
+    /// // Create iterator over match set
+    /// for index in matches.drain() {
     ///     println!("{index:?}");
     /// }
     /// ```
@@ -54,7 +54,7 @@ impl Iterator for Drain<'_> {
     /// Returns the next item.
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            let block = self.data[self.index];
+            let &block = self.data.get(self.index)?;
             if block != 0 {
                 let num = block.trailing_zeros() as usize;
 
@@ -65,11 +65,6 @@ impl Iterator for Drain<'_> {
 
             // Move to the next block
             self.index += 1;
-
-            // If all blocks are exhausted, we're done
-            if self.index >= self.data.len() {
-                return None;
-            }
         }
     }
 }
@@ -77,8 +72,8 @@ impl Iterator for Drain<'_> {
 // ----------------------------------------------------------------------------
 
 impl Drop for Drain<'_> {
-    /// Removes all remaining items.
+    /// Removes all remaining matches.
     fn drop(&mut self) {
-        self.data[self.index..].fill(0);
+        self.data.clear();
     }
 }

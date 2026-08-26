@@ -38,6 +38,7 @@ use super::Ordered;
 // ----------------------------------------------------------------------------
 
 /// Iterator over the items of an [`Ordered`] store.
+#[must_use]
 #[derive(Debug)]
 pub struct Iter<'a, K, V, C = Ascending> {
     /// Ordering of values.
@@ -45,6 +46,7 @@ pub struct Iter<'a, K, V, C = Ascending> {
 }
 
 /// Iterator over the keys of an [`Ordered`] store.
+#[must_use]
 #[derive(Debug)]
 pub struct Keys<'a, K, V, C = Ascending> {
     /// Ordering of values.
@@ -52,6 +54,7 @@ pub struct Keys<'a, K, V, C = Ascending> {
 }
 
 /// Iterator over the values of an [`Ordered`] store.
+#[must_use]
 #[derive(Debug)]
 pub struct Values<'a, K, V, C = Ascending> {
     /// Ordering of values.
@@ -68,7 +71,8 @@ where
     V: Value,
     S: Store<K, V>,
 {
-    type Iter<'a> = Iter<'a, K, V, C>
+    type Iter<'a>
+        = Iter<'a, K, V, C>
     where
         Self: 'a;
 
@@ -84,7 +88,7 @@ where
     /// let mut store = Ordered::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for (key, value) in store.iter() {
     ///     println!("{key}: {value}");
     /// }
@@ -100,7 +104,8 @@ where
     K: Key,
     S: Store<K, V>,
 {
-    type Keys<'a> = Keys<'a, K, V, C>
+    type Keys<'a>
+        = Keys<'a, K, V, C>
     where
         Self: 'a;
 
@@ -116,7 +121,7 @@ where
     /// let mut store = Ordered::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for key in store.keys() {
     ///     println!("{key}");
     /// }
@@ -133,7 +138,8 @@ where
     V: Value,
     S: Store<K, V>,
 {
-    type Values<'a> = Values<'a, K, V, C>
+    type Values<'a>
+        = Values<'a, K, V, C>
     where
         Self: 'a;
 
@@ -149,7 +155,7 @@ where
     /// let mut store = Ordered::default();
     /// store.insert("key", 42);
     ///
-    /// // Create iterator over the store
+    /// // Create iterator over store
     /// for value in store.values() {
     ///     println!("{value}");
     /// }

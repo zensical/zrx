@@ -25,15 +25,15 @@
 
 //! Timer queue.
 
-use crossbeam::channel::{at, never, Receiver};
+use crossbeam::channel::{Receiver, at, never};
 use std::time::Instant;
 
 use zrx_store::{Queue, Store, StoreMut, StoreMutRef};
 
 use crate::scheduler::engine::{AsReceiver, TokenFull};
 use crate::scheduler::signal::Id;
-use crate::scheduler::step::effect::Timer;
 use crate::scheduler::step::Steps;
+use crate::scheduler::step::effect::Timer;
 
 // ----------------------------------------------------------------------------
 // Structs

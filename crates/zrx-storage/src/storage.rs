@@ -100,6 +100,7 @@ impl<K, V> Storage<K, V> {
     /// // Insert value
     /// storage.insert("key", 42);
     /// ```
+    #[must_use]
     pub fn new<T>(collection: T) -> Self
     where
         T: Collection<K, V>,

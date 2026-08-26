@@ -45,8 +45,7 @@ use super::Task;
 /// ```
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_executor::task::Tasks;
-/// use zrx_executor::Executor;
+/// use zrx_executor::{Executor, Tasks};
 ///
 /// // Create executor and submit task
 /// let executor = Executor::default();
@@ -79,7 +78,7 @@ impl Tasks {
     /// # Examples
     ///
     /// ```
-    /// use zrx_executor::task::Tasks;
+    /// use zrx_executor::Tasks;
     ///
     /// // Create task set
     /// let tasks = Tasks::new();
@@ -97,7 +96,7 @@ impl Tasks {
     /// # Examples
     ///
     /// ```
-    /// use zrx_executor::task::Tasks;
+    /// use zrx_executor::Tasks;
     ///
     /// // Create task set and add tasks
     /// let mut tasks = Tasks::new();
@@ -122,7 +121,7 @@ impl Tasks {
     /// # Examples
     ///
     /// ```
-    /// use zrx_executor::task::Tasks;
+    /// use zrx_executor::Tasks;
     ///
     /// // Create task set and add tasks
     /// let mut tasks = Tasks::new();
@@ -173,7 +172,7 @@ impl From<()> for Tasks {
     /// # Examples
     ///
     /// ```
-    /// use zrx_executor::task::Tasks;
+    /// use zrx_executor::Tasks;
     ///
     /// // Create task set from unit value
     /// let tasks = Tasks::from(());
@@ -197,7 +196,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_executor::task::Tasks;
+    /// use zrx_executor::Tasks;
     ///
     /// // Create task set from task
     /// let tasks = Tasks::from(|| println!("Task"));
@@ -220,7 +219,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use zrx_executor::task::Tasks;
+    /// use zrx_executor::Tasks;
     ///
     /// // Create task set from iterator
     /// let tasks = Tasks::from_iter([
@@ -251,7 +250,7 @@ impl IntoIterator for Tasks {
     /// # Examples
     ///
     /// ```
-    /// use zrx_executor::task::Tasks;
+    /// use zrx_executor::Tasks;
     ///
     /// // Create task set and add tasks
     /// let mut tasks = Tasks::new();

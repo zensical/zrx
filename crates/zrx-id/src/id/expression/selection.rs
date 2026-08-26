@@ -9,10 +9,10 @@
 // rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
 // sell copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,65 +23,76 @@
 
 // ----------------------------------------------------------------------------
 
-//! Iterator over terms.
+//! Selection.
 
-use slab::Iter;
+use crate::id::matcher::matches::IntoIter;
+use crate::id::selector::Selector;
 
-use crate::id::expression::Term;
-
+use super::Expression;
 use super::condition::Condition;
-use super::Filter;
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Iterator over terms.
-pub struct Terms<'a> {
-    /// Condition set, built from expressions.
-    conditions: Iter<'a, Condition>,
-    /// Current set of extracted terms.
-    inner: &'a [Term],
+/// Selection.
+///
+/// Selections are used to extract a positive set of [`Term`][] instances from
+/// an [`Expression`], yielding canonical [`Selector`] instances only. Providers
+/// can combine those selectors into a single [`Matcher`][], which can be used
+/// to match against the [`Id`][] instances they manage and produce.
+///
+/// [`Id`]: crate::id::Id
+/// [`Matcher`]: crate::id::matcher::Matcher
+/// [`Term`]: crate::id::expression::Term
+pub struct Selection {
+    /// Condition.
+    condition: Condition,
+    /// Iterator over terms.
+    terms: IntoIter,
 }
 
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl Filter {
-    /// Creates an iterator over the terms.
+impl Expression {
+    /// Returns a selection over all positive selectors.
+    ///
+    /// This method evaluates the terms in the condition's expression using a
+    /// stack-based approach, where each instruction is processed in reverse
+    /// order. The resulting match set contains the indices of all terms that
+    /// are positive, i.e., those that are not negated by [`Operator::Not`][].
+    ///
+    /// [`Operator::Not`]: crate::id::expression::Operator::Not
     ///
     /// # Examples
     ///
     /// ```
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// use zrx_id::expression::Filter;
-    /// use zrx_id::{selector, Expression};
+    /// use zrx_id::{Expression, selector};
     ///
-    /// // Create filter builder and insert expression
-    /// let mut builder = Filter::builder();
-    /// builder.insert(Expression::any(|expr| {
+    /// // Create expression
+    /// let expr = Expression::any(|expr| {
     ///     expr.with(selector!(location = "**/*.jpg")?)?
     ///         .with(selector!(location = "**/*.png")?)
-    /// })?);
+    /// })?;
     ///
-    /// // Create filter from builder
-    /// let filter = builder.build()?;
-    ///
-    /// // Create iterator over terms
-    /// for term in filter.terms() {
-    ///     println!("{term:?}");
+    /// // Create iterator over selection
+    /// for selector in expr.selection() {
+    ///     println!("{selector:?}");
     /// }
     /// # Ok(())
     /// # }
     /// ```
     #[inline]
     #[must_use]
-    pub fn terms(&self) -> Terms<'_> {
-        Terms {
-            conditions: self.conditions.iter(),
-            inner: &[],
+    pub fn selection(&self) -> Selection {
+        let condition = Condition::builder(self.clone()).optimize().build();
+        Selection {
+            terms: condition.selection().into_iter(),
+            condition,
         }
     }
 }
@@ -90,21 +101,19 @@ impl Filter {
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<'a> Iterator for Terms<'a> {
-    type Item = &'a Term;
+impl Iterator for Selection {
+    type Item = Selector;
 
-    /// Returns the next term.
+    /// Returns the next selector.
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            // Check if we have terms left in the current condition
-            if let Some(term) = self.inner.first() {
-                self.inner = &self.inner[1..];
-                return Some(term);
-            }
+        let terms = self.condition.terms();
+        self.terms.next().map(|index| terms[index].clone().into())
+    }
 
-            // Fetch next condition and extract its terms
-            let (_, condition) = self.conditions.next()?;
-            self.inner = condition.terms();
-        }
+    /// Returns the bounds on the remaining length of the iterator.
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.terms.size_hint()
     }
 }

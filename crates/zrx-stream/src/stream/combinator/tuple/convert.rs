@@ -27,8 +27,8 @@
 
 use zrx_scheduler::{Id, Value};
 
-use crate::stream::combinator::convert::IntoStreamTupleCons;
 use crate::stream::Stream;
+use crate::stream::combinator::convert::IntoStreamTupleCons;
 
 mod join;
 

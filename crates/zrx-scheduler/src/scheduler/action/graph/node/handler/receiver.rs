@@ -44,7 +44,7 @@ where
     T: Value,
 {
     type Inputs = ();
-    type Output<'a> = T;
+    type Output = T;
 
     /// Receives from the channel and emits a step for each received diff.
     fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {

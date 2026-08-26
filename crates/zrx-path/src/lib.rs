@@ -27,5 +27,5 @@
 
 mod path;
 
-pub use path::transform;
 pub use path::PathExt;
+pub use path::transform;

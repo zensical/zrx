@@ -23,48 +23,43 @@
 
 // ----------------------------------------------------------------------------
 
-//! Stash.
+//! Generational stash.
 
 use ahash::HashMap;
-use slab::Slab;
 use std::borrow::Borrow;
 use std::fmt::{self, Debug};
-use std::marker::PhantomData;
 use std::mem;
 use std::ops::{Index, IndexMut};
 
-use crate::store::adapter::slab::{Iter, IterMut};
 use crate::store::item::{Key, Value};
 use crate::store::{
     Store, StoreIterable, StoreIterableMut, StoreMut, StoreMutRef,
 };
 
-pub mod items;
 mod iter;
+pub mod slab;
 pub mod slots;
 
-pub use items::Items;
+pub use iter::{Iter, IterMut, Keys, Values};
+pub use slab::{Map, Slab, Slot};
 pub use slots::{Slots, SlotsMut};
 
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
 
-/// Stash.
+/// Generational stash.
 ///
-/// This data type implements a simple stash, which is a key-value store that
-/// is optimized for fast insertion and retrieval of items by index. It's built
-/// on a [`Slab`], together with a [`Store`] that provides the underlying item
-/// storage. Stashes offer optimal performance for temporary storage.
+/// This data type implements a generational stash, which is a key-value store
+/// that is optimized for fast insertion and retrieval of items by slots. It's
+/// built on a generational [`Slab`], together with a [`Store`] that provides
+/// the underlying item storage.
 ///
-/// Iteration happens on the underlying [`Slab`], which means that the order of
-/// items is stable, but not sorted by key. This ensures, that iteration is not
-/// affected by insertions and removals, and cache efficient, since no lookups
-/// need to be performed on the underlying [`Store`] to obtain the items. Note
-/// that the store iterator traits don't allow to return indices for the items,
-/// only references to keys and values. In case indices are required, the stash
-/// can be iterated with [`Stash::slots`] or [`Stash::slots_mut`], since those
-/// return both, indices and references to keys and values.
+/// Iteration follows underlying slab index order, which is not sorted by key.
+/// Removed indices may be reused by later insertions. Iteration is cache
+/// efficient because it does not look up items in the underlying [`Store`].
+/// Store iterator traits return only references to keys and values; use
+/// [`Stash::slots`] or [`Stash::slots_mut`] when slots are required.
 ///
 /// # Examples
 ///
@@ -75,19 +70,17 @@ pub use slots::{Slots, SlotsMut};
 /// let mut stash = Stash::default();
 /// stash.insert("key", 42);
 ///
-/// // Create iterator over the stash
+/// // Create iterator over stash
 /// for (key, value) in &stash {
 ///     println!("{key}: {value}");
 /// }
 /// ```
 #[derive(Clone)]
-pub struct Stash<K, V, S = HashMap<K, usize>> {
+pub struct Stash<K, V, S = HashMap<K, Slot>> {
     /// Underlying store.
     store: S,
     /// Stash items.
     items: Slab<(K, V)>,
-    /// Capture types.
-    marker: PhantomData<K>,
 }
 
 // ----------------------------------------------------------------------------
@@ -97,7 +90,7 @@ pub struct Stash<K, V, S = HashMap<K, usize>> {
 impl<K, V, S> Stash<K, V, S>
 where
     K: Key,
-    S: Store<K, usize>,
+    S: Store<K, Slot>,
 {
     /// Creates a stash.
     ///
@@ -119,27 +112,27 @@ where
         Self {
             store: S::default(),
             items: Slab::new(),
-            marker: PhantomData,
         }
     }
 
-    /// Returns the index of the value identified by the key.
+    /// Returns the slot of the value identified by the key.
     ///
     /// # Examples
     ///
     /// ```
     /// use zrx_store::Stash;
+    /// use zrx_store::stash::Slot;
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
     /// stash.insert("key", 42);
     ///
-    /// // Obtain index of value
-    /// let index = stash.get(&"key");
-    /// assert_eq!(index, Some(0));
+    /// // Obtain slot of value
+    /// let slot = stash.get(&"key");
+    /// assert_eq!(slot.map(Slot::index), Some(0));
     /// ```
     #[inline]
-    pub fn get<Q>(&self, key: &Q) -> Option<usize>
+    pub fn get<Q>(&self, key: &Q) -> Option<Slot>
     where
         K: Borrow<Q>,
         Q: Key,
@@ -147,7 +140,7 @@ where
         self.store.get(key).copied()
     }
 
-    /// Returns a reference to the key at the index.
+    /// Returns a reference to the key in the slot.
     ///
     /// # Examples
     ///
@@ -156,27 +149,29 @@ where
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
-    /// stash.insert("key", 42);
+    /// let slot = stash.insert("key", 42);
     ///
-    /// // Obtain key at index
-    /// let key = stash.key(0);
+    /// // Obtain key at slot
+    /// let key = stash.key(slot);
     /// assert_eq!(key, Some(&"key"));
     /// ```
     #[inline]
-    pub fn key(&self, index: usize) -> Option<&K> {
-        self.items.get(index).map(|(key, _)| key)
+    pub fn key(&self, slot: Slot) -> Option<&K> {
+        self.items.get(slot).map(|(key, _)| key)
     }
 }
 
 impl<K, V, S> Stash<K, V, S>
 where
     K: Key,
-    S: StoreMut<K, usize>,
+    S: StoreMut<K, Slot>,
 {
-    /// Inserts the value identified by the key and returns its index.
+    /// Inserts the value identified by the key and returns its slot.
     ///
-    /// This method inserts the value and returns an index into the store that
-    /// can be used to retrieve an immutable or mutable reference to the value.
+    /// This method inserts the value and returns a slot that can be used to
+    /// retrieve an immutable or mutable reference to the value. If a value
+    /// with the same key already exists, the value is replaced, while the
+    /// generation of the slot remains stable.
     ///
     /// # Examples
     ///
@@ -187,22 +182,22 @@ where
     /// let mut stash = Stash::default();
     ///
     /// // Insert value
-    /// let index = stash.insert("key", 42);
-    /// assert_eq!(index, 0);
+    /// let slot = stash.insert("key", 42);
+    /// assert_eq!(slot.index(), 0);
     /// ```
     #[inline]
-    pub fn insert(&mut self, key: K, value: V) -> usize {
-        if let Some(&index) = self.store.get(&key) {
-            self.items[index].1 = value;
-            index
+    pub fn insert(&mut self, key: K, value: V) -> Slot {
+        if let Some(&slot) = self.store.get(&key) {
+            self.items[slot].1 = value;
+            slot
         } else {
-            let index = self.items.insert((key.clone(), value));
-            self.store.insert(key, index);
-            index
+            let slot = self.items.insert((key.clone(), value));
+            self.store.insert(key, slot);
+            slot
         }
     }
 
-    /// Removes the entry at the index and returns it.
+    /// Removes the entry in the slot and returns it.
     ///
     /// # Examples
     ///
@@ -211,19 +206,18 @@ where
     ///
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
-    /// stash.insert("key", 42);
+    /// let slot = stash.insert("key", 42);
     ///
     /// // Remove and return entry
-    /// let entry = stash.remove(0);
+    /// let entry = stash.remove(slot);
     /// assert_eq!(entry, Some(("key", 42)));
     /// ```
+    #[allow(clippy::missing_panics_doc)]
     #[inline]
-    pub fn remove(&mut self, index: usize) -> Option<(K, V)> {
-        if let Some((key, _)) = self.items.get(index) {
-            self.store.remove(key).map(|index| self.items.remove(index))
-        } else {
-            None
-        }
+    pub fn remove(&mut self, slot: Slot) -> Option<(K, V)> {
+        self.items.remove(slot).inspect(|(key, _)| {
+            self.store.remove(key).expect("invariant");
+        })
     }
 }
 
@@ -234,7 +228,7 @@ where
 impl<K, V, S> Store<K, V> for Stash<K, V, S>
 where
     K: Key,
-    S: Store<K, usize>,
+    S: Store<K, Slot>,
 {
     /// Returns a reference to the value identified by the key.
     ///
@@ -257,10 +251,10 @@ where
         K: Borrow<Q>,
         Q: Key,
     {
-        match self.store.get(key) {
-            Some(&index) => self.items.get(index).map(|(_, value)| value),
-            None => None,
-        }
+        self.store.get(key).map(|&slot| {
+            let (_, value) = &self.items[slot];
+            value
+        })
     }
 
     /// Returns whether the store contains the key.
@@ -298,7 +292,7 @@ impl<K, V, S> StoreMut<K, V> for Stash<K, V, S>
 where
     K: Key,
     V: Value,
-    S: StoreMut<K, usize>,
+    S: StoreMut<K, Slot>,
 {
     /// Inserts the value identified by the key.
     ///
@@ -316,12 +310,12 @@ where
     /// ```
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
-        if let Some(&index) = self.store.get(&key) {
-            let prior = &mut self.items[index].1;
+        if let Some(&slot) = self.store.get(&key) {
+            let prior = &mut self.items[slot].1;
             (prior != &value).then(|| mem::replace(prior, value))
         } else {
-            let index = self.items.insert((key.clone(), value));
-            self.store.insert(key, index);
+            let slot = self.items.insert((key.clone(), value));
+            self.store.insert(key, slot);
             None
         }
     }
@@ -347,8 +341,8 @@ where
         K: Borrow<Q>,
         Q: Key,
     {
-        self.store.remove(key).map(|index| {
-            let (_, value) = self.items.remove(index);
+        self.store.remove(key).map(|slot| {
+            let (_, value) = self.items.remove(slot).expect("invariant");
             value
         })
     }
@@ -374,7 +368,8 @@ where
         K: Borrow<Q>,
         Q: Key,
     {
-        self.store.remove(key).map(|index| self.items.remove(index))
+        let opt = self.store.remove(key);
+        opt.map(|slot| self.items.remove(slot).expect("invariant"))
     }
 
     /// Clears the stash, removing all items.
@@ -388,7 +383,7 @@ where
     /// let mut stash = Stash::default();
     /// stash.insert("key", 42);
     ///
-    /// // Clear stash
+    /// // Remove all items
     /// stash.clear();
     /// assert!(stash.is_empty());
     /// ```
@@ -402,7 +397,7 @@ where
 impl<K, V, S> StoreMutRef<K, V> for Stash<K, V, S>
 where
     K: Key,
-    S: StoreMut<K, usize>,
+    S: StoreMut<K, Slot>,
 {
     /// Returns a mutable reference to the value identified by the key.
     ///
@@ -425,10 +420,10 @@ where
         K: Borrow<Q>,
         Q: Key,
     {
-        match self.store.get(key) {
-            Some(&index) => self.items.get_mut(index).map(|(_, value)| value),
-            None => None,
-        }
+        self.store.get(key).map(|&slot| {
+            let (_, value) = &mut self.items[slot];
+            value
+        })
     }
 
     /// Returns a mutable reference to the value or creates the default.
@@ -451,8 +446,8 @@ where
         V: Default,
     {
         if !self.store.contains_key(key) {
-            let n = self.items.insert((key.clone(), V::default()));
-            self.store.insert(key.clone(), n);
+            let slot = self.items.insert((key.clone(), V::default()));
+            self.store.insert(key.clone(), slot);
         }
 
         // We can safely use expect here, as the key is present
@@ -462,18 +457,18 @@ where
 
 // ----------------------------------------------------------------------------
 
-impl<K, V, S> Index<usize> for Stash<K, V, S>
+impl<K, V, S> Index<Slot> for Stash<K, V, S>
 where
     K: Key,
-    S: Store<K, usize>,
+    S: Store<K, Slot>,
 {
     type Output = V;
 
-    /// Returns a reference to the value at the index.
+    /// Returns a reference to the value in the slot.
     ///
     /// # Panics
     ///
-    /// Panics if the index is out of bounds.
+    /// Panics if the slot is stale or invalid for this stash.
     ///
     /// # Examples
     ///
@@ -483,28 +478,30 @@ where
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
     /// stash.insert("a", 42);
-    /// stash.insert("b", 84);
+    ///
+    /// // Insert value
+    /// let slot = stash.insert("b", 84);
     ///
     /// // Obtain reference to value
-    /// let value = &stash[1];
+    /// let value = &stash[slot];
     /// assert_eq!(value, &84);
     /// ```
     #[inline]
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.items[index].1
+    fn index(&self, slot: Slot) -> &Self::Output {
+        &self.items[slot].1
     }
 }
 
-impl<K, V, S> IndexMut<usize> for Stash<K, V, S>
+impl<K, V, S> IndexMut<Slot> for Stash<K, V, S>
 where
     K: Key,
-    S: Store<K, usize>,
+    S: Store<K, Slot>,
 {
-    /// Returns a mutable reference to the value at the index.
+    /// Returns a mutable reference to the value in the slot.
     ///
     /// # Panics
     ///
-    /// Panics if the index is out of bounds.
+    /// Panics if the slot is stale or invalid for this stash.
     ///
     /// # Examples
     ///
@@ -514,15 +511,17 @@ where
     /// // Create stash and initial state
     /// let mut stash = Stash::default();
     /// stash.insert("a", 42);
-    /// stash.insert("b", 84);
+    ///
+    /// // Insert value
+    /// let slot = stash.insert("b", 84);
     ///
     /// // Obtain mutable reference to value
-    /// let value = &mut stash[1];
+    /// let value = &mut stash[slot];
     /// assert_eq!(value, &mut 84);
     /// ```
     #[inline]
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.items[index].1
+    fn index_mut(&mut self, slot: Slot) -> &mut Self::Output {
+        &mut self.items[slot].1
     }
 }
 
@@ -531,7 +530,7 @@ where
 impl<K, V, S> FromIterator<(K, V)> for Stash<K, V, S>
 where
     K: Key,
-    S: StoreMut<K, usize> + Default,
+    S: StoreMut<K, Slot> + Default,
 {
     /// Creates a stash from an iterator.
     ///
@@ -553,7 +552,7 @@ where
     /// let stash: Stash<_, _, HashMap<_, _>> =
     ///     items.into_iter().collect();
     ///
-    /// // Create iterator over the stash
+    /// // Create iterator over stash
     /// for (key, value) in &stash {
     ///     println!("{key}: {value}");
     /// }
@@ -576,7 +575,7 @@ impl<'a, K, V, S> IntoIterator for &'a Stash<K, V, S>
 where
     K: Key,
     V: Value,
-    S: StoreIterable<K, usize>,
+    S: Store<K, Slot>,
 {
     type Item = (&'a K, &'a V);
     type IntoIter = Iter<'a, K, V>;
@@ -592,14 +591,14 @@ where
     /// let mut stash = Stash::default();
     /// stash.insert("key", 42);
     ///
-    /// // Create iterator over the stash
+    /// // Create iterator over stash
     /// for (key, value) in &stash {
     ///     println!("{key}: {value}");
     /// }
     /// ```
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        StoreIterable::iter(&self.items)
+        self.iter()
     }
 }
 
@@ -608,7 +607,7 @@ impl<'a, K, V, S> IntoIterator for &'a mut Stash<K, V, S>
 where
     K: Key,
     V: Value,
-    S: StoreIterableMut<K, usize>,
+    S: StoreMut<K, Slot>,
 {
     type Item = (&'a K, &'a mut V);
     type IntoIter = IterMut<'a, K, V>;
@@ -624,14 +623,14 @@ where
     /// let mut stash = Stash::default();
     /// stash.insert("key", 42);
     ///
-    /// // Create iterator over the stash
+    /// // Create iterator over stash
     /// for (key, value) in &mut stash {
     ///     println!("{key}: {value}");
     /// }
     /// ```
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        StoreIterableMut::iter_mut(&mut self.items)
+        self.iter_mut()
     }
 }
 

@@ -37,7 +37,6 @@ pub use store::comparator::{self, Comparator};
 pub use store::decorator;
 pub use store::item::{Key, Value};
 pub use store::{
-    Store, StoreFromIterator, StoreIntoIterator, StoreIterable,
-    StoreIterableMut, StoreKeys, StoreMut, StoreMutRef, StoreRange,
-    StoreValues, StoreWithComparator,
+    Store, StoreIterable, StoreIterableMut, StoreKeys, StoreMut, StoreMutRef,
+    StoreRange, StoreValues, StoreWithComparator,
 };

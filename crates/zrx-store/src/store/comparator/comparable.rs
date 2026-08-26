@@ -74,7 +74,7 @@ impl<T, C> Comparable<T, C> {
     /// let value = Comparable::new(42, Ascending);
     /// assert_eq!(*value, 42);
     /// ```
-    #[inline]
+    #[must_use]
     pub fn new(value: T, comparator: C) -> Self {
         Comparable(value, comparator)
     }

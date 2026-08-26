@@ -32,9 +32,9 @@
 /// Operator.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Operator {
-    /// Logical `AND`.
-    Any,
     /// Logical `OR`.
+    Any,
+    /// Logical `AND`.
     All,
     /// Logical `NOT`.
     Not,

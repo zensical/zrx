@@ -31,9 +31,9 @@
 
 use std::marker::PhantomData;
 
+use zrx_scheduler::Id;
 use zrx_scheduler::action::Action;
 use zrx_scheduler::schedule::Subscriber;
-use zrx_scheduler::Id;
 
 use super::Stream;
 
@@ -58,30 +58,30 @@ pub use select::Select;
 // ----------------------------------------------------------------------------
 
 /// Operator.
-pub trait Operator<'a, I, A>
+pub trait Operator<I, A>
 where
     A: Action<I>,
 {
     /// Subscribe the given subscriber.
-    fn subscribe<S>(&self, subscriber: S) -> Stream<I, A::Output<'a>>
+    fn subscribe<S>(&self, subscriber: S) -> Stream<I, A::Output>
     where
-        S: Into<Subscriber<'a, I, A>>;
+        S: Into<Subscriber<I, A>>;
 }
 
 // ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<'a, I, A, T> Operator<'a, I, A> for Stream<I, T>
+impl<I, A, T> Operator<I, A> for Stream<I, T>
 where
     I: Id,
     A: Action<I, Inputs = (T,)> + 'static,
 {
     /// Subscribe the given subscriber.
     #[inline]
-    fn subscribe<S>(&self, subscriber: S) -> Stream<I, A::Output<'a>>
+    fn subscribe<S>(&self, subscriber: S) -> Stream<I, A::Output>
     where
-        S: Into<Subscriber<'a, I, A>>,
+        S: Into<Subscriber<I, A>>,
     {
         // We can safely use expect here, as the stream interface prevents us
         // from creating subscribers with invalid nodes. Otherwise, it's a bug.
@@ -103,16 +103,16 @@ where
 /// Implements operator trait for a tuple.
 macro_rules! impl_operator_for_tuple {
     ($T1:ident $(, $T:ident)+ $(,)?) => {
-        impl<'a, I, A, $T1, $($T,)+> Operator<'a, I, A>
+        impl<I, A, $T1, $($T,)+> Operator<I, A>
             for (Stream<I, $T1>, $(Stream<I, $T>,)+)
         where
             I: Id,
             A: Action<I, Inputs = ($T1, $($T,)+)> + 'static,
         {
             #[inline]
-            fn subscribe<S>(&self, subscriber: S) -> Stream<I, A::Output<'a>>
+            fn subscribe<S>(&self, subscriber: S) -> Stream<I, A::Output>
             where
-                S: Into<Subscriber<'a, I, A>>,
+                S: Into<Subscriber<I, A>>,
             {
                 #[allow(non_snake_case)]
                 let ($T1, $($T,)*) = self;

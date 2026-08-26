@@ -27,8 +27,8 @@
 
 use std::collections::VecDeque;
 
-use super::topology::Transitive;
 use super::Graph;
+use super::topology::Transitive;
 
 // ----------------------------------------------------------------------------
 // Implementations

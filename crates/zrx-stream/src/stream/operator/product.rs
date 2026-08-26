@@ -32,8 +32,8 @@ use zrx_scheduler::action::{Action, Context};
 use zrx_scheduler::step::{IntoSteps, Scope};
 use zrx_scheduler::{Id, Value};
 
-use crate::stream::combinator::convert::IntoStreamTupleCons;
 use crate::stream::Stream;
+use crate::stream::combinator::convert::IntoStreamTupleCons;
 
 use super::Operator;
 
@@ -79,7 +79,7 @@ where
     U: Value,
 {
     type Inputs = (T, U);
-    type Output<'a> = (T, U);
+    type Output = (T, U);
 
     /// Executes the operator.
     fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {

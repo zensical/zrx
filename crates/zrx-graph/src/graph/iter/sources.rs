@@ -25,8 +25,8 @@
 
 //! Iterator over sources.
 
-use crate::graph::topology::Adjacency;
 use crate::graph::Graph;
+use crate::graph::topology::Adjacency;
 
 // ----------------------------------------------------------------------------
 // Structs

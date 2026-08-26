@@ -25,7 +25,7 @@
 
 //! Router.
 
-use crossbeam::channel::{bounded, Select};
+use crossbeam::channel::{Select, bounded};
 use std::ops::{Index, IndexMut, Range};
 
 use crate::scheduler::engine::Token;

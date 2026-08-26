@@ -27,8 +27,8 @@
 
 use std::borrow::Cow;
 
-use super::error::Result;
 use super::Id;
+use super::error::Result;
 
 // ----------------------------------------------------------------------------
 // Traits

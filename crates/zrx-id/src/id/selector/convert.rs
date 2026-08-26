@@ -93,7 +93,7 @@ impl TryToSelector for Id {
     /// ```
     #[inline]
     fn try_to_selector(&self) -> Result<Cow<'_, Selector>> {
-        self.to_owned().try_into().map(Cow::Owned)
+        Ok(Cow::Owned(self.to_owned().into()))
     }
 }
 

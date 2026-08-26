@@ -32,8 +32,8 @@ use std::ops::{Index, IndexMut};
 
 use zrx_store::StoreMutRef;
 
-use crate::scheduler::action::graph::Node;
 use crate::scheduler::action::Result;
+use crate::scheduler::action::graph::Node;
 use crate::scheduler::engine::queue::Token;
 use crate::scheduler::schedule::Schedule;
 use crate::scheduler::signal::Id;
@@ -119,9 +119,10 @@ where
         let schedule = &mut self.schedules[token.module];
         (
             token,
-            vec![then
-                .execute(schedule.context(token.node).build([]).unwrap())
-                .map_err(Into::into)],
+            vec![
+                then.execute(schedule.context(token.node).build([]).unwrap())
+                    .map_err(Into::into),
+            ],
         )
     }
 

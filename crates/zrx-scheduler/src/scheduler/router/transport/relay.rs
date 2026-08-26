@@ -73,13 +73,13 @@ impl<T> Relay<T> {
             match self.receiver.try_recv() {
                 Ok(value) => tokens.extend(self.senders.send(value)),
                 Err(TryRecvError::Empty) => {
-                    return Ok(tokens.into_iter().collect())
+                    return Ok(tokens.into_iter().collect());
                 }
                 Err(TryRecvError::Disconnected) if !tokens.is_empty() => {
-                    return Ok(tokens.into_iter().collect())
+                    return Ok(tokens.into_iter().collect());
                 }
                 Err(TryRecvError::Disconnected) => {
-                    return Err(Error::Disconnected)?
+                    return Err(Error::Disconnected);
                 }
             }
         }

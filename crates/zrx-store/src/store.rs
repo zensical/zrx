@@ -203,7 +203,7 @@ pub trait StoreMutRef<K, V>: Store<K, V> {
 /// let mut store = HashMap::new();
 /// store.insert("key", 42);
 ///
-/// // Create iterator over the store
+/// // Create iterator over store
 /// for (key, value) in store.iter() {
 ///     println!("{key}: {value}");
 /// }
@@ -236,7 +236,7 @@ where
 /// let mut store = HashMap::new();
 /// store.insert("key", 42);
 ///
-/// // Create iterator over the store
+/// // Create iterator over store
 /// for (key, value) in store.iter_mut() {
 ///     println!("{key}: {value}");
 /// }
@@ -269,7 +269,7 @@ where
 /// let mut store = HashMap::new();
 /// store.insert("key", 42);
 ///
-/// // Create iterator over the store
+/// // Create iterator over store
 /// for key in store.keys() {
 ///     println!("{key}");
 /// }
@@ -301,7 +301,7 @@ where
 /// let mut store = HashMap::new();
 /// store.insert("key", 42);
 ///
-/// // Create iterator over the store
+/// // Create iterator over store
 /// for value in store.values() {
 ///     println!("{value}");
 /// }
@@ -335,7 +335,7 @@ where
 /// store.insert("a", 42);
 /// store.insert("b", 84);
 ///
-/// // Create iterator over the store
+/// // Create iterator over store
 /// for (key, value) in store.range("b"..) {
 ///     println!("{key}: {value}");
 /// }
@@ -371,7 +371,7 @@ where
 /// use zrx_store::{StoreMut, StoreWithComparator};
 ///
 /// // Create store
-/// let mut store: Ordered::<_, _, HashMap<_, _>, _> =
+/// let mut store: Ordered<_, _, HashMap<_, _>, _> =
 ///     Ordered::with_comparator(Descending);
 ///
 /// // Insert value
@@ -384,25 +384,3 @@ where
     /// Creates a store with the given comparator.
     fn with_comparator(comparator: C) -> Self;
 }
-
-// ----------------------------------------------------------------------------
-
-/// Creates a store from an iterator.
-pub trait StoreFromIterator<K, V>: FromIterator<(K, V)> {}
-
-/// Creates an iterator over the items of the store.
-pub trait StoreIntoIterator<K, V>: IntoIterator<Item = (K, V)> {}
-
-// ----------------------------------------------------------------------------
-// Blanket implementations
-// ----------------------------------------------------------------------------
-
-#[rustfmt::skip]
-impl<K, V, T> StoreFromIterator<K, V> for T
-where
-    T: FromIterator<(K, V)> {}
-
-#[rustfmt::skip]
-impl<K, V, T> StoreIntoIterator<K, V> for T
-where
-    T: IntoIterator<Item = (K, V)> {}

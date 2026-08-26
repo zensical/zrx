@@ -70,7 +70,7 @@ macro_rules! impl_action {
             $($T: Value,)+
         {
             type Inputs = ($($T,)+);
-            type Output<'a> = ($($T,)+);
+            type Output = ($($T,)+);
 
             /// Executes the operator.
             fn execute(

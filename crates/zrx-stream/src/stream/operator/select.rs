@@ -34,8 +34,8 @@ use zrx_scheduler::schedule::Subscriber;
 use zrx_scheduler::step::{IntoSteps, Scope};
 use zrx_scheduler::{Id, Key, Value};
 
-use crate::stream::barrier::{Barrier, Barriers};
 use crate::stream::Stream;
+use crate::stream::barrier::{Barrier, Barriers};
 
 use super::Operator;
 
@@ -86,7 +86,7 @@ where
     T: Value,
 {
     type Inputs = (T,);
-    type Output<'a> = Vec<(Key<I>, T)>;
+    type Output = Vec<(Key<I>, T)>;
 
     /// Executes the operator.
     fn execute(&mut self, ctx: Context<I, Self>) -> impl IntoSteps<I, Self> {

@@ -91,6 +91,7 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: 1.97.1
           targets: ${{ matrix.target }}
 
       - name: Set up Rust cache
