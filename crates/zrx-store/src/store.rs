@@ -84,14 +84,14 @@ use item::{Key, Value};
 ///
 /// ```
 /// use std::collections::HashMap;
-/// use zrx_store::StoreMut;
+/// use zrx_store::{Store, StoreMut};
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Obtain reference to value
-/// let value = store.get(&"key");
+/// let value = Store::get(&store, &"key");
 /// assert_eq!(value, Some(&42));
 /// ```
 pub trait Store<K, V> {
@@ -130,10 +130,10 @@ pub trait Store<K, V> {
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Remove value from store
-/// let value = store.remove(&"key");
+/// let value = StoreMut::remove(&mut store, &"key");
 /// assert_eq!(value, Some(42));
 /// ```
 pub trait StoreMut<K, V>: Store<K, V> {
@@ -169,10 +169,10 @@ pub trait StoreMut<K, V>: Store<K, V> {
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Obtain mutable reference to value
-/// let value = store.get_mut(&"key");
+/// let value = StoreMutRef::get_mut(&mut store, &"key");
 /// assert_eq!(value, Some(&mut 42));
 /// ```
 pub trait StoreMutRef<K, V>: StoreMut<K, V> {
@@ -196,10 +196,10 @@ pub trait StoreMutRef<K, V>: StoreMut<K, V> {
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Create iterator over store
-/// for (key, value) in store.iter() {
+/// for (key, value) in StoreIterable::iter(&store) {
 ///     println!("{key}: {value}");
 /// }
 /// ```
@@ -230,10 +230,10 @@ where
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Create iterator over store
-/// for (key, value) in store.iter_mut() {
+/// for (key, value) in StoreIterableMut::iter_mut(&mut store) {
 ///     println!("{key}: {value}");
 /// }
 /// ```
@@ -264,10 +264,10 @@ where
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Create iterator over store
-/// for key in store.keys() {
+/// for key in StoreKeys::keys(&store) {
 ///     println!("{key}");
 /// }
 /// ```
@@ -297,10 +297,10 @@ where
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Create iterator over store
-/// for value in store.values() {
+/// for value in StoreValues::values(&store) {
 ///     println!("{value}");
 /// }
 /// ```
@@ -331,11 +331,11 @@ where
 ///
 /// // Create store and initial state
 /// let mut store = BTreeMap::new();
-/// store.insert("a", 42);
-/// store.insert("b", 84);
+/// StoreMut::insert(&mut store, "a", 42);
+/// StoreMut::insert(&mut store, "b", 84);
 ///
 /// // Create iterator over store
-/// for (key, value) in store.range("b"..) {
+/// for (key, value) in StoreRange::range(&store, "b"..) {
 ///     println!("{key}: {value}");
 /// }
 /// ```

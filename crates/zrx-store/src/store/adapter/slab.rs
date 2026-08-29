@@ -191,7 +191,7 @@ where
     ///
     /// ```
     /// use slab::Slab;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Store, StoreMut};
     ///
     /// // Create store and initial state
     /// let mut store = Slab::default();
@@ -199,7 +199,7 @@ where
     ///
     /// // Remove all items
     /// StoreMut::clear(&mut store);
-    /// assert!(store.is_empty());
+    /// assert!(Store::is_empty(&store));
     /// ```
     #[inline]
     fn clear(&mut self) {

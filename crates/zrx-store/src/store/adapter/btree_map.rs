@@ -51,10 +51,10 @@ where
     ///
     /// // Create store and initial state
     /// let mut store = BTreeMap::new();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Obtain reference to value
-    /// let value = store.get(&"key");
+    /// let value = Store::get(&store, &"key");
     /// assert_eq!(value, Some(&42));
     /// ```
     #[inline]
@@ -76,10 +76,10 @@ where
     ///
     /// // Create store and initial state
     /// let mut store = BTreeMap::default();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Ensure presence of key
-    /// let check = store.contains_key(&"key");
+    /// let check = Store::contains_key(&store, &"key");
     /// assert_eq!(check, true);
     /// ```
     #[inline]
@@ -115,7 +115,7 @@ where
     /// let mut store = BTreeMap::new();
     ///
     /// // Insert value
-    /// let value = store.insert("key", 42);
+    /// let value = StoreMut::insert(&mut store, "key", 42);
     /// assert_eq!(value, None);
     /// ```
     #[inline]
@@ -145,10 +145,10 @@ where
     ///
     /// // Create store and initial state
     /// let mut store = BTreeMap::new();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Remove and return value
-    /// let value = store.remove(&"key");
+    /// let value = StoreMut::remove(&mut store, &"key");
     /// assert_eq!(value, Some(42));
     /// ```
     #[inline]
@@ -170,10 +170,10 @@ where
     ///
     /// // Create store and initial state
     /// let mut store = BTreeMap::default();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Remove and return entry
-    /// let entry = store.remove_entry(&"key");
+    /// let entry = StoreMut::remove_entry(&mut store, &"key");
     /// assert_eq!(entry, Some(("key", 42)));
     /// ```
     #[inline]
@@ -191,15 +191,15 @@ where
     ///
     /// ```
     /// use std::collections::BTreeMap;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Store, StoreMut};
     ///
     /// // Create store and initial state
     /// let mut store = BTreeMap::new();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Remove all items
-    /// store.clear();
-    /// assert!(store.is_empty());
+    /// StoreMut::clear(&mut store);
+    /// assert!(Store::is_empty(&store));
     /// ```
     #[inline]
     fn clear(&mut self) {
@@ -221,10 +221,10 @@ where
     ///
     /// // Create store and initial state
     /// let mut store = BTreeMap::new();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Obtain mutable reference to value
-    /// let value = store.get_mut(&"key");
+    /// let value = StoreMutRef::get_mut(&mut store, &"key");
     /// assert_eq!(value, Some(&mut 42));
     /// ```
     #[inline]
