@@ -26,12 +26,15 @@
 //! Store implementations for [`BTreeMap`].
 
 use std::borrow::Borrow;
-use std::collections::btree_map::{BTreeMap, Entry};
+use std::collections::btree_map::{self, BTreeMap};
 
 use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreMut, StoreMutRef};
 
+mod entry;
 mod iter;
+
+pub use entry::Entry;
 
 // ----------------------------------------------------------------------------
 // Trait implementations
@@ -121,11 +124,11 @@ where
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
         match BTreeMap::entry(self, key) {
-            Entry::Vacant(entry) => {
+            btree_map::Entry::Vacant(entry) => {
                 entry.insert(value);
                 None
             }
-            Entry::Occupied(mut entry) => {
+            btree_map::Entry::Occupied(mut entry) => {
                 if entry.get() == &value {
                     None
                 } else {

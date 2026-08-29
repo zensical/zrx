@@ -49,8 +49,8 @@ where
     /// Returns a mutable reference to the value, consuming the entry.
     fn into_mut(self) -> &'a mut V;
 
-    /// Inserts and returns the value.
-    fn insert(&mut self, value: V) -> V;
+    /// Inserts the value if different and returns the previous value.
+    fn insert(&mut self, value: V) -> Option<V>;
 
     /// Removes and returns the value.
     fn remove(self) -> V;

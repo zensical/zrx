@@ -32,8 +32,10 @@ use std::mem;
 use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreMut, StoreMutRef};
 
+mod entry;
 mod iter;
 
+pub use entry::{Entry, OccupiedEntry, VacantEntry};
 pub use iter::{Iter, IterMut, Keys, Values};
 
 // ----------------------------------------------------------------------------

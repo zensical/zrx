@@ -26,13 +26,16 @@
 //! Store implementations for [`HashMap`].
 
 use std::borrow::Borrow;
-use std::collections::hash_map::{Entry, HashMap};
+use std::collections::hash_map::{self, HashMap};
 use std::hash::BuildHasher;
 
 use crate::store::item::{Key, Value};
 use crate::store::{Store, StoreMut, StoreMutRef};
 
+mod entry;
 mod iter;
+
+pub use entry::Entry;
 
 // ----------------------------------------------------------------------------
 // Trait implementations
@@ -124,11 +127,11 @@ where
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
         match HashMap::entry(self, key) {
-            Entry::Vacant(entry) => {
+            hash_map::Entry::Vacant(entry) => {
                 entry.insert(value);
                 None
             }
-            Entry::Occupied(mut entry) => {
+            hash_map::Entry::Occupied(mut entry) => {
                 if entry.get() == &value {
                     None
                 } else {

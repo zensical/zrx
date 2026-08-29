@@ -31,9 +31,12 @@ use std::fmt::{self, Debug};
 use std::mem;
 use std::ops::{Index, IndexMut};
 
+use crate::store::entry::{
+    Entry, OccupiedEntry as OccupiedEntryTrait, VacantEntry as VacantEntryTrait,
+};
 use crate::store::item::{Key, Value};
 use crate::store::{
-    Store, StoreIterable, StoreIterableMut, StoreMut, StoreMutRef,
+    Store, StoreEntry, StoreIterable, StoreIterableMut, StoreMut, StoreMutRef,
 };
 
 mod iter;
@@ -43,6 +46,26 @@ pub mod slots;
 pub use iter::{Iter, IterMut, Keys, Values};
 pub use slab::{Map, Slab, Slot};
 pub use slots::{Slots, SlotsMut};
+
+// -----------------------------------------------------------------------------
+// Structs
+// -----------------------------------------------------------------------------
+
+/// Located occupied stash entry.
+pub struct StashOccupiedEntry<'a, K, V, E> {
+    /// Occupied entry in the backing store.
+    entry: E,
+    /// Stash items.
+    items: &'a mut Slab<(K, V)>,
+}
+
+/// Located vacant stash entry.
+pub struct StashVacantEntry<'a, K, V, E> {
+    /// Vacant entry in the backing store.
+    entry: E,
+    /// Stash items.
+    items: &'a mut Slab<(K, V)>,
+}
 
 // ----------------------------------------------------------------------------
 // Implementations
@@ -397,6 +420,7 @@ where
 impl<K, V, S> StoreMutRef<K, V> for Stash<K, V, S>
 where
     K: Key,
+    V: Value,
     S: StoreMut<K, Slot>,
 {
     /// Returns a mutable reference to the value identified by the key.
@@ -424,6 +448,110 @@ where
             let (_, value) = &mut self.items[slot];
             value
         })
+    }
+}
+
+impl<K, V, S> StoreEntry<K, V> for Stash<K, V, S>
+where
+    K: Key,
+    V: Value,
+    S: StoreEntry<K, Slot>,
+{
+    type Occupied<'a>
+        = StashOccupiedEntry<'a, K, V, S::Occupied<'a>>
+    where
+        Self: 'a;
+    type Vacant<'a>
+        = StashVacantEntry<'a, K, V, S::Vacant<'a>>
+    where
+        Self: 'a;
+
+    #[inline]
+    fn entry(&mut self, key: K) -> Entry<Self::Occupied<'_>, Self::Vacant<'_>> {
+        match self.store.entry(key) {
+            Entry::Occupied(entry) => Entry::Occupied(StashOccupiedEntry {
+                entry,
+                items: &mut self.items,
+            }),
+            Entry::Vacant(entry) => Entry::Vacant(StashVacantEntry {
+                entry,
+                items: &mut self.items,
+            }),
+        }
+    }
+}
+
+impl<'a, K, V, E> OccupiedEntryTrait<'a, K, V>
+    for StashOccupiedEntry<'a, K, V, E>
+where
+    E: OccupiedEntryTrait<'a, K, Slot>,
+    K: Key,
+    V: Value,
+{
+    #[inline]
+    fn key(&self) -> &K {
+        &self.items[*self.entry.get()].0
+    }
+
+    #[inline]
+    fn get(&self) -> &V {
+        &self.items[*self.entry.get()].1
+    }
+
+    #[inline]
+    fn get_mut(&mut self) -> &mut V {
+        &mut self.items[*self.entry.get()].1
+    }
+
+    #[inline]
+    fn into_mut(self) -> &'a mut V {
+        let slot = *self.entry.get();
+        &mut self.items[slot].1
+    }
+
+    /// Inserts the value if different and returns the previous value.
+    #[inline]
+    fn insert(&mut self, value: V) -> Option<V> {
+        let current = &mut self.items[*self.entry.get()].1;
+        (current != &value).then(|| mem::replace(current, value))
+    }
+
+    #[inline]
+    fn remove(self) -> V {
+        let slot = self.entry.remove();
+        self.items.remove(slot).expect("invariant").1
+    }
+
+    #[inline]
+    fn remove_entry(self) -> (K, V) {
+        let (key, slot) = self.entry.remove_entry();
+        let (_, value) = self.items.remove(slot).expect("invariant");
+        (key, value)
+    }
+}
+
+impl<'a, K, V, E> VacantEntryTrait<'a, K, V> for StashVacantEntry<'a, K, V, E>
+where
+    E: VacantEntryTrait<'a, K, Slot>,
+    K: Key,
+    V: Value,
+{
+    #[inline]
+    fn key(&self) -> &K {
+        self.entry.key()
+    }
+
+    #[inline]
+    fn into_key(self) -> K {
+        self.entry.into_key()
+    }
+
+    #[inline]
+    fn insert(self, value: V) -> &'a mut V {
+        let key = self.entry.key().clone();
+        let slot = self.items.insert((key, value));
+        self.entry.insert(slot);
+        &mut self.items[slot].1
     }
 }
 

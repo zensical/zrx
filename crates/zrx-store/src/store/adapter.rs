@@ -25,6 +25,6 @@
 
 //! Store adapters for various implementations.
 
-mod btree_map;
-mod hash_map;
+pub mod btree_map;
+pub mod hash_map;
 pub mod slab;
