@@ -181,11 +181,6 @@ pub trait StoreMutRef<K, V>: Store<K, V> {
     where
         K: Borrow<Q>,
         Q: Key;
-
-    /// Returns a mutable reference to the value or creates the default.
-    fn get_or_insert_default(&mut self, key: &K) -> &mut V
-    where
-        V: Default;
 }
 
 /// Immutable store that is iterable.

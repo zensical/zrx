@@ -425,34 +425,6 @@ where
             value
         })
     }
-
-    /// Returns a mutable reference to the value or creates the default.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_store::{Stash, StoreMutRef};
-    ///
-    /// // Create stash
-    /// let mut stash = Stash::<_, i32>::default();
-    ///
-    /// // Obtain mutable reference to value
-    /// let value = stash.get_or_insert_default(&"key");
-    /// assert_eq!(value, &mut 0);
-    /// ```
-    #[inline]
-    fn get_or_insert_default(&mut self, key: &K) -> &mut V
-    where
-        V: Default,
-    {
-        if !self.store.contains_key(key) {
-            let slot = self.items.insert((key.clone(), V::default()));
-            self.store.insert(key.clone(), slot);
-        }
-
-        // We can safely use expect here, as the key is present
-        self.get_mut(key).expect("invariant")
-    }
 }
 
 // ----------------------------------------------------------------------------

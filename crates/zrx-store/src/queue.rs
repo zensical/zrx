@@ -450,34 +450,6 @@ where
         let opt = self.store.get(key);
         opt.and_then(|item| self.items.get_mut(*item.data()))
     }
-
-    /// Returns a mutable reference to the value or creates the default.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use zrx_store::{Queue, StoreMutRef};
-    ///
-    /// // Create queue
-    /// let mut queue = Queue::<_, i32>::default();
-    ///
-    /// // Obtain mutable reference to value
-    /// let value = queue.get_or_insert_default(&"key");
-    /// assert_eq!(value, &mut 0);
-    /// ```
-    #[inline]
-    fn get_or_insert_default(&mut self, key: &K) -> &mut V
-    where
-        V: Default,
-    {
-        if !self.store.contains_key(key) {
-            let index = self.items.insert(V::default());
-            self.store.insert(key.clone(), Item::new(index));
-        }
-
-        // We can safely use expect here, as the key is present
-        self.get_mut(key).expect("invariant")
-    }
 }
 
 // ----------------------------------------------------------------------------

@@ -235,28 +235,4 @@ where
     {
         BTreeMap::get_mut(self, key)
     }
-
-    /// Returns a mutable reference to the value or creates the default.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use std::collections::BTreeMap;
-    /// use zrx_store::StoreMutRef;
-    ///
-    /// // Create store
-    /// let mut store = BTreeMap::new();
-    /// # let _: BTreeMap<_, i32> = store;
-    ///
-    /// // Obtain mutable reference to value
-    /// let value = store.get_or_insert_default(&"key");
-    /// assert_eq!(value, &mut 0);
-    /// ```
-    #[inline]
-    fn get_or_insert_default(&mut self, key: &K) -> &mut V
-    where
-        V: Default,
-    {
-        BTreeMap::entry(self, key.clone()).or_default()
-    }
 }
