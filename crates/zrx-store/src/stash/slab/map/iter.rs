@@ -27,7 +27,7 @@
 
 use std::slice;
 
-use crate::store::item::Key;
+use crate::store::entry::Key;
 
 use super::{Entry, Map, Slot};
 

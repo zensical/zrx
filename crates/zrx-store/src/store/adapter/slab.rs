@@ -29,7 +29,7 @@ use slab::Slab;
 use std::borrow::Borrow;
 use std::mem;
 
-use crate::store::item::{Key, Value};
+use crate::store::entry::{Key, Value};
 use crate::store::{Store, StoreMut, StoreMutRef};
 
 mod entry;

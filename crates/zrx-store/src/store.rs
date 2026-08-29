@@ -33,11 +33,10 @@ pub mod collection;
 pub mod comparator;
 pub mod decorator;
 pub mod entry;
-pub mod item;
+pub mod row;
 
 use comparator::Comparator;
-use entry::{Entry, OccupiedEntry, VacantEntry};
-use item::{Key, Value};
+use entry::{Entry, Key, OccupiedEntry, VacantEntry, Value};
 
 // ----------------------------------------------------------------------------
 // Traits

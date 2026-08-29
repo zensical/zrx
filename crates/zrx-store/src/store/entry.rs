@@ -25,7 +25,11 @@
 
 //! Store entry.
 
-use super::item::{Key, Value};
+mod key;
+mod value;
+
+pub use key::Key;
+pub use value::Value;
 
 // -----------------------------------------------------------------------------
 // Traits

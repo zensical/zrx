@@ -29,7 +29,7 @@ use std::collections::btree_map::{self, BTreeMap, OccupiedEntry, VacantEntry};
 
 use crate::store::StoreEntry;
 use crate::store::entry;
-use crate::store::item::{Key, Value};
+use crate::store::entry::{Key, Value};
 
 // -----------------------------------------------------------------------------
 // Trait implementations

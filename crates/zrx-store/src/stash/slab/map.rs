@@ -28,7 +28,7 @@
 use std::mem;
 use std::num::NonZeroUsize;
 
-use crate::store::item::Key;
+use crate::store::entry::Key;
 
 use super::slot::Slot;
 

@@ -34,7 +34,7 @@ use std::ops::{Index, IndexMut};
 use crate::store::entry::{
     Entry, OccupiedEntry as OccupiedEntryTrait, VacantEntry as VacantEntryTrait,
 };
-use crate::store::item::{Key, Value};
+use crate::store::entry::{Key, Value};
 use crate::store::{
     Store, StoreEntry, StoreIterable, StoreIterableMut, StoreMut, StoreMutRef,
 };

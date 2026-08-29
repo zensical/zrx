@@ -30,7 +30,7 @@ use std::marker::PhantomData;
 use std::ops::{Bound, RangeBounds};
 use std::slice;
 
-use crate::store::item::{Key, Value};
+use crate::store::entry::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreKeys, StoreValues};
 
 use super::Indexed;

@@ -30,7 +30,7 @@ use std::hash::BuildHasher;
 
 use crate::store::StoreEntry;
 use crate::store::entry;
-use crate::store::item::{Key, Value};
+use crate::store::entry::{Key, Value};
 
 // -----------------------------------------------------------------------------
 // Trait implementations

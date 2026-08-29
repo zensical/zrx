@@ -29,7 +29,7 @@ use std::borrow::Borrow;
 use std::collections::hash_map::{self, HashMap};
 use std::hash::BuildHasher;
 
-use crate::store::item::{Key, Value};
+use crate::store::entry::{Key, Value};
 use crate::store::{Store, StoreMut, StoreMutRef};
 
 mod entry;

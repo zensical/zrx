@@ -28,7 +28,7 @@
 use std::collections::btree_set;
 
 use crate::store::comparator::{Ascending, Comparable};
-use crate::store::item::{Key, Value};
+use crate::store::entry::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreKeys, StoreValues};
 
 use super::Ordered;

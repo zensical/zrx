@@ -33,7 +33,7 @@ use std::mem;
 use std::time::Instant;
 
 use crate::store::decorator::Ordered;
-use crate::store::item::{Key, Value};
+use crate::store::entry::{Key, Value};
 use crate::store::{
     Store, StoreIterable, StoreIterableMut, StoreMut, StoreMutRef,
 };
