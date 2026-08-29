@@ -158,7 +158,7 @@ pub trait StoreMut<K, V>: Store<K, V> {
 
 /// Mutable store that can return mutable references.
 ///
-/// This trait extends [`StoreMut`], adding the possibility to obtain mutable
+/// This trait extends [`StoreMut`], adding the capability to obtain mutable
 /// references as a requirement, so values can be mutated in-place.
 ///
 /// # Examples
@@ -213,6 +213,7 @@ where
     K: Key,
     V: Value,
 {
+    /// Iterator type.
     type Iter<'a>: Iterator<Item = (&'a K, &'a V)>
     where
         Self: 'a;
@@ -246,6 +247,7 @@ where
     K: Key,
     V: Value,
 {
+    /// Mutable iterator type.
     type IterMut<'a>: Iterator<Item = (&'a K, &'a mut V)>
     where
         Self: 'a;
@@ -278,6 +280,7 @@ pub trait StoreKeys<K, V>: Store<K, V>
 where
     K: Key,
 {
+    /// Key iterator type.
     type Keys<'a>: Iterator<Item = &'a K>
     where
         Self: 'a;
@@ -311,6 +314,7 @@ where
     K: Key,
     V: Value,
 {
+    /// Value iterator type.
     type Values<'a>: Iterator<Item = &'a V>
     where
         Self: 'a;
@@ -345,6 +349,7 @@ where
     K: Key,
     V: Value,
 {
+    /// Range iterator type.
     type Range<'a>: Iterator<Item = (&'a K, &'a V)>
     where
         Self: 'a;
