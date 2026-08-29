@@ -424,6 +424,7 @@ where
 impl<K, V, S> StoreMutRef<K, V> for Queue<K, V, S>
 where
     K: Key,
+    V: Value,
     S: StoreMut<K, Item>,
 {
     /// Returns a mutable reference to the value identified by the key.

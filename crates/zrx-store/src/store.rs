@@ -32,9 +32,11 @@ pub mod adapter;
 pub mod collection;
 pub mod comparator;
 pub mod decorator;
+pub mod entry;
 pub mod item;
 
 use comparator::Comparator;
+use entry::{Entry, OccupiedEntry, VacantEntry};
 use item::{Key, Value};
 
 // ----------------------------------------------------------------------------
@@ -53,6 +55,7 @@ use item::{Key, Value};
 ///
 /// - [`StoreMut`]: Mutable store.
 /// - [`StoreMutRef`]: Mutable store that can return mutable references.
+/// - [`StoreEntry`]: Mutable store that supports access of entries.
 /// - [`StoreIterable`]: Immutable store that is iterable.
 /// - [`StoreIterableMut`]: Mutable store that is iterable.
 /// - [`StoreKeys`]: Immutable store that is iterable over its keys.
@@ -181,6 +184,44 @@ pub trait StoreMutRef<K, V>: StoreMut<K, V> {
     where
         K: Borrow<Q>,
         Q: Key;
+}
+
+/// Mutable store that supports access of entries.
+///
+/// This trait extends [`StoreMut`], adding the capability to access entries as
+/// a requirement, so values can be inspected, mutated, or removed in-place.
+///
+/// # Examples
+///
+/// ```
+/// use std::collections::HashMap;
+/// use zrx_store::entry::Entry;
+/// use zrx_store::{StoreEntry, StoreMut};
+///
+/// // Create store and initial state
+/// let mut store = HashMap::new();
+/// StoreMut::insert(&mut store, "key", 42);
+///
+/// // Obtain entry for value
+/// let entry = StoreEntry::entry(&mut store, "key");
+/// assert!(matches!(entry, Entry::Occupied(_)));
+/// ```
+pub trait StoreEntry<K, V>: StoreMut<K, V>
+where
+    K: Key,
+    V: Value,
+{
+    /// Occupied entry.
+    type Occupied<'a>: OccupiedEntry<'a, K, V>
+    where
+        Self: 'a;
+    /// Vacant entry.
+    type Vacant<'a>: VacantEntry<'a, K, V>
+    where
+        Self: 'a;
+
+    /// Returns the entry for the given key.
+    fn entry(&mut self, key: K) -> Entry<Self::Occupied<'_>, Self::Vacant<'_>>;
 }
 
 /// Immutable store that is iterable.
