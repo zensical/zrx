@@ -175,7 +175,7 @@ pub trait StoreMut<K, V>: Store<K, V> {
 /// let value = store.get_mut(&"key");
 /// assert_eq!(value, Some(&mut 42));
 /// ```
-pub trait StoreMutRef<K, V>: Store<K, V> {
+pub trait StoreMutRef<K, V>: StoreMut<K, V> {
     /// Returns a mutable reference to the value identified by the key.
     fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
     where
