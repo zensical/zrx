@@ -210,6 +210,7 @@ where
 impl<K, V> StoreMutRef<K, V> for Slab<(K, V)>
 where
     K: Key,
+    V: Value,
 {
     /// Returns a mutable reference to the value identified by the key.
     ///

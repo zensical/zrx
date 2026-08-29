@@ -26,7 +26,7 @@
 //! Store implementations for [`HashMap`].
 
 use std::borrow::Borrow;
-use std::collections::hash_map::{self, HashMap};
+use std::collections::hash_map::{Entry, HashMap};
 use std::hash::BuildHasher;
 
 use crate::store::item::{Key, Value};
@@ -124,11 +124,11 @@ where
     #[inline]
     fn insert(&mut self, key: K, value: V) -> Option<V> {
         match HashMap::entry(self, key) {
-            hash_map::Entry::Vacant(entry) => {
+            Entry::Vacant(entry) => {
                 entry.insert(value);
                 None
             }
-            hash_map::Entry::Occupied(mut entry) => {
+            Entry::Occupied(mut entry) => {
                 if entry.get() == &value {
                     None
                 } else {
@@ -213,6 +213,7 @@ where
 impl<K, V, S> StoreMutRef<K, V> for HashMap<K, V, S>
 where
     K: Key,
+    V: Value,
     S: BuildHasher,
 {
     /// Returns a mutable reference to the value identified by the key.
