@@ -31,7 +31,7 @@ use std::collections::BTreeSet;
 use std::fmt::{self, Debug};
 
 use crate::store::comparator::{Ascending, Comparable, Comparator};
-use crate::store::item::{Key, Value};
+use crate::store::entry::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreMut, StoreWithComparator};
 
 mod into_iter;

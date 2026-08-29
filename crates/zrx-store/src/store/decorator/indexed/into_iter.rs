@@ -30,7 +30,7 @@ use std::marker::PhantomData;
 use std::vec;
 
 use crate::store::StoreMut;
-use crate::store::item::Key;
+use crate::store::entry::Key;
 
 use super::Indexed;
 

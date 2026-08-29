@@ -28,7 +28,7 @@
 use std::collections::btree_map::{self, BTreeMap};
 use std::ops::RangeBounds;
 
-use crate::store::item::{Key, Value};
+use crate::store::entry::{Key, Value};
 use crate::store::{
     StoreIterable, StoreIterableMut, StoreKeys, StoreRange, StoreValues,
 };
@@ -57,10 +57,10 @@ where
     ///
     /// // Create store and initial state
     /// let mut store = BTreeMap::new();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Create iterator over store
-    /// for (key, value) in store.iter() {
+    /// for (key, value) in StoreIterable::iter(&store) {
     ///     println!("{key}: {value}");
     /// }
     /// ```
@@ -90,10 +90,10 @@ where
     ///
     /// // Create store and initial state
     /// let mut store = BTreeMap::new();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Create iterator over store
-    /// for (key, value) in store.iter_mut() {
+    /// for (key, value) in StoreIterableMut::iter_mut(&mut store) {
     ///     println!("{key}: {value}");
     /// }
     /// ```
@@ -122,10 +122,10 @@ where
     ///
     /// // Create store and initial state
     /// let mut store = BTreeMap::new();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Create iterator over store
-    /// for key in store.keys() {
+    /// for key in StoreKeys::keys(&store) {
     ///     println!("{key}");
     /// }
     /// ```
@@ -155,10 +155,10 @@ where
     ///
     /// // Create store and initial state
     /// let mut store = BTreeMap::new();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Create iterator over store
-    /// for value in store.values() {
+    /// for value in StoreValues::values(&store) {
     ///     println!("{value}");
     /// }
     /// ```
@@ -188,11 +188,11 @@ where
     ///
     /// // Create store and initial state
     /// let mut store = BTreeMap::new();
-    /// store.insert("a", 42);
-    /// store.insert("b", 84);
+    /// StoreMut::insert(&mut store, "a", 42);
+    /// StoreMut::insert(&mut store, "b", 84);
     ///
     /// // Create iterator over store
-    /// for (key, value) in store.range("b"..) {
+    /// for (key, value) in StoreRange::range(&store, "b"..) {
     ///     println!("{key}: {value}");
     /// }
     /// ```

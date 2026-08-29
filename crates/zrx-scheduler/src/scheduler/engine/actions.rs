@@ -30,8 +30,6 @@ use std::collections::{BTreeMap, VecDeque};
 use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
 
-use zrx_store::StoreMutRef;
-
 use crate::scheduler::action::Result;
 use crate::scheduler::action::graph::Node;
 use crate::scheduler::engine::queue::Token;
@@ -206,10 +204,8 @@ where
                     for &exit in exit_nodes {
                         for &entry in nodes {
                             self.dependencies
-                                .get_or_insert_default(&Token {
-                                    module: producer,
-                                    node: exit,
-                                })
+                                .entry(Token { module: producer, node: exit })
+                                .or_default()
                                 .push(Token { module: consumer, node: entry });
                         }
                     }

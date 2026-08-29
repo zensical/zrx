@@ -28,7 +28,7 @@
 use std::collections::hash_map::{self, HashMap};
 use std::hash::BuildHasher;
 
-use crate::store::item::{Key, Value};
+use crate::store::entry::{Key, Value};
 use crate::store::{StoreIterable, StoreIterableMut, StoreKeys, StoreValues};
 
 // ----------------------------------------------------------------------------
@@ -52,14 +52,14 @@ where
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{StoreIterable, StoreMut};
     ///
     /// // Create store and initial state
     /// let mut store = HashMap::new();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Create iterator over store
-    /// for (key, value) in store {
+    /// for (key, value) in StoreIterable::iter(&store) {
     ///     println!("{key}: {value}");
     /// }
     /// ```
@@ -90,10 +90,10 @@ where
     ///
     /// // Create store and initial state
     /// let mut store = HashMap::new();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Create iterator over store
-    /// for (key, value) in store.iter_mut() {
+    /// for (key, value) in StoreIterableMut::iter_mut(&mut store) {
     ///     println!("{key}: {value}");
     /// }
     /// ```
@@ -123,10 +123,10 @@ where
     ///
     /// // Create store and initial state
     /// let mut store = HashMap::new();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Create iterator over store
-    /// for key in store.keys() {
+    /// for key in StoreKeys::keys(&store) {
     ///     println!("{key}");
     /// }
     /// ```
@@ -157,10 +157,10 @@ where
     ///
     /// // Create store and initial state
     /// let mut store = HashMap::new();
-    /// store.insert("key", 42);
+    /// StoreMut::insert(&mut store, "key", 42);
     ///
     /// // Create iterator over store
-    /// for value in store.values() {
+    /// for value in StoreValues::values(&store) {
     ///     println!("{value}");
     /// }
     /// ```

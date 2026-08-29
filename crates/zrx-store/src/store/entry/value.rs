@@ -23,8 +23,32 @@
 
 // ----------------------------------------------------------------------------
 
-//! Store adapters for various implementations.
+//! Store value.
 
-pub mod btree_map;
-pub mod hash_map;
-pub mod slab;
+use std::fmt::Debug;
+
+// -----------------------------------------------------------------------------
+// Traits
+// -----------------------------------------------------------------------------
+
+/// Store value.
+///
+/// This trait defines the basic requirements for a value used in a [`Store`][].
+/// Values must implement [`Debug`] and [`Eq`], where the latter is required to
+/// allow for equality checks when inserting values with [`StoreMut::insert`][],
+/// returning the prior value only if it's different.
+///
+/// __Warning__: The `'static` lifetime which is required by this trait is a
+/// deliberate design choice to simplify trait bounds across the code base. If
+/// we would not require the lifetime, we would need to add a lifetime parameter
+/// to almost all types using this trait, which makes it cumbersome to use.
+///
+/// [`Store`]: crate::store::Store
+/// [`StoreMut::insert`]: crate::store::StoreMut::insert
+pub trait Value: Debug + Eq + Sized + 'static {}
+
+// -----------------------------------------------------------------------------
+// Blanket implementations
+// -----------------------------------------------------------------------------
+
+impl<T> Value for T where T: Debug + Eq + 'static {}

@@ -33,7 +33,7 @@ use std::marker::PhantomData;
 use std::ops::{Index, Range};
 
 use crate::store::comparator::{Ascending, Comparator};
-use crate::store::item::{Key, Value};
+use crate::store::entry::{Key, Value};
 use crate::store::{Store, StoreIterable, StoreMut, StoreWithComparator};
 
 mod into_iter;

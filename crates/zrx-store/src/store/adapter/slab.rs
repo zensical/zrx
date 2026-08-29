@@ -29,11 +29,13 @@ use slab::Slab;
 use std::borrow::Borrow;
 use std::mem;
 
-use crate::store::item::{Key, Value};
+use crate::store::entry::{Key, Value};
 use crate::store::{Store, StoreMut, StoreMutRef};
 
+mod entry;
 mod iter;
 
+pub use entry::{Entry, OccupiedEntry, VacantEntry};
 pub use iter::{Iter, IterMut, Keys, Values};
 
 // ----------------------------------------------------------------------------
@@ -179,7 +181,9 @@ where
         Q: Key,
     {
         Slab::iter(self)
-            .position(|(_, (check, _))| check.borrow() == key)
+            .find_map(|(index, (check, _))| {
+                (check.borrow() == key).then_some(index)
+            })
             .map(|index| self.remove(index))
     }
 
@@ -189,7 +193,7 @@ where
     ///
     /// ```
     /// use slab::Slab;
-    /// use zrx_store::StoreMut;
+    /// use zrx_store::{Store, StoreMut};
     ///
     /// // Create store and initial state
     /// let mut store = Slab::default();
@@ -197,7 +201,7 @@ where
     ///
     /// // Remove all items
     /// StoreMut::clear(&mut store);
-    /// assert!(store.is_empty());
+    /// assert!(Store::is_empty(&store));
     /// ```
     #[inline]
     fn clear(&mut self) {
@@ -208,6 +212,7 @@ where
 impl<K, V> StoreMutRef<K, V> for Slab<(K, V)>
 where
     K: Key,
+    V: Value,
 {
     /// Returns a mutable reference to the value identified by the key.
     ///
@@ -234,34 +239,5 @@ where
         Slab::iter_mut(self).find_map(|(_, (check, value))| {
             ((*check).borrow() == key).then_some(value)
         })
-    }
-
-    /// Returns a mutable reference to the value or creates the default.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use slab::Slab;
-    /// use zrx_store::StoreMutRef;
-    ///
-    /// // Create store
-    /// let mut store = Slab::default();
-    /// # let _: Slab<(_, i32)> = store;
-    ///
-    /// // Obtain mutable reference to value
-    /// let value = StoreMutRef::get_or_insert_default(&mut store, &"key");
-    /// assert_eq!(value, &mut 0);
-    /// ```
-    #[inline]
-    fn get_or_insert_default(&mut self, key: &K) -> &mut V
-    where
-        V: Default,
-    {
-        let index = Slab::iter(self)
-            .position(|(_, (check, _))| check == key)
-            .unwrap_or_else(|| Slab::insert(self, (key.clone(), V::default())));
-
-        // Return mutable reference
-        &mut self[index].1
     }
 }

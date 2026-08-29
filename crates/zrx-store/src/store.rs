@@ -32,10 +32,11 @@ pub mod adapter;
 pub mod collection;
 pub mod comparator;
 pub mod decorator;
-pub mod item;
+pub mod entry;
+pub mod row;
 
 use comparator::Comparator;
-use item::{Key, Value};
+use entry::{Entry, Key, OccupiedEntry, VacantEntry, Value};
 
 // ----------------------------------------------------------------------------
 // Traits
@@ -53,6 +54,7 @@ use item::{Key, Value};
 ///
 /// - [`StoreMut`]: Mutable store.
 /// - [`StoreMutRef`]: Mutable store that can return mutable references.
+/// - [`StoreEntry`]: Mutable store that supports access of entries.
 /// - [`StoreIterable`]: Immutable store that is iterable.
 /// - [`StoreIterableMut`]: Mutable store that is iterable.
 /// - [`StoreKeys`]: Immutable store that is iterable over its keys.
@@ -84,14 +86,14 @@ use item::{Key, Value};
 ///
 /// ```
 /// use std::collections::HashMap;
-/// use zrx_store::StoreMut;
+/// use zrx_store::{Store, StoreMut};
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Obtain reference to value
-/// let value = store.get(&"key");
+/// let value = Store::get(&store, &"key");
 /// assert_eq!(value, Some(&42));
 /// ```
 pub trait Store<K, V> {
@@ -130,10 +132,10 @@ pub trait Store<K, V> {
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Remove value from store
-/// let value = store.remove(&"key");
+/// let value = StoreMut::remove(&mut store, &"key");
 /// assert_eq!(value, Some(42));
 /// ```
 pub trait StoreMut<K, V>: Store<K, V> {
@@ -158,7 +160,7 @@ pub trait StoreMut<K, V>: Store<K, V> {
 
 /// Mutable store that can return mutable references.
 ///
-/// This trait extends [`StoreMut`], adding the possibility to obtain mutable
+/// This trait extends [`StoreMut`], adding the capability to obtain mutable
 /// references as a requirement, so values can be mutated in-place.
 ///
 /// # Examples
@@ -169,23 +171,56 @@ pub trait StoreMut<K, V>: Store<K, V> {
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Obtain mutable reference to value
-/// let value = store.get_mut(&"key");
+/// let value = StoreMutRef::get_mut(&mut store, &"key");
 /// assert_eq!(value, Some(&mut 42));
 /// ```
-pub trait StoreMutRef<K, V>: Store<K, V> {
+pub trait StoreMutRef<K, V>: StoreMut<K, V> {
     /// Returns a mutable reference to the value identified by the key.
     fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
     where
         K: Borrow<Q>,
         Q: Key;
+}
 
-    /// Returns a mutable reference to the value or creates the default.
-    fn get_or_insert_default(&mut self, key: &K) -> &mut V
+/// Mutable store that supports access of entries.
+///
+/// This trait extends [`StoreMut`], adding the capability to access entries as
+/// a requirement, so values can be inspected, mutated, or removed in-place.
+///
+/// # Examples
+///
+/// ```
+/// use std::collections::HashMap;
+/// use zrx_store::entry::Entry;
+/// use zrx_store::{StoreEntry, StoreMut};
+///
+/// // Create store and initial state
+/// let mut store = HashMap::new();
+/// StoreMut::insert(&mut store, "key", 42);
+///
+/// // Obtain entry for value
+/// let entry = StoreEntry::entry(&mut store, "key");
+/// assert!(matches!(entry, Entry::Occupied(_)));
+/// ```
+pub trait StoreEntry<K, V>: StoreMut<K, V>
+where
+    K: Key,
+    V: Value,
+{
+    /// Occupied entry.
+    type Occupied<'a>: OccupiedEntry<'a, K, V>
     where
-        V: Default;
+        Self: 'a;
+    /// Vacant entry.
+    type Vacant<'a>: VacantEntry<'a, K, V>
+    where
+        Self: 'a;
+
+    /// Returns the entry for the given key.
+    fn entry(&mut self, key: K) -> Entry<Self::Occupied<'_>, Self::Vacant<'_>>;
 }
 
 /// Immutable store that is iterable.
@@ -201,10 +236,10 @@ pub trait StoreMutRef<K, V>: Store<K, V> {
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Create iterator over store
-/// for (key, value) in store.iter() {
+/// for (key, value) in StoreIterable::iter(&store) {
 ///     println!("{key}: {value}");
 /// }
 /// ```
@@ -213,6 +248,7 @@ where
     K: Key,
     V: Value,
 {
+    /// Iterator type.
     type Iter<'a>: Iterator<Item = (&'a K, &'a V)>
     where
         Self: 'a;
@@ -234,10 +270,10 @@ where
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Create iterator over store
-/// for (key, value) in store.iter_mut() {
+/// for (key, value) in StoreIterableMut::iter_mut(&mut store) {
 ///     println!("{key}: {value}");
 /// }
 /// ```
@@ -246,6 +282,7 @@ where
     K: Key,
     V: Value,
 {
+    /// Mutable iterator type.
     type IterMut<'a>: Iterator<Item = (&'a K, &'a mut V)>
     where
         Self: 'a;
@@ -267,10 +304,10 @@ where
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Create iterator over store
-/// for key in store.keys() {
+/// for key in StoreKeys::keys(&store) {
 ///     println!("{key}");
 /// }
 /// ```
@@ -278,6 +315,7 @@ pub trait StoreKeys<K, V>: Store<K, V>
 where
     K: Key,
 {
+    /// Key iterator type.
     type Keys<'a>: Iterator<Item = &'a K>
     where
         Self: 'a;
@@ -299,10 +337,10 @@ where
 ///
 /// // Create store and initial state
 /// let mut store = HashMap::new();
-/// store.insert("key", 42);
+/// StoreMut::insert(&mut store, "key", 42);
 ///
 /// // Create iterator over store
-/// for value in store.values() {
+/// for value in StoreValues::values(&store) {
 ///     println!("{value}");
 /// }
 /// ```
@@ -311,6 +349,7 @@ where
     K: Key,
     V: Value,
 {
+    /// Value iterator type.
     type Values<'a>: Iterator<Item = &'a V>
     where
         Self: 'a;
@@ -332,11 +371,11 @@ where
 ///
 /// // Create store and initial state
 /// let mut store = BTreeMap::new();
-/// store.insert("a", 42);
-/// store.insert("b", 84);
+/// StoreMut::insert(&mut store, "a", 42);
+/// StoreMut::insert(&mut store, "b", 84);
 ///
 /// // Create iterator over store
-/// for (key, value) in store.range("b"..) {
+/// for (key, value) in StoreRange::range(&store, "b"..) {
 ///     println!("{key}: {value}");
 /// }
 /// ```
@@ -345,6 +384,7 @@ where
     K: Key,
     V: Value,
 {
+    /// Range iterator type.
     type Range<'a>: Iterator<Item = (&'a K, &'a V)>
     where
         Self: 'a;

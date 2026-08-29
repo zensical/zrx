@@ -23,8 +23,18 @@
 
 // ----------------------------------------------------------------------------
 
-//! Store adapters for various implementations.
+//! Store row projections.
 
-pub mod btree_map;
-pub mod hash_map;
-pub mod slab;
+mod anti_join;
+mod coalesce;
+mod full_join;
+mod join;
+mod left_join;
+mod semi_join;
+
+pub use anti_join::AntiJoin;
+pub use coalesce::Coalesce;
+pub use full_join::FullJoin;
+pub use join::Join;
+pub use left_join::LeftJoin;
+pub use semi_join::SemiJoin;
