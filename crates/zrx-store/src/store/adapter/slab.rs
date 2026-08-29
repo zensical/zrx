@@ -179,7 +179,9 @@ where
         Q: Key,
     {
         Slab::iter(self)
-            .position(|(_, (check, _))| check.borrow() == key)
+            .find_map(|(index, (check, _))| {
+                (check.borrow() == key).then_some(index)
+            })
             .map(|index| self.remove(index))
     }
 
