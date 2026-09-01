@@ -23,22 +23,120 @@
 
 // ----------------------------------------------------------------------------
 
-//! Function signatures.
+//! Function signature.
 
 #![cfg_attr(not(feature = "tracing"), allow(unused_variables))]
 
-mod default;
-mod filter;
-mod filter_map;
-mod flat_map;
-mod get;
-mod inspect;
-mod map;
+use std::marker::PhantomData;
+use std::ops::Deref;
 
-pub use default::DefaultFn;
-pub use filter::FilterFn;
-pub use filter_map::FilterMapFn;
-pub use flat_map::FlatMapFn;
-pub use get::GetFn;
-pub use inspect::InspectFn;
+use super::arguments::{WithId, WithKey, WithSplat, WithValue};
+
+mod map;
+mod reduce;
+
 pub use map::MapFn;
+pub use reduce::ReduceFn;
+
+// ----------------------------------------------------------------------------
+// Structs
+// ----------------------------------------------------------------------------
+
+/// Function signature.
+pub struct Signature<F, A> {
+    /// Function.
+    function: F,
+    /// Capture types.
+    marker: PhantomData<fn() -> A>,
+}
+
+// ----------------------------------------------------------------------------
+// Trait implementations
+// ----------------------------------------------------------------------------
+
+impl<F, A> Clone for Signature<F, A>
+where
+    F: Clone,
+{
+    /// Clones the function signature.
+    #[inline]
+    fn clone(&self) -> Self {
+        Self {
+            function: self.function.clone(),
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<F, A> Deref for Signature<F, A> {
+    type Target = F;
+
+    /// Dereferences to the function.
+    fn deref(&self) -> &Self::Target {
+        &self.function
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Functions
+// ----------------------------------------------------------------------------
+
+/// Selects the signature with a key argument.
+///
+/// This function can be used to deliberately select a function signature if
+/// there are multiple signatures available for a given function. It's usually
+/// not necessary to use this function, as the compiler can usually infer the
+/// correct signature based on the context.
+#[inline]
+#[must_use]
+pub fn with_key<F>(f: F) -> Signature<F, WithKey> {
+    Signature {
+        function: f,
+        marker: PhantomData,
+    }
+}
+
+/// Selects the signature with an identifier argument.
+///
+/// This function can be used to deliberately select a function signature if
+/// there are multiple signatures available for a given function. It's usually
+/// not necessary to use this function, as the compiler can usually infer the
+/// correct signature based on the context.
+#[inline]
+#[must_use]
+pub fn with_id<F>(f: F) -> Signature<F, WithId> {
+    Signature {
+        function: f,
+        marker: PhantomData,
+    }
+}
+
+/// Selects the signature with a value argument.
+///
+/// This function can be used to deliberately select a function signature if
+/// there are multiple signatures available for a given function. It's usually
+/// not necessary to use this function, as the compiler can usually infer the
+/// correct signature based on the context.
+#[inline]
+#[must_use]
+pub fn with_value<F>(f: F) -> Signature<F, WithValue> {
+    Signature {
+        function: f,
+        marker: PhantomData,
+    }
+}
+
+/// Selects the signature with a splat argument.
+///
+/// This function can be used to deliberately select a function signature if
+/// there are multiple signatures available for a given function. It's usually
+/// not necessary to use this function, as the compiler can usually infer the
+/// correct signature based on the context.
+#[inline]
+#[must_use]
+pub fn with_splat<F>(f: F) -> Signature<F, WithSplat> {
+    Signature {
+        function: f,
+        marker: PhantomData,
+    }
+}

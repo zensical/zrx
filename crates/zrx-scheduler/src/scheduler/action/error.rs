@@ -25,25 +25,69 @@
 
 //! Action error.
 
+use std::fmt::{self, Display};
 use std::result;
-use thiserror::Error;
+use std::sync::Arc;
 
-use crate::scheduler::action::context;
-use crate::scheduler::step;
+mod catch;
+mod convert;
+
+pub use catch::catch;
+pub use convert::IntoResult;
 
 // ----------------------------------------------------------------------------
 // Enums
 // ----------------------------------------------------------------------------
 
+#[derive(Debug)]
+enum Kind {
+    /// Error in user-provided function.
+    Cause(anyhow::Error),
+    /// Panic in user-provided function.
+    Panic(String),
+}
+
+// ----------------------------------------------------------------------------
+// Structs
+// ----------------------------------------------------------------------------
+
 /// Action error.
-#[derive(Debug, Error)]
-pub enum Error {
-    /// Context error.
-    #[error(transparent)]
-    Context(#[from] context::Error),
-    /// Step error.
-    #[error(transparent)]
-    Step(#[from] step::Error),
+///
+/// In order to integrate with user-provided error types that are not covered
+/// by the existing variants, the [`anyhow`] crate is used as a catch-all. Any
+/// error or panic that occurs in user-provided functions is wrapped in this
+/// type, so we can handle it gracefully and provide useful error messages.
+#[derive(Clone, Debug)]
+pub struct Error(Arc<Kind>);
+
+// ----------------------------------------------------------------------------
+// Trait implementations
+// ----------------------------------------------------------------------------
+
+impl From<anyhow::Error> for Error {
+    fn from(error: anyhow::Error) -> Self {
+        Self(Arc::new(Kind::Cause(error)))
+    }
+}
+
+impl Display for Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &*self.0 {
+            Kind::Cause(error) => Display::fmt(error, formatter),
+            Kind::Panic(message) => {
+                write!(formatter, "caught panic: {message}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &*self.0 {
+            Kind::Cause(error) => Some(error.as_ref()),
+            Kind::Panic(_) => None,
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------

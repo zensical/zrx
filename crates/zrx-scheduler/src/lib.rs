@@ -23,15 +23,14 @@
 
 // ----------------------------------------------------------------------------
 
-//! Scheduler.
-
-#![allow(clippy::match_same_arms)]
+//! Scheduler execution kernel.
 
 mod scheduler;
 
-pub use scheduler::Scheduler;
 pub use scheduler::action;
-pub use scheduler::schedule::{self, Schedule};
-pub use scheduler::session::{self, Session};
-pub use scheduler::signal::{self, Id, Key, Value};
-pub use scheduler::step;
+pub use scheduler::plan;
+pub use scheduler::{
+    Attachment, Change, CurrentError, Egress, EgressIter, Error, Id,
+    InvocationReport, Plan, PlanId, Readiness, Report, RevisionId, Scheduler,
+    Session, SessionError, Settlement, Tick, Value, Writer,
+};

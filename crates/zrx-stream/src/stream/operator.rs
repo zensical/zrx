@@ -1,7 +1,7 @@
 // Copyright (c) 2025-2026 Zensical and contributors
 
 // SPDX-License-Identifier: MIT
-// Third-party contributions licensed under DCO
+// All contributions are certified under the DCO
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -25,118 +25,148 @@
 
 //! Stream operators.
 
-#![allow(clippy::must_use_candidate)] // check why we need this
-#![allow(clippy::new_without_default)]
-#![allow(clippy::return_self_not_must_use)]
+use zrx_scheduler::Value;
+use zrx_scheduler::action::replication::IntoReplication;
+pub use zrx_scheduler::action::replication::{
+    Replication, concurrent, sequential,
+};
+use zrx_scheduler::action::{Action, Inputs, Job};
 
-use std::marker::PhantomData;
+use crate::stream::Id;
 
-use zrx_scheduler::Id;
-use zrx_scheduler::action::Action;
-use zrx_scheduler::schedule::Subscriber;
+use super::{Key, Stream};
 
-use super::Stream;
-
+mod barrier;
+mod coalesce;
+mod currency;
 mod filter;
 mod filter_map;
-mod inspect;
+mod flat_map;
+mod group_by_key;
 mod join;
 mod map;
 mod product;
+mod publication;
+mod reduce;
+mod reduce_by_key;
 mod select;
+mod terminal;
+mod unique_by_key;
+mod window;
 
-pub use filter::Filter;
-pub use filter_map::FilterMap;
-pub use inspect::Inspect;
-pub use join::Join;
-pub use map::Map;
-pub use product::Product;
-pub use select::Select;
+pub(in crate::stream) use coalesce::Coalesce;
+pub(in crate::stream) use join::{Anti, Full, Inner, Join, Left, Semi};
+pub use select::Membership;
+use terminal::{Terminal, Tickets};
 
 // ----------------------------------------------------------------------------
 // Traits
 // ----------------------------------------------------------------------------
 
-/// Operator.
-pub trait Operator<I, A>
+/// Typed construction seam shared by individual streams and stream tuples.
+pub trait Operator<I>
 where
-    A: Action<I>,
+    I: Id,
 {
-    /// Subscribe the given subscriber.
-    fn subscribe<S>(&self, subscriber: S) -> Stream<I, A::Output>
+    /// Typed input lanes supplied by this stream shape.
+    type Inputs: Inputs<Key<I>>;
+
+    /// Subscribes an action to these input streams.
+    fn subscribe<A>(&self, subscriber: A) -> Stream<I, A::Output>
     where
-        S: Into<Subscriber<I, A>>;
+        A: Action<Key<I>, Inputs = Self::Inputs>,
+    {
+        self.subscribe_job(Job::new(subscriber))
+    }
+
+    /// Subscribes an action and revision progress to these input streams.
+    fn subscribe_progress<A>(&self, subscriber: A) -> Stream<I, A::Output>
+    where
+        A: Action<Key<I>, Inputs = Self::Inputs>,
+    {
+        self.subscribe_job(Job::new(subscriber).with_progress())
+    }
+
+    /// Subscribes an already installed action job to these input streams.
+    fn subscribe_job<U>(&self, job: Job<Key<I>>) -> Stream<I, U>
+    where
+        U: Value;
 }
 
 // ----------------------------------------------------------------------------
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl<I, A, T> Operator<I, A> for Stream<I, T>
+impl<I, T> Operator<I> for Stream<I, T>
 where
     I: Id,
-    A: Action<I, Inputs = (T,)> + 'static,
+    T: Value,
 {
-    /// Subscribe the given subscriber.
+    type Inputs = (T,);
+
     #[inline]
-    fn subscribe<S>(&self, subscriber: S) -> Stream<I, A::Output>
+    fn subscribe_job<U>(&self, job: Job<Key<I>>) -> Stream<I, U>
     where
-        S: Into<Subscriber<I, A>>,
+        U: Value,
     {
-        // We can safely use expect here, as the stream interface prevents us
-        // from creating subscribers with invalid nodes. Otherwise, it's a bug.
-        let id = self.workflow.with(|builder| {
-            builder.add([self.id], subscriber).expect("invariant")
-        });
-        Stream {
-            id,
-            workflow: self.workflow.clone(),
-            marker: PhantomData,
-        }
+        let workflow = self
+            .workflow
+            .upgrade()
+            .expect("stream construction has ended");
+        let node = workflow
+            .try_borrow_mut()
+            .expect("stream construction reentered")
+            .job([self.node()], job);
+        Stream::new(node, self.workflow.clone())
     }
 }
 
 // ----------------------------------------------------------------------------
-// Macros
+// Blanket implementations
 // ----------------------------------------------------------------------------
 
-/// Implements operator trait for a tuple.
 macro_rules! impl_operator_for_tuple {
     ($T1:ident $(, $T:ident)+ $(,)?) => {
-        impl<I, A, $T1, $($T,)+> Operator<I, A>
+        impl<I, $T1, $($T,)+> Operator<I>
             for (Stream<I, $T1>, $(Stream<I, $T>,)+)
         where
             I: Id,
-            A: Action<I, Inputs = ($T1, $($T,)+)> + 'static,
+            $T1: Value,
+            $($T: Value,)+
         {
+            type Inputs = ($T1, $($T,)+);
+
             #[inline]
-            fn subscribe<S>(&self, subscriber: S) -> Stream<I, A::Output>
+            fn subscribe_job<U>(
+                &self, job: Job<Key<I>>,
+            ) -> Stream<I, U>
             where
-                S: Into<Subscriber<I, A>>,
+                U: Value,
             {
                 #[allow(non_snake_case)]
-                let ($T1, $($T,)*) = self;
-                // Albeit this can practically never happen, we can technically
-                // have different workflows here if we somehow alter the stream
-                // interface. Thus, this assertion is just a cautionary measure
-                // to prevent our future selves from breaking it by accident.
-                $(assert_eq!($T1.workflow, $T.workflow);)+
-                let id = $T1.workflow.with(|builder| {
-                    builder
-                        .add([$T1.id, $($T.id,)*], subscriber)
-                        .expect("invariant")
-                });
-                Stream {
-                    id,
-                    workflow: $T1.workflow.clone(),
-                    marker: PhantomData,
-                }
+                let ($T1, $($T,)+) = self;
+                $(
+                    assert!(
+                        $T1.workflow.ptr_eq(&$T.workflow),
+                        "operator inputs belong to different workflows"
+                    );
+                )+
+                let workflow = $T1
+                    .workflow
+                    .upgrade()
+                    .expect("stream construction has ended");
+                let node = workflow
+                    .try_borrow_mut()
+                    .expect("stream construction reentered")
+                    .job(
+                        [$T1.node(), $($T.node(),)+],
+                        job,
+                    );
+                Stream::new(node, $T1.workflow.clone())
             }
         }
     };
 }
-
-// ----------------------------------------------------------------------------
 
 impl_operator_for_tuple!(T1, T2);
 impl_operator_for_tuple!(T1, T2, T3);
@@ -145,3 +175,57 @@ impl_operator_for_tuple!(T1, T2, T3, T4, T5);
 impl_operator_for_tuple!(T1, T2, T3, T4, T5, T6);
 impl_operator_for_tuple!(T1, T2, T3, T4, T5, T6, T7);
 impl_operator_for_tuple!(T1, T2, T3, T4, T5, T6, T7, T8);
+
+// ----------------------------------------------------------------------------
+// Functions
+// ----------------------------------------------------------------------------
+
+fn subscribe_function<I, O, F, A, C, P>(
+    operator: &O, function: F, construct: C, project: P,
+) -> Stream<I, A::Output>
+where
+    I: Id,
+    O: Operator<I> + ?Sized,
+    F: IntoReplication,
+    F::Target: 'static,
+    A: Action<Key<I>, Inputs = O::Inputs>,
+    C: Fn(F::Target) -> A + Clone + Send + 'static,
+    P: for<'a> Fn(&'a A) -> &'a F::Target + Clone + Send + 'static,
+{
+    let (function, maximum, replica) = function.into_replication().into_parts();
+    let action = construct(function);
+    let replica = replica.map(|replica| {
+        let construct = construct.clone();
+        move |action: &A| construct(replica(project(action)))
+    });
+    let job = match replica {
+        Some(replica) => Job::replicated(action, maximum, replica),
+        None => Job::new(action),
+    };
+    operator.subscribe_job(job)
+}
+
+#[cfg(test)]
+fn test_revisions(count: usize) -> Vec<zrx_scheduler::RevisionId> {
+    use zrx_executor::strategy::Immediate;
+    use zrx_scheduler::Settlement;
+
+    let workflow = super::Workflow::<u64>::build(|workflow| {
+        let input = workflow.input::<u64>();
+        workflow.output(&input);
+    });
+    let mut runner = workflow.runner_with(Immediate::new()).unwrap();
+    let mut input = runner.input::<u64>().unwrap();
+    let mut revisions = Vec::with_capacity(count);
+    for _ in 0..count {
+        let open = input.begin().unwrap();
+        input = open.seal().unwrap();
+        let run = runner.settle().unwrap();
+        let [Settlement::Complete(revision)] = run.report().settlements()
+        else {
+            panic!("empty test revision did not settle exactly once")
+        };
+        revisions.push(*revision);
+    }
+    revisions
+}

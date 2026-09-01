@@ -36,44 +36,44 @@ pub trait Arguments: Send + Sync + 'static {}
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Marker for scope arguments.
-pub struct ForScope;
+/// Marker for scope argument.
+pub struct WithScope;
 
 /// Marker for scope and value arguments.
-pub struct ForScopeValue;
+pub struct WithScopeValue;
 
 /// Marker for scope and splat arguments.
-pub struct ForScopeSplat;
+pub struct WithScopeSplat;
 
 // ----------------------------------------------------------------------------
 
-/// Marker for key arguments.
-pub struct ForKey;
+/// Marker for key argument.
+pub struct WithKey;
 
 /// Marker for key and value arguments.
-pub struct ForKeyValue;
+pub struct WithKeyValue;
 
 /// Marker for key and splat arguments.
-pub struct ForKeySplat;
+pub struct WithKeySplat;
 
 // ----------------------------------------------------------------------------
 
-/// Marker for identifier arguments.
-pub struct ForId;
+/// Marker for identifier argument.
+pub struct WithId;
 
 /// Marker for identifier and value arguments.
-pub struct ForIdValue;
+pub struct WithIdValue;
 
 /// Marker for identifier and splat arguments.
-pub struct ForIdSplat;
+pub struct WithIdSplat;
 
 // ----------------------------------------------------------------------------
 
-/// Marker for value arguments.
-pub struct ForValue;
+/// Marker for value argument.
+pub struct WithValue;
 
-/// Marker for splat arguments.
-pub struct ForSplat;
+/// Marker for splat argument.
+pub struct WithSplat;
 
 // ----------------------------------------------------------------------------
 // Blanket implementations

@@ -23,61 +23,16 @@
 
 // ----------------------------------------------------------------------------
 
-//! Functions for use in operators.
+//! Closure-shape adapters used by stream operators.
 
-use std::panic::{self, AssertUnwindSafe};
-
-use zrx_scheduler::step::Error;
+pub use zrx_store::Collection;
 
 pub mod arguments;
-mod signature;
+mod scope;
+pub mod signature;
 
 pub use arguments::Arguments;
+pub use scope::Scope;
 pub use signature::{
-    DefaultFn, FilterFn, FilterMapFn, FlatMapFn, GetFn, InspectFn, MapFn,
+    MapFn, ReduceFn, with_id, with_key, with_splat, with_value,
 };
-
-// ----------------------------------------------------------------------------
-// Functions
-// ----------------------------------------------------------------------------
-
-/// Catches panics and converts them to errors.
-///
-/// This function is useful for wrapping code that may panic, i.e., to shield
-/// against panics in user-defined code or third-party libraries. It captures
-/// the panic and returns it as an [`Error::Panic`], allowing the program to
-/// continue running gracefully instead of terminating unexpectedly.
-///
-/// All of the function traits that we provide use this internally to ensure
-/// that any panic is caught and converted to an error. Thus, it's absolutely
-/// recommended to wrap any user-defined function in this function when
-/// implementing a custom function trait.
-///
-/// # Errors
-///
-/// Returns [`Error::Panic`] if the provided function panics.
-///
-/// # Examples
-///
-/// ```
-/// use zrx_scheduler::step::Error;
-/// use zrx_stream::function::catch;
-///
-/// // Define function that panics
-/// let res = catch(|| {
-///     panic!("don't panic!");
-///     Ok(42) // Never returned
-/// });
-///
-/// // Assert that panic was caught
-/// assert!(matches!(res, Err(Error::Panic(_))));
-/// ```
-#[inline]
-pub fn catch<F, T>(f: F) -> Result<T, Error>
-where
-    F: FnOnce() -> Result<T, Error>,
-{
-    panic::catch_unwind(AssertUnwindSafe(f))
-        .map_err(Error::Panic)
-        .and_then(|res| res)
-}

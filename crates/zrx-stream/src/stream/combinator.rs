@@ -25,7 +25,6 @@
 
 //! Stream combinators.
 
-pub mod convert;
-pub mod tuple;
+mod tuple;
 
-pub use tuple::StreamTupleExt;
+pub use tuple::{StreamSetExt, StreamTupleExt};

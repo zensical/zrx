@@ -23,66 +23,107 @@
 
 // ----------------------------------------------------------------------------
 
-//! Workflow builder.
+//! Mutable construction of one isolated typed stream graph.
 
-use std::error::Error;
-use std::marker::PhantomData;
+use std::cell::RefCell;
+use std::rc::{Rc, Weak};
 
-use zrx_scheduler::schedule::{self, Shared};
-use zrx_scheduler::{Id, Value};
+use zrx_scheduler::Value;
+use zrx_scheduler::action::{Job, Port};
+use zrx_scheduler::plan::{
+    InputBinding, InputId, OutputBinding, OutputId, Route,
+};
 
-use crate::stream::Stream;
+use crate::stream::Id;
+use crate::stream::{Key, Stream};
 
-use super::Workflow;
+use super::endpoint::{Input, Output};
+use super::{Definition, Workflow};
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Workflow builder.
-#[derive(Debug, PartialEq, Eq)]
-pub struct Builder<I> {
-    /// Schedule builder.
-    schedule: Shared<schedule::Builder<I>>,
+struct InputSpec {
+    endpoint: Input,
+    binding: InputBinding,
+}
+
+// ----------------------------------------------------------------------------
+
+struct OutputSpec {
+    endpoint: Output,
+    binding: OutputBinding,
+}
+
+// ----------------------------------------------------------------------------
+
+pub struct Construction<I>
+where
+    I: Id,
+{
+    jobs: Vec<Job<Key<I>>>,
+    routes: Vec<Vec<Route>>,
+    inputs: Vec<InputSpec>,
+    outputs: Vec<OutputSpec>,
+}
+
+// ----------------------------------------------------------------------------
+
+/// Scoped mutable owner of one open typed stream construction.
+pub struct Builder<I>
+where
+    I: Id,
+{
+    inner: Rc<RefCell<Construction<I>>>,
 }
 
 // ----------------------------------------------------------------------------
 // Implementations
 // ----------------------------------------------------------------------------
 
-impl<I> Workflow<I>
+impl<I> Construction<I>
 where
     I: Id,
 {
-    /// Creates a workflow builder.
-    ///
-    /// If possible, it's recommended to use [`Workflow::with`] instead, as it
-    /// creates a [`Builder`] which is only valid for the function lifetime.
-    #[inline]
-    #[must_use]
-    pub fn builder() -> Builder<I> {
-        Builder::default()
+    fn new() -> Self {
+        Self {
+            jobs: Vec::new(),
+            routes: Vec::new(),
+            inputs: Vec::new(),
+            outputs: Vec::new(),
+        }
     }
 
-    /// Creates a workflow from the builder passed to the given function.
-    ///
-    /// # Errors
-    ///
-    /// If the given function returns an error, it is returned.
-    #[allow(clippy::missing_panics_doc)]
-    pub fn with<F, E>(f: F) -> Result<Self, E>
-    where
-        F: FnOnce(Builder<I>) -> Result<(), E>,
-        E: Error,
-    {
-        let builder = Builder::default();
-        f(builder.clone()).map(|()| {
-            let Builder { schedule } = builder;
-            let builder = schedule.try_into_inner().expect("invariant");
-            // We can safely use expect here, since the builder can't be cloned
-            // in the function, and is thus guaranteed to be the only reference
-            Self { schedule: builder.build() }
-        })
+    pub(in crate::stream) fn job(
+        &mut self, inputs: impl IntoIterator<Item = usize>, job: Job<Key<I>>,
+    ) -> usize {
+        let node = self.jobs.len();
+        for (lane, source) in inputs.into_iter().enumerate() {
+            self.routes[source].push(Route::new(node, lane));
+        }
+        self.jobs.push(job);
+        self.routes.push(Vec::new());
+        node
+    }
+
+    fn finish(self) -> Workflow<I> {
+        let inputs = self.inputs.iter().map(|spec| spec.endpoint).collect();
+        let outputs = self.outputs.iter().map(|spec| spec.endpoint).collect();
+        let input_bindings =
+            self.inputs.into_iter().map(|spec| spec.binding).collect();
+        let output_bindings =
+            self.outputs.into_iter().map(|spec| spec.binding).collect();
+        Workflow::new(
+            Definition {
+                jobs: self.jobs,
+                routes: self.routes,
+                input_bindings,
+                output_bindings,
+            },
+            inputs,
+            outputs,
+        )
     }
 }
 
@@ -92,60 +133,90 @@ impl<I> Builder<I>
 where
     I: Id,
 {
-    /// Adds a stream to the workflow.
-    #[inline]
-    pub fn add<T>(&self) -> Stream<I, T>
+    pub(in crate::stream) fn new() -> Self {
+        Self {
+            inner: Rc::new(RefCell::new(Construction::new())),
+        }
+    }
+
+    /// Adds one typed externally addressable input.
+    pub fn input<T>(&mut self) -> Stream<I, T>
     where
         T: Value,
     {
-        Stream {
-            id: self.schedule.with_mut(schedule::Builder::add_source::<T>),
-            workflow: self.clone(),
-            marker: PhantomData,
-        }
+        self.input_endpoint().1
     }
 
-    /// Attempts to unwrap the inner value.
-    ///
-    /// This method tries to unwrap the inner schedule builder, which will only
-    /// succeed if there's exactly one strong reference remaining.
-    ///
-    /// # Errors
-    ///
-    /// This method returns `Self` if there's more than one strong reference.
-    pub fn build(self) -> Result<Workflow<I>, Self> {
-        self.schedule
-            .try_into_inner()
-            .map(|builder| Workflow { schedule: builder.build() })
-            .map_err(|schedule| Self { schedule })
-    }
-
-    /// Mutably borrows the schedule builder.
-    pub(crate) fn with<F, R>(&self, f: F) -> R
+    pub(in crate::stream) fn input_endpoint<T>(
+        &mut self,
+    ) -> (Input, Stream<I, T>)
     where
-        F: FnOnce(&mut schedule::Builder<I>) -> R,
+        T: Value,
     {
-        self.schedule.with_mut(f)
+        let mut inner = self.inner.borrow_mut();
+        let node = inner.job([], crate::stream::source_job::<I, T>());
+        let id = InputId::new(
+            u64::try_from(inner.inputs.len()).expect("input count fits in u64"),
+        );
+        let endpoint = Input::new(id, Port::of::<Key<I>, T>());
+        inner.inputs.push(InputSpec {
+            endpoint,
+            binding: InputBinding::new::<Key<I>, T>(id, Route::new(node, 0)),
+        });
+        (endpoint, Stream::new(node, Rc::downgrade(&self.inner)))
     }
-}
 
-impl<I> Builder<I> {
-    /// Clones the builder.
-    pub(crate) fn clone(&self) -> Self {
-        Self {
-            schedule: self.schedule.clone(),
-        }
+    /// Registers one typed external output.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `stream` belongs to another workflow construction.
+    pub fn output<T>(&mut self, stream: &Stream<I, T>)
+    where
+        T: Value,
+    {
+        self.output_endpoint(stream);
+    }
+
+    pub(in crate::stream) fn output_endpoint<T>(
+        &mut self, stream: &Stream<I, T>,
+    ) -> Output
+    where
+        T: Value,
+    {
+        assert!(
+            self.owns(stream),
+            "stream belongs to another workflow construction"
+        );
+        let mut inner = self.inner.borrow_mut();
+        let id = OutputId::new(
+            u64::try_from(inner.outputs.len())
+                .expect("output count fits in u64"),
+        );
+        let endpoint = Output::new(id, Port::of::<Key<I>, T>());
+        inner.outputs.push(OutputSpec {
+            endpoint,
+            binding: OutputBinding::new::<Key<I>, T>(id, stream.node()),
+        });
+        endpoint
+    }
+
+    /// Returns whether this construction owns the stream.
+    #[must_use]
+    pub fn owns<T>(&self, stream: &Stream<I, T>) -> bool {
+        stream.workflow.ptr_eq(&Rc::downgrade(&self.inner))
+    }
+
+    pub(in crate::stream) fn finish(self) -> Workflow<I> {
+        let inner = Rc::try_unwrap(self.inner).unwrap_or_else(|_| {
+            panic!("stream workflow builder must be the sole strong owner")
+        });
+        inner.into_inner().finish()
     }
 }
 
 // ----------------------------------------------------------------------------
-// Trait implementations
+// Type aliases
 // ----------------------------------------------------------------------------
 
-impl<I> Default for Builder<I> {
-    /// Creates a workflow builder.
-    #[inline]
-    fn default() -> Self {
-        Self { schedule: Shared::default() }
-    }
-}
+pub type Handle<I> = Weak<RefCell<Construction<I>>>;
