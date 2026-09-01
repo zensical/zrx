@@ -40,8 +40,7 @@ workspace = true
 zrx-diagnostic.workspace = true
 zrx-executor.workspace = true
 zrx-graph.workspace = true
-zrx-id.workspace = true
-zrx-module.workspace = true
+zrx-id = { workspace = true, features = ["scheduler"] }
 zrx-path.workspace = true
 zrx-scheduler.workspace = true
 zrx-storage.workspace = true

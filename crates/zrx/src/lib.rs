@@ -36,7 +36,6 @@ pub use {
     zrx_executor as executor,
     zrx_graph as graph,
     zrx_id as id,
-    zrx_module as module,
     zrx_path as path,
     zrx_scheduler as scheduler,
     zrx_storage as storage,
