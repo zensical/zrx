@@ -23,22 +23,20 @@
 
 // ----------------------------------------------------------------------------
 
-//! Zen Reactive Extensions.
+//! Scheduler integrations.
+
+use zrx_scheduler::Value;
+
+use crate::id::Id;
+use crate::id::expression::Expression;
+use crate::id::selector::Selector;
+use crate::id::sequence::Sequence;
 
 // ----------------------------------------------------------------------------
-// Re-exports
+// Trait implementations
 // ----------------------------------------------------------------------------
 
-#[doc(inline)]
-#[rustfmt::skip]
-pub use {
-    zrx_diagnostic as diagnostic,
-    zrx_executor as executor,
-    zrx_graph as graph,
-    zrx_id as id,
-    zrx_path as path,
-    zrx_scheduler as scheduler,
-    zrx_storage as storage,
-    zrx_store as store,
-    zrx_stream as stream,
-};
+impl Value for Id {}
+impl Value for Expression {}
+impl Value for Selector {}
+impl Value for Sequence {}

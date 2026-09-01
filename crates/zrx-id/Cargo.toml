@@ -38,10 +38,14 @@ workspace = true
 
 [dependencies]
 zrx-path.workspace = true
-zrx-scheduler.workspace = true
+zrx-scheduler = { workspace = true, optional = true }
 
 ahash.workspace = true
 globset.workspace = true
 percent-encoding.workspace = true
 slab.workspace = true
 thiserror.workspace = true
+
+[features]
+default = []
+scheduler = ["dep:zrx-scheduler"]

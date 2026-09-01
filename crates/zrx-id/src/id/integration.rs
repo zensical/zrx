@@ -23,22 +23,7 @@
 
 // ----------------------------------------------------------------------------
 
-//! Zen Reactive Extensions.
+//! Integrations.
 
-// ----------------------------------------------------------------------------
-// Re-exports
-// ----------------------------------------------------------------------------
-
-#[doc(inline)]
-#[rustfmt::skip]
-pub use {
-    zrx_diagnostic as diagnostic,
-    zrx_executor as executor,
-    zrx_graph as graph,
-    zrx_id as id,
-    zrx_path as path,
-    zrx_scheduler as scheduler,
-    zrx_storage as storage,
-    zrx_store as store,
-    zrx_stream as stream,
-};
+#[cfg(feature = "scheduler")]
+mod scheduler;

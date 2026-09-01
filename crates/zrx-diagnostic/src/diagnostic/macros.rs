@@ -51,11 +51,6 @@
 /// ```
 #[macro_export]
 macro_rules! error {
-    // Create and append diagnostic
-    (&mut $sink:expr, $($arg:tt)+) => {
-        $sink.push($crate::error!($($arg)+))
-    };
-    // Create and return diagnostic
     ($($arg:tt)*) => {
         $crate::__diagnostic!(
             $crate::Severity::Error,
@@ -86,11 +81,6 @@ macro_rules! error {
 /// ```
 #[macro_export]
 macro_rules! warning {
-    // Create and append diagnostic
-    (&mut $sink:expr, $($arg:tt)+) => {
-        $sink.push($crate::warning!($($arg)+))
-    };
-    // Create and return diagnostic
     ($($arg:tt)*) => {
         $crate::__diagnostic!(
             $crate::Severity::Warning,
@@ -121,11 +111,6 @@ macro_rules! warning {
 /// ```
 #[macro_export]
 macro_rules! info {
-    // Create and append diagnostic
-    (&mut $sink:expr, $($arg:tt)+) => {
-        $sink.push($crate::info!($($arg)+))
-    };
-    // Create and return diagnostic
     ($($arg:tt)*) => {
         $crate::__diagnostic!(
             $crate::Severity::Info,
@@ -156,11 +141,6 @@ macro_rules! info {
 /// ```
 #[macro_export]
 macro_rules! hint {
-    // Create and append diagnostic
-    (&mut $sink:expr, $($arg:tt)+) => {
-        $sink.push($crate::hint!($($arg)+))
-    };
-    // Create and return diagnostic
     ($($arg:tt)*) => {
         $crate::__diagnostic!(
             $crate::Severity::Hint,
@@ -191,11 +171,6 @@ macro_rules! hint {
 /// ```
 #[macro_export]
 macro_rules! debug {
-    // Create and append diagnostic
-    (&mut $sink:expr, $($arg:tt)+) => {
-        $sink.push($crate::debug!($($arg)+))
-    };
-    // Create and return diagnostic
     ($($arg:tt)*) => {
         $crate::__diagnostic!(
             $crate::Severity::Debug,

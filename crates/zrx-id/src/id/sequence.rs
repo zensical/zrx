@@ -29,8 +29,6 @@ use std::iter::once;
 use std::slice::Iter;
 use std::vec::IntoIter;
 
-use zrx_scheduler::Value;
-
 mod element;
 pub mod filter;
 
@@ -188,10 +186,6 @@ impl Sequence {
 
 // ----------------------------------------------------------------------------
 // Trait implementations
-// ----------------------------------------------------------------------------
-
-impl Value for Sequence {}
-
 // ----------------------------------------------------------------------------
 
 impl<E> From<E> for Sequence
