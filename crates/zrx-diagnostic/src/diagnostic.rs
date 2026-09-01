@@ -29,6 +29,7 @@ mod convert;
 pub mod location;
 mod macros;
 mod severity;
+pub mod sink;
 mod tag;
 
 pub use convert::IntoDiagnostic;
