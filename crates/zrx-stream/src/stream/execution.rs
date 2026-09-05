@@ -242,8 +242,9 @@ where
     ///
     /// # Errors
     ///
-    /// Returns an error while a revision remains open, if scheduler access
-    /// fails, or if retained authority has no future readiness.
+    /// Returns an error while a revision remains open (including while its
+    /// terminal event is being published), if scheduler access fails, or if
+    /// retained authority has no future readiness.
     pub fn settle(&mut self) -> Result<Run<I>, Error> {
         let outputs = self.outputs.clone();
         let mut egress = VecDeque::new();
@@ -260,8 +261,9 @@ where
     ///
     /// # Errors
     ///
-    /// Returns an error while a revision remains open, if scheduler access
-    /// fails, or if retained authority has no future readiness.
+    /// Returns an error while a revision remains open (including while its
+    /// terminal event is being published), if scheduler access fails, or if
+    /// retained authority has no future readiness.
     pub fn settle_with(
         &mut self, mut visit: impl FnMut(Egress<Key<I>>),
     ) -> Result<Report, Error> {
@@ -318,18 +320,13 @@ where
 
     fn wait(&self) -> bool {
         let readiness = self.scheduler.readiness();
-        if !readiness.pending() {
-            if let Some(deadline) = readiness.deadline() {
-                std::thread::sleep(
-                    deadline.saturating_duration_since(Instant::now()),
-                );
-                return true;
-            }
+        if !readiness.pending() && readiness.deadline().is_none() {
             return false;
         }
 
-        // Pending work remains outstanding until a scheduler tick imports its
-        // completion. Only this path needs input and completion registrations.
+        // Both worker and timer waits must observe session events and sender
+        // teardown. Registration authenticates readiness; hints cannot replace
+        // channel selection when deciding to block.
         let mut select = Select::new();
         let readiness = self.scheduler.register(&mut select);
         if let Some(deadline) = readiness.deadline() {
@@ -382,6 +379,108 @@ mod tests {
     use crate::stream::{Change, Key};
 
     use super::Error;
+
+    struct FutureWake(std::time::Instant);
+
+    impl zrx_scheduler::action::Action<Key<u64>> for FutureWake {
+        type Inputs = (u64,);
+        type Output = u64;
+
+        fn execute(
+            &mut self,
+            context: zrx_scheduler::action::Context<'_, Key<u64>, Self>,
+        ) {
+            use zrx_scheduler::action::{Wake, WakeKey};
+            let zrx_scheduler::action::Context {
+                inputs, output, events, ..
+            } = context;
+            inputs.for_each(output, |_, emit| {
+                emit.wake(Wake::at(WakeKey::new(1), self.0));
+                Ok(())
+            });
+            events.for_each(output, |_, _| Ok(()));
+        }
+    }
+
+    #[test]
+    fn wake_only_wait_must_observe_ready_session_events_before_the_deadline() {
+        use crate::stream::operator::Operator;
+        use crossbeam::channel::Select;
+        use std::time::{Duration, Instant};
+
+        let mut delayed = Vec::new();
+        for arrival in ["data", "abort", "writer drop", "session disconnect"] {
+            let deadline = Instant::now() + Duration::from_secs(1);
+            let workflow = Workflow::<u64>::build(|workflow| {
+                let input = workflow.input::<u64>();
+                let waking = input.subscribe(FutureWake(deadline));
+                workflow.output(&waking);
+                let quiet = workflow.input::<String>();
+                workflow.output(&quiet);
+            });
+            let mut runner = workflow.runner_with(Immediate::new()).unwrap();
+            let input = runner.input::<u64>().unwrap();
+            let quiet = runner.input::<String>().unwrap();
+            let mut revision = input.begin().unwrap();
+            revision
+                .emit_from(&mut std::iter::once(Change::Insert(
+                    Key::from(1),
+                    1,
+                )))
+                .unwrap();
+            // Drive only ready work; Runner::advance would itself enter wait.
+            while runner.scheduler.tick().is_some() {}
+            let readiness = runner.scheduler.readiness();
+            assert!(!readiness.pending(), "must isolate the wake-only branch");
+            assert_eq!(readiness.deadline(), Some(deadline));
+
+            let mut revision = Some(revision);
+            let mut quiet = Some(quiet);
+            let mut returned_input = None;
+            match arrival {
+                "data" => {
+                    revision
+                        .as_mut()
+                        .unwrap()
+                        .emit_from(&mut std::iter::once(Change::Insert(
+                            Key::from(2),
+                            2,
+                        )))
+                        .unwrap();
+                }
+                "abort" => {
+                    returned_input =
+                        Some(revision.take().unwrap().abort().unwrap());
+                }
+                "writer drop" => drop(revision.take()),
+                "session disconnect" => drop(quiet.take()),
+                _ => unreachable!(),
+            }
+            // Authenticate channel readiness before calling wait. This is
+            // stronger than hoping a sender wins a race against a sleep.
+            {
+                let mut select = Select::new();
+                let readiness = runner.scheduler.register(&mut select);
+                let operation = select
+                    .ready_timeout(Duration::ZERO)
+                    .expect("published event or disconnection is observable");
+                assert!(readiness.contains(operation));
+            }
+            assert!(
+                Instant::now() < deadline,
+                "test setup exhausted the wake interval"
+            );
+            assert!(runner.wait());
+            if Instant::now() >= deadline {
+                delayed.push(arrival);
+            }
+            drop((revision, quiet, returned_input));
+        }
+        assert!(
+            delayed.is_empty(),
+            "ready session events waited until the wake deadline: {delayed:?}"
+        );
+    }
 
     #[test]
     fn settle_rejects_an_open_revision_and_drains_its_implicit_abort() {
