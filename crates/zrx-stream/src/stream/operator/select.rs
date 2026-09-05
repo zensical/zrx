@@ -107,6 +107,8 @@ where
 {
     matcher: M,
     members: BTreeSet<Key<I>>,
+    /// Candidates whose latest value has not been successfully evaluated.
+    unresolved: BTreeSet<Key<I>>,
 }
 
 // ----------------------------------------------------------------------------
@@ -279,12 +281,13 @@ where
             let selector = self.scratch[index].clone();
             let selection = self
                 .selections
-                .get(&selector)
+                .get_mut(&selector)
                 .expect("selected matcher disappeared");
             let mut scope = CallbackScope::new(key, emit);
             let included = match selection.matcher.execute(&mut scope, value) {
                 Ok(included) => included,
                 Err(error) => {
+                    selection.unresolved.insert(key.clone());
                     emit.reject_at::<PairEvaluation>(
                         selector.concat(key),
                         error,
@@ -295,14 +298,12 @@ where
             if let Err(error) =
                 self.publication.validate(&selector, key, included)
             {
+                selection.unresolved.insert(key.clone());
                 emit.reject_at::<PairEvaluation>(selector.concat(key), error);
                 continue;
             }
             emit.resolve_at::<PairEvaluation>(selector.concat(key));
-            let selection = self
-                .selections
-                .get_mut(&selector)
-                .expect("evaluated selection disappeared");
+            selection.unresolved.remove(key);
             let previous = selection.members.contains(key);
             if included {
                 selection.members.insert(key.clone());
@@ -326,6 +327,7 @@ where
         self.scratch.clear();
         for (selector, selection) in &mut self.selections {
             emit.resolve_at::<PairEvaluation>(selector.concat(key));
+            selection.unresolved.remove(key);
             if selection.members.remove(key) {
                 self.scratch.push(selector.clone());
             }
@@ -365,15 +367,21 @@ where
         for candidate in self.candidates.keys() {
             emit.resolve_at::<PairEvaluation>(key.concat(candidate));
         }
-        let previous = self
+        let (previous, unresolved) = self
             .selections
             .remove(&key)
-            .map_or_else(BTreeSet::new, |selection| selection.members);
+            .map(|selection| (selection.members, selection.unresolved))
+            .unwrap_or_default();
         for candidate in previous.difference(&members) {
             self.publication
                 .remove_member(revision, &key, candidate, emit);
         }
-        for candidate in members.difference(&previous) {
+        // Successful replacement also accepts current values for retained
+        // members whose prior evaluation failed. Unaffected members keep
+        // their existing publication without emitting redundant changes.
+        for candidate in members.iter().filter(|candidate| {
+            !previous.contains(*candidate) || unresolved.contains(*candidate)
+        }) {
             self.publication.upsert_member(
                 revision,
                 &key,
@@ -385,7 +393,14 @@ where
             );
         }
         self.publication.accept_selection(revision, &key);
-        self.selections.insert(key, Selection { matcher, members });
+        self.selections.insert(
+            key,
+            Selection {
+                matcher,
+                members,
+                unresolved: BTreeSet::new(),
+            },
+        );
     }
 
     fn remove_selection(

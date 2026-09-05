@@ -78,6 +78,59 @@ fn failures(run: &Run<u64>) -> usize {
         .sum()
 }
 
+#[test]
+fn fuzzy_barrier_removes_a_previously_required_unresolved_discovery() {
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    let failed = Arc::new(AtomicBool::new(false));
+    let matcher_failed = Arc::clone(&failed);
+    let workflow = Workflow::<u64>::build(|workflow| {
+        let discovered = workflow.input::<()>();
+        let completed = workflow.input::<String>();
+        let configuration = workflow.input::<Rule>();
+        let selected =
+            discovered.barrier(&completed, &configuration, move |_: &Rule| {
+                let failed = Arc::clone(&matcher_failed);
+                move |_: &Key<u64>| {
+                    assert!(
+                        !failed.load(Ordering::Relaxed),
+                        "invalid discovery"
+                    );
+                    true
+                }
+            });
+        workflow.output(&selected);
+    });
+    let mut runner = workflow.runner_with(Immediate::new()).unwrap();
+    let discovered = runner.input::<()>().unwrap();
+    let configuration = runner.input::<Rule>().unwrap();
+
+    let mut revision = configuration.begin().unwrap();
+    revision.insert(Key::from(10), Rule { maximum: 1 }).unwrap();
+    let configuration = revision.seal().unwrap();
+    assert_eq!(values(&mut runner.settle().unwrap()), [(10, Some(vec![]))]);
+
+    let mut revision = discovered.begin().unwrap();
+    revision.insert(Key::from(1), ()).unwrap();
+    let discovered = revision.seal().unwrap();
+    assert_eq!(values(&mut runner.settle().unwrap()), [(10, None)]);
+
+    failed.store(true, Ordering::Relaxed);
+    let mut revision = discovered.begin().unwrap();
+    revision.insert(Key::from(1), ()).unwrap();
+    let discovered = revision.seal().unwrap();
+    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(runner.errors().len(), 1);
+
+    let mut revision = discovered.begin().unwrap();
+    revision.remove(Key::from(1)).unwrap();
+    let discovered = revision.seal().unwrap();
+    assert_eq!(values(&mut runner.settle().unwrap()), [(10, Some(vec![]))]);
+    assert!(runner.errors().is_empty());
+    drop((discovered, configuration));
+}
+
 // ----------------------------------------------------------------------------
 
 #[test]

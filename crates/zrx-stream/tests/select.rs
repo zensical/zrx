@@ -82,6 +82,82 @@ fn failures(run: &Run<u64>) -> usize {
         .sum()
 }
 
+#[test]
+fn selector_replacement_refreshes_only_unresolved_retained_members() {
+    let workflow = Workflow::<u64>::build(|workflow| {
+        let pages = workflow.input::<String>();
+        let configuration = workflow.input::<bool>();
+        let factory = |allow: &bool| {
+            let allow = *allow;
+            move |value: &String| {
+                anyhow::ensure!(allow || value != "new", "invalid candidate");
+                Ok::<_, anyhow::Error>(true)
+            }
+        };
+        workflow.output(&pages.select(&configuration, factory));
+        workflow.output(&pages.select_by(&configuration, factory));
+    });
+    let mut runner = workflow.runner_with(Immediate::new()).unwrap();
+    let pages = runner.input::<String>().unwrap();
+    let configuration = runner.input::<bool>().unwrap();
+
+    let mut revision = pages.begin().unwrap();
+    revision.insert(Key::from(1), String::from("old")).unwrap();
+    revision
+        .insert(Key::from(2), String::from("stable"))
+        .unwrap();
+    let pages = revision.seal().unwrap();
+    drop(runner.settle().unwrap());
+
+    let mut revision = configuration.begin().unwrap();
+    revision.insert(Key::from(10), false).unwrap();
+    let configuration = revision.seal().unwrap();
+    let mut initial = runner.settle().unwrap();
+    assert_eq!(memberships(&mut initial).len(), 2);
+
+    let mut revision = pages.begin().unwrap();
+    revision.insert(Key::from(1), String::from("new")).unwrap();
+    let pages = revision.seal().unwrap();
+    let mut failed = runner.settle().unwrap();
+    assert!(values(&mut failed).is_empty());
+    assert!(memberships(&mut failed).is_empty());
+    assert_eq!(runner.errors().len(), 2);
+
+    // A failed selector replacement must retain the unresolved member too.
+    let mut revision = configuration.begin().unwrap();
+    revision.insert(Key::from(10), false).unwrap();
+    let configuration = revision.seal().unwrap();
+    let mut failed = runner.settle().unwrap();
+    assert!(values(&mut failed).is_empty());
+    assert!(memberships(&mut failed).is_empty());
+
+    let mut revision = configuration.begin().unwrap();
+    revision.insert(Key::from(10), true).unwrap();
+    let configuration = revision.seal().unwrap();
+    let mut recovered = runner.settle().unwrap();
+    assert_eq!(
+        values(&mut recovered),
+        [(
+            10,
+            Some(vec![
+                (Key::from(1), String::from("new")),
+                (Key::from(2), String::from("stable")),
+            ])
+        )]
+    );
+    assert_eq!(
+        memberships(&mut recovered),
+        [(vec![10, 1], Some((1, String::from("new")))),]
+    );
+    assert!(runner.errors().is_empty());
+
+    let mut revision = configuration.begin().unwrap();
+    revision.insert(Key::from(10), true).unwrap();
+    let configuration = revision.seal().unwrap();
+    assert!(memberships(&mut runner.settle().unwrap()).is_empty());
+    drop((pages, configuration));
+}
+
 fn memberships(run: &mut Run<u64>) -> Vec<MembershipChange> {
     run.output::<Membership<u64, String>>()
         .unwrap()

@@ -179,8 +179,9 @@ where
         self.affected.extend(self.selections.iter_mut().filter_map(
             |(selection, state)| {
                 emit.resolve_at::<PairEvaluation>(selection.concat(key));
-                (state.required.remove(key) || state.unresolved.remove(key))
-                    .then(|| selection.clone())
+                let required = state.required.remove(key);
+                let unresolved = state.unresolved.remove(key);
+                (required || unresolved).then(|| selection.clone())
             },
         ));
         while let Some(selection) = self.affected.pop() {
