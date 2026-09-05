@@ -795,3 +795,43 @@ impl Drop for Notify {
 // ----------------------------------------------------------------------------
 
 type SessionEvent<I, V> = Event<Vec<Change<I, V>>>;
+
+#[cfg(test)]
+mod tests {
+    use super::{BOOTSTRAP_EVENT_CAPACITY, Inboxes};
+    use crate::scheduler::action::Port;
+    use crate::scheduler::plan::InputId;
+    use crossbeam::channel::Select;
+    use std::time::Duration;
+
+    #[test]
+    fn full_session_requires_a_receiver_credit_for_the_next_flush() {
+        let mut inboxes = Inboxes::<u64>::default();
+        let session = inboxes
+            .install::<u64>(InputId::new(1), Port::of::<u64, u64>())
+            .unwrap();
+        let mut writer = session.begin().unwrap();
+        // Begin occupies one position; flush each item as a separate event.
+        for value in 1..BOOTSTRAP_EVENT_CAPACITY {
+            writer.insert(value as u64, value as u64).unwrap();
+            writer.flush().unwrap();
+        }
+        assert!(writer.session().events.is_full());
+        let value = BOOTSTRAP_EVENT_CAPACITY as u64;
+        writer.insert(value, value).unwrap();
+        {
+            let mut select = Select::new();
+            select.send(&writer.session().events);
+            assert!(select.ready_timeout(Duration::ZERO).is_err());
+        }
+        // Consume exactly one event, independently of thread scheduling.
+        assert!(inboxes.states[0].receiver.event().is_ok());
+        assert_eq!(writer.session().events.len(), BOOTSTRAP_EVENT_CAPACITY - 1);
+        writer.flush().unwrap();
+        assert!(writer.session().events.is_full());
+        assert!(writer.items.is_empty());
+        let mut select = Select::new();
+        select.send(&writer.session().events);
+        assert!(select.ready_timeout(Duration::ZERO).is_err());
+    }
+}

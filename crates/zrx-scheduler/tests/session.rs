@@ -213,20 +213,38 @@ fn bounded_session_channel_propagates_scheduler_progress() {
         .session::<u64>(INPUT)
         .unwrap();
 
+    let mut writer = session.begin().unwrap();
+    // Begin plus 63 separately flushed batches fill all 64 event positions.
+    for value in 1..64 {
+        writer.insert(value, value * 10).unwrap();
+        writer.flush().unwrap();
+    }
+    let (published, publication) = std::sync::mpsc::channel();
     let provider = thread::spawn(move || {
-        let mut writer = session.begin().unwrap();
-        writer.insert(1, 10).unwrap();
-        writer.insert(2, 20).unwrap();
+        writer.insert(64, 640).unwrap();
+        writer.flush().unwrap();
+        published.send(()).unwrap();
+        writer.insert(65, 650).unwrap();
+        writer.flush().unwrap();
         let _session = writer.seal().unwrap();
     });
+    // With no receiver progress, the next flush cannot have published.
+    assert!(publication.try_recv().is_err());
+    let _ = scheduler.tick();
+    publication.recv_timeout(Duration::from_secs(1)).unwrap();
 
     run_until_settled(&mut scheduler, |settlement| {
         matches!(settlement, Settlement::Complete(_))
     });
     provider.join().unwrap();
 
-    assert_eq!(invocations.load(Ordering::Relaxed), 1);
-    assert_eq!(*values.lock().unwrap(), [(1, 10), (2, 20)]);
+    assert_eq!(invocations.load(Ordering::Relaxed), 65);
+    assert_eq!(
+        *values.lock().unwrap(),
+        (1..=65)
+            .map(|value| (value, value * 10))
+            .collect::<Vec<_>>()
+    );
 }
 
 #[test]
