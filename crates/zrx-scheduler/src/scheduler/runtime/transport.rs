@@ -910,7 +910,7 @@ mod tests {
         let first = transport.reserve_repeated(route, 1).unwrap();
         let later = transport.reserve_repeated(route, 2).unwrap();
         assert!(transport.reserve_repeated(route, 1).is_none());
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(3);
         let revision = revisions.begin(InputIndex::new(1));
         let mut authorities = Obligations::for_revision(revision);
         // The later empty positions remain occupied behind the first gap.
@@ -936,7 +936,7 @@ mod tests {
 
     #[test]
     fn consuming_a_visible_entry_releases_its_credit() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(3);
         let revision = revisions.begin(InputIndex::new(1));
         let obligation =
             revisions.admit_many(revision, 1).unwrap().next().unwrap();
@@ -955,7 +955,7 @@ mod tests {
 
     #[test]
     fn pruning_a_pending_entry_retains_credit_until_order_reaches_it() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(3);
         let revision = revisions.begin(InputIndex::new(1));
         let obligation =
             revisions.admit_many(revision, 1).unwrap().next().unwrap();
@@ -978,7 +978,7 @@ mod tests {
 
     #[test]
     fn pruning_visible_entries_preserves_retained_fifo_order() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(3);
         let retained = revisions.begin(InputIndex::new(1));
         let removed = revisions.begin(InputIndex::new(2));
         let mut lane = Lane::new(3);

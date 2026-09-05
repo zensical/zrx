@@ -310,7 +310,7 @@ mod tests {
 
     #[test]
     fn completed_convergences_are_taken_in_completion_order() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(3);
         let revision = revisions.begin(InputIndex::new(0));
         let mut obligations = revisions.admit_many(revision, 10).unwrap();
         let progress = ProgressIndex::new(0);

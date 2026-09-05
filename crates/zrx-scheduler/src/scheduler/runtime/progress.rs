@@ -99,9 +99,9 @@ struct Revision {
 // ----------------------------------------------------------------------------
 
 /// Generational owner of every active scheduler revision.
-#[derive(Default)]
 pub struct Revisions {
     states: Slab<Revision>,
+    open: Vec<Option<RevisionId>>,
 }
 
 // ----------------------------------------------------------------------------
@@ -221,10 +221,24 @@ impl Revision {
 // ----------------------------------------------------------------------------
 
 impl Revisions {
+    pub fn new(inputs: usize) -> Self {
+        Self {
+            states: Slab::default(),
+            open: vec![None; inputs],
+        }
+    }
+
+    pub fn open(&self, input: InputIndex) -> Option<RevisionId> {
+        self.open[input.get()]
+    }
+
     /// Opens and returns one fresh scheduler revision.
     #[must_use]
     pub fn begin(&mut self, input: InputIndex) -> RevisionId {
-        RevisionId(self.states.insert(Revision::new(input)))
+        assert!(self.open(input).is_none(), "source already open");
+        let id = RevisionId(self.states.insert(Revision::new(input)));
+        self.open[input.get()] = Some(id);
+        id
     }
 
     /// Returns the source input attributed to an active revision.
@@ -273,11 +287,12 @@ impl Revisions {
     pub fn seal(
         &mut self, id: RevisionId,
     ) -> Result<Option<Settlement>, Error> {
-        let settlement = self
-            .states
-            .get_mut(id.0)
-            .ok_or(Error::Inactive(id))?
-            .seal(id)?;
+        let revision = self.states.get_mut(id.0).ok_or(Error::Inactive(id))?;
+        let settlement = revision.seal(id)?;
+        let open = &mut self.open[revision.input.get()];
+        if *open == Some(id) {
+            *open = None;
+        }
         Ok(self.finish(id, settlement))
     }
 
@@ -289,11 +304,12 @@ impl Revisions {
     pub fn abort(
         &mut self, id: RevisionId,
     ) -> Result<Option<Settlement>, Error> {
-        let settlement = self
-            .states
-            .get_mut(id.0)
-            .ok_or(Error::Inactive(id))?
-            .abort(id)?;
+        let revision = self.states.get_mut(id.0).ok_or(Error::Inactive(id))?;
+        let settlement = revision.abort(id)?;
+        let open = &mut self.open[revision.input.get()];
+        if *open == Some(id) {
+            *open = None;
+        }
         Ok(self.finish(id, settlement))
     }
 
@@ -415,8 +431,43 @@ mod tests {
     }
 
     #[test]
+    fn closing_an_older_revision_preserves_the_new_open_revision() {
+        let mut revisions = Revisions::new(1);
+        let input = InputIndex::new(0);
+        let old = revisions.begin(input);
+        let work = admit(&mut revisions, old);
+        assert_eq!(revisions.open(input), Some(old));
+        assert_eq!(revisions.seal(old), Ok(None));
+        assert_eq!(revisions.open(input), None);
+        let current = revisions.begin(input);
+        assert_eq!(revisions.seal(old), Err(Error::Closed(old)));
+        assert_eq!(revisions.open(input), Some(current));
+        assert_eq!(revisions.abort(old), Ok(None));
+        assert_eq!(revisions.open(input), Some(current));
+        assert_eq!(revisions.retire(work), Some(Settlement::Aborted(old)));
+        assert_eq!(revisions.input(old), None);
+        assert_eq!(revisions.abort(old), Err(Error::Inactive(old)));
+        assert_eq!(revisions.open(input), Some(current));
+        assert_eq!(
+            revisions.abort(current),
+            Ok(Some(Settlement::Aborted(current)))
+        );
+        assert_eq!(revisions.open(input), None);
+        assert!(revisions.is_empty());
+    }
+
+    #[test]
+    #[should_panic(expected = "source already open")]
+    fn revision_owner_rejects_a_second_open_revision_for_one_input() {
+        let mut revisions = Revisions::new(1);
+        let input = InputIndex::new(0);
+        let _ = revisions.begin(input);
+        let _ = revisions.begin(input);
+    }
+
+    #[test]
     fn counted_authority_converges_and_replaces_without_token_storage() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(8);
         let id = begin(&mut revisions);
         let mut inputs = Obligations::for_revision(id);
         inputs.push(admit(&mut revisions, id));
@@ -436,16 +487,16 @@ mod tests {
     #[test]
     #[should_panic(expected = "obligation belongs to another revision")]
     fn counted_authority_rejects_mixed_revisions() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(8);
         let first = begin(&mut revisions);
-        let second = begin(&mut revisions);
+        let second = revisions.begin(InputIndex::new(2));
         let mut obligations = Obligations::for_revision(first);
         obligations.push(admit(&mut revisions, second));
     }
 
     #[test]
     fn empty_revision_settles_when_sealed() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(8);
         let id = begin(&mut revisions);
 
         assert_eq!(revisions.seal(id), Ok(Some(Settlement::Complete(id))));
@@ -454,7 +505,7 @@ mod tests {
 
     #[test]
     fn revision_owns_source_attribution_until_settlement() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(8);
         let input = InputIndex::new(7);
         let id = revisions.begin(input);
         let work = admit(&mut revisions, id);
@@ -468,7 +519,7 @@ mod tests {
 
     #[test]
     fn diamond_with_zero_output_settles_after_the_join_output() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(8);
         let id = begin(&mut revisions);
         let root = admit(&mut revisions, id);
         assert_eq!(revisions.seal(id), Ok(None));
@@ -492,7 +543,7 @@ mod tests {
 
     #[test]
     fn replication_settles_only_after_every_shard_in_any_order() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(8);
         let id = begin(&mut revisions);
         let root = admit(&mut revisions, id);
         let (mut shards, settled) = revisions.replace(root, 4);
@@ -511,7 +562,7 @@ mod tests {
 
     #[test]
     fn wake_transfers_authority_until_it_fires() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(8);
         let id = begin(&mut revisions);
         let root = admit(&mut revisions, id);
         let (mut work, settled) = revisions.replace(root, 2);
@@ -529,7 +580,7 @@ mod tests {
 
     #[test]
     fn clearing_a_wake_releases_its_authority() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(8);
         let id = begin(&mut revisions);
         let wake = Authority::new(admit(&mut revisions, id));
         assert_eq!(revisions.seal(id), Ok(None));
@@ -539,7 +590,7 @@ mod tests {
 
     #[test]
     fn abort_fences_ingress_but_committed_work_can_finish() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(8);
         let id = begin(&mut revisions);
         let root = admit(&mut revisions, id);
         let (mut work, settled) = revisions.replace(root, 2);
@@ -559,7 +610,7 @@ mod tests {
 
     #[test]
     fn closed_revision_rejects_new_root_work() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(8);
         let id = begin(&mut revisions);
         let _root = admit(&mut revisions, id);
         assert_eq!(revisions.seal(id), Ok(None));
@@ -570,7 +621,7 @@ mod tests {
 
     #[test]
     fn sealed_revision_can_abort_for_generation_retirement() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(8);
         let id = begin(&mut revisions);
         let work = admit(&mut revisions, id);
         assert_eq!(revisions.seal(id), Ok(None));
@@ -580,9 +631,9 @@ mod tests {
 
     #[test]
     fn simultaneous_revisions_settle_independently() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(8);
         let first_id = begin(&mut revisions);
-        let second_id = begin(&mut revisions);
+        let second_id = revisions.begin(InputIndex::new(2));
         let first_work = admit(&mut revisions, first_id);
         let second_work = admit(&mut revisions, second_id);
         assert_eq!(revisions.seal(first_id), Ok(None));
@@ -601,7 +652,7 @@ mod tests {
 
     #[test]
     fn settled_slot_rejects_stale_identity_after_reuse() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(8);
         let stale = begin(&mut revisions);
         assert_eq!(
             revisions.seal(stale),

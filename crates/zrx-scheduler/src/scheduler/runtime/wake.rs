@@ -335,7 +335,7 @@ mod tests {
 
     #[test]
     fn dispatched_hold_survives_cancellation_until_reconciliation() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(3);
         let revision = revisions.begin(InputIndex::new(0));
         let other = revisions.begin(InputIndex::new(1));
         let mut wakes = Wakes::new(2);
@@ -397,7 +397,7 @@ mod tests {
     #[test]
     fn replacement_invalidates_every_old_projection() {
         for projection in [Projection::Scheduled, Projection::Due] {
-            let mut revisions = Revisions::default();
+            let mut revisions = Revisions::new(3);
             let revision = revisions.begin(InputIndex::new(1));
             let mut wakes = Wakes::default();
             let deadline = Instant::now();
@@ -430,7 +430,7 @@ mod tests {
     #[test]
     fn clearing_invalidates_every_current_projection() {
         for projection in [Projection::Scheduled, Projection::Due] {
-            let mut revisions = Revisions::default();
+            let mut revisions = Revisions::new(3);
             let revision = revisions.begin(InputIndex::new(1));
             let mut wakes = Wakes::default();
             let (id, _) = wakes.install(
@@ -450,7 +450,7 @@ mod tests {
 
     #[test]
     fn pruning_removes_scheduled_and_due_wakes_once() {
-        let mut revisions = Revisions::default();
+        let mut revisions = Revisions::new(3);
         let revision = revisions.begin(InputIndex::new(1));
         let mut wakes = Wakes::default();
         let now = Instant::now();

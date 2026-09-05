@@ -324,6 +324,7 @@ where
         let transport = Transport::new(&graph, lane_capacity, outputs);
         let execution = Execution::new(jobs, backend);
         let progresses = Progresses::new(progress, progress_by_input);
+        let revisions = Revisions::new(inputs.len());
         Self {
             graph,
             sources: Sources::new(inputs, inputs_by_id),
@@ -331,7 +332,7 @@ where
             progress_branches: ProgressBranches::new(nodes),
             transport,
             execution,
-            revisions: Revisions::default(),
+            revisions,
             wakes: Wakes::new(nodes),
             report: Report::default(),
             current_errors: Vec::new(),
@@ -359,7 +360,11 @@ where
     pub fn begin(
         &mut self, input: InputId,
     ) -> Result<Admit<RevisionId, InputId>, OperationError> {
-        let (index, source) = self.sources.available(input)?;
+        let index = self.sources.resolve(input)?;
+        if self.revisions.open(index).is_some() {
+            return Err(IngressError::Open(input).into());
+        }
+        let source = self.sources.source_at(index);
         let count = usize::from(self.progresses.contains(index));
         let Some(reservations) =
             self.transport.reserve_repeated(source.route, count)
@@ -374,7 +379,6 @@ where
             return Ok(Admit::Full(input));
         };
         let revision = self.revisions.begin(index);
-        self.sources.open(index, revision);
         self.enqueue_boundary(
             revision,
             index,
@@ -414,10 +418,10 @@ where
             .revisions
             .input(revision)
             .ok_or(RevisionError::Inactive(revision))?;
-        let source = self
-            .sources
-            .active(index, revision)
-            .ok_or(RevisionError::Inactive(revision))?;
+        if self.revisions.open(index) != Some(revision) {
+            return Err(RevisionError::Inactive(revision).into());
+        }
+        let source = self.sources.source_at(index);
         if segment.port() != source.port {
             return Err(IngressError::Port {
                 node: source.route.node,
@@ -473,10 +477,10 @@ where
             .revisions
             .input(id)
             .ok_or(RevisionError::Inactive(id))?;
-        let source = self
-            .sources
-            .active(index, id)
-            .ok_or(RevisionError::Inactive(id))?;
+        if self.revisions.open(index) != Some(id) {
+            return Err(RevisionError::Inactive(id).into());
+        }
+        let source = self.sources.source_at(index);
         let count = usize::from(self.progresses.contains(index));
         let Some(reservations) =
             self.transport.reserve_repeated(source.route, count)
@@ -492,10 +496,6 @@ where
         };
         self.enqueue_boundary(id, index, ProgressEvent::End, reservations)?;
         let settlement = self.revisions.seal(id)?;
-        assert!(
-            self.sources.close(index, id),
-            "sealed source revision was not open"
-        );
         self.record_settlement(settlement);
         Ok(Admit::Accepted(()))
     }
@@ -531,7 +531,7 @@ where
             .input(id)
             .ok_or(RevisionError::Inactive(id))?;
         let source = self.sources.source_at(index);
-        if self.sources.active(index, id).is_some() {
+        if self.revisions.open(index) == Some(id) {
             let count = usize::from(self.progresses.contains(index));
             let Some(reservations) =
                 self.transport.reserve_repeated(source.route, count)
@@ -551,10 +551,6 @@ where
                 ProgressEvent::Abort,
                 reservations,
             )?;
-            assert!(
-                self.sources.close(index, id),
-                "aborted source revision was not open"
-            );
         } else {
             self.transport.abort_revision_end(id);
             self.progress_branches.abort_revision_end(id);
@@ -1223,16 +1219,6 @@ where
 
     fn fence_revision(&mut self, revision: RevisionId) {
         if !self.revisions.is_aborted(revision) {
-            let input = self
-                .revisions
-                .input(revision)
-                .expect("resident revision retains source attribution");
-            if self.sources.active(input, revision).is_some() {
-                assert!(
-                    self.sources.close(input, revision),
-                    "retired source revision was not open"
-                );
-            }
             let settlement = self
                 .revisions
                 .abort(revision)
