@@ -280,6 +280,10 @@ where
 // ----------------------------------------------------------------------------
 
 /// Shared execution owner for independently attached immutable plans.
+///
+/// Dropping the scheduler waits for executor-accepted work while runtime return
+/// ports remain connected. Retained rejected submissions are discarded, and
+/// outstanding reports are not reconciled during destruction.
 pub struct Scheduler<I, S = WorkSharing>
 where
     I: Id,
@@ -727,6 +731,21 @@ where
 
 // ----------------------------------------------------------------------------
 // Trait implementations
+// ----------------------------------------------------------------------------
+
+impl<I, S> Drop for Scheduler<I, S>
+where
+    I: Id,
+    S: Strategy,
+{
+    fn drop(&mut self) {
+        // Runtime handles share backend access, not authority to wait for other
+        // plans. Only whole-scheduler destruction waits for accepted work, with
+        // all attached and retiring completion ports still alive.
+        self.backend.wait();
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 impl<T> Value for Option<T> where T: Value {}

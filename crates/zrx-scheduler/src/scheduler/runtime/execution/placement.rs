@@ -28,6 +28,7 @@
 use crossbeam::channel::{self, Receiver, Sender, TryRecvError};
 use std::any::Any;
 use std::panic::{self, AssertUnwindSafe};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use zrx_executor::strategy::Immediate;
@@ -69,8 +70,8 @@ where
 {
     /// Execute directly on the scheduler thread.
     Inline,
-    /// Execute through the supplied strategy.
-    Worker(Executor<S>),
+    /// Shared executor owner; runtime handles do not wait when released.
+    Worker(Arc<Executor<S>>),
 }
 
 // ----------------------------------------------------------------------------
@@ -107,7 +108,7 @@ where
     T: Send + 'static,
     S: Strategy,
 {
-    executor: Executor<S>,
+    executor: Arc<Executor<S>>,
     sender: Sender<Return<T>>,
     receiver: Receiver<Return<T>>,
     overflow: Option<Retained>,
@@ -132,7 +133,7 @@ where
     S: Strategy,
 {
     pub fn worker(strategy: S) -> Self {
-        Self::Worker(Executor::new(strategy))
+        Self::Worker(Arc::new(Executor::new(strategy)))
     }
 
     pub fn workers(&self) -> usize {
@@ -146,6 +147,13 @@ where
         match self {
             Self::Inline => 0,
             Self::Worker(executor) => executor.capacity(),
+        }
+    }
+
+    /// Waits for accepted tasks before the scheduler destroys return ports.
+    pub fn wait(&self) {
+        if let Self::Worker(executor) = self {
+            executor.wait();
         }
     }
 }
@@ -365,7 +373,7 @@ where
     fn clone(&self) -> Self {
         match self {
             Self::Inline => Self::Inline,
-            Self::Worker(executor) => Self::Worker(executor.clone()),
+            Self::Worker(executor) => Self::Worker(Arc::clone(executor)),
         }
     }
 }

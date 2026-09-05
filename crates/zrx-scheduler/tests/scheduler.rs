@@ -89,6 +89,46 @@ impl Strategy for Queued {
     }
 }
 
+#[derive(Debug)]
+struct ObservedShutdown {
+    strategy: WorkSharing,
+    submissions: Arc<AtomicUsize>,
+    panics: Arc<AtomicUsize>,
+    waiting: mpsc::Sender<()>,
+}
+
+impl Strategy for ObservedShutdown {
+    fn submit(&self, task: Box<dyn Task>) -> zrx_executor::Result {
+        let panics = Arc::clone(&self.panics);
+        self.strategy.submit(Box::new(move || {
+            if std::panic::catch_unwind(|| task.execute().execute()).is_err() {
+                panics.fetch_add(1, Ordering::Relaxed);
+            }
+        }))?;
+        self.submissions.fetch_add(1, Ordering::Relaxed);
+        Ok(())
+    }
+
+    fn num_workers(&self) -> usize {
+        self.strategy.num_workers()
+    }
+
+    fn num_tasks_running(&self) -> usize {
+        self.strategy.num_tasks_running()
+    }
+
+    fn num_tasks_pending(&self) -> usize {
+        // The scheduler inspects placement locally while ticking. A strategy
+        // task-count inspection here identifies executor shutdown waiting.
+        let _ = self.waiting.send(());
+        self.strategy.num_tasks_pending()
+    }
+
+    fn capacity(&self) -> usize {
+        self.strategy.capacity()
+    }
+}
+
 struct Join;
 
 impl Action<u64> for Join {
@@ -708,4 +748,155 @@ fn retirement_closes_output_reservations_behind_a_return_gap() {
     assert_eq!(queue.len(), 0);
     assert!(!scheduler.readiness().pending());
     assert!(scheduler.readiness().deadline().is_none());
+}
+
+#[test]
+fn idle_retirement_does_not_wait_for_another_plan() {
+    use std::sync::atomic::AtomicBool;
+    let (started_tx, started_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+    let mut scheduler = Scheduler::new(WorkSharing::new(1));
+    let busy = scheduler.attach(plan(Blocking {
+        started: started_tx,
+        release: release_rx,
+    }));
+    let idle = scheduler.attach(plan(Count(Arc::new(AtomicUsize::new(0)))));
+    submit(&mut scheduler, busy, 1, 1);
+    let deadline = std::time::Instant::now() + Duration::from_secs(2);
+    loop {
+        assert!(std::time::Instant::now() < deadline, "worker did not start");
+        let _ = scheduler.tick();
+        if started_rx.try_recv().is_ok() {
+            break;
+        }
+        thread::yield_now();
+    }
+    scheduler.attachment(idle).unwrap().detach();
+    let (done_tx, done_rx) = mpsc::channel();
+    let watchdog_fired = Arc::new(AtomicBool::new(false));
+    let fired = Arc::clone(&watchdog_fired);
+    let watchdog = thread::spawn(move || {
+        if done_rx.recv_timeout(Duration::from_secs(1)).is_err() {
+            fired.store(true, Ordering::SeqCst);
+        }
+        release_tx.send(()).unwrap();
+    });
+    let tick = scheduler.tick().expect("idle retirement must finish");
+    assert_eq!(tick.plan(), idle);
+    let _ = done_tx.send(());
+    watchdog.join().unwrap();
+    assert!(
+        !watchdog_fired.load(Ordering::SeqCst),
+        "idle retirement waited for unrelated worker completion"
+    );
+}
+
+#[test]
+fn scheduler_drop_keeps_return_ports_alive_for_running_and_queued_work() {
+    for retire in [false, true] {
+        let submissions = Arc::new(AtomicUsize::new(0));
+        let panics = Arc::new(AtomicUsize::new(0));
+        let calls = Arc::new(AtomicUsize::new(0));
+        let (waiting_tx, waiting_rx) = mpsc::channel();
+        let strategy = ObservedShutdown {
+            strategy: WorkSharing::with_capacity(1, 2),
+            submissions: Arc::clone(&submissions),
+            panics: Arc::clone(&panics),
+            waiting: waiting_tx,
+        };
+        let (started_tx, started_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        let mut scheduler = Scheduler::new(strategy);
+        let running = scheduler.attach(plan(Blocking {
+            started: started_tx,
+            release: release_rx,
+        }));
+        let queued = scheduler.attach(plan(Count(Arc::clone(&calls))));
+        submit(&mut scheduler, running, 1, 1);
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        loop {
+            let _ = scheduler.tick();
+            if started_rx.try_recv().is_ok() {
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "worker did not start"
+            );
+            thread::yield_now();
+        }
+        submit(&mut scheduler, queued, 2, 2);
+        while submissions.load(Ordering::Relaxed) != 2 {
+            assert!(scheduler.tick().is_some());
+        }
+        assert_eq!(calls.load(Ordering::Relaxed), 0);
+        if retire {
+            scheduler.attachment(running).unwrap().detach();
+            scheduler.attachment(queued).unwrap().detach();
+        }
+        // Release the running task only when shutdown starts waiting. Without
+        // the scheduler's wait-before-field-drop contract, both return sends panic.
+        let release = thread::spawn(move || {
+            let observed = waiting_rx.recv_timeout(Duration::from_secs(2));
+            let _ = release_tx.send(());
+            observed.expect("shutdown did not wait for accepted work");
+        });
+        drop(scheduler);
+        release.join().unwrap();
+        assert_eq!(calls.load(Ordering::Relaxed), 1);
+        assert_eq!(
+            panics.load(Ordering::Relaxed),
+            0,
+            "shutdown disconnected a return port before accepted work completed"
+        );
+    }
+}
+
+#[test]
+fn scheduler_drop_discards_rejected_work_without_retrying() {
+    #[derive(Debug)]
+    struct Reject(Arc<AtomicUsize>);
+
+    impl Strategy for Reject {
+        fn submit(&self, task: Box<dyn Task>) -> zrx_executor::Result {
+            self.0.fetch_add(1, Ordering::Relaxed);
+            Err(zrx_executor::Error::Submit(task))
+        }
+
+        fn num_workers(&self) -> usize {
+            1
+        }
+
+        fn num_tasks_running(&self) -> usize {
+            0
+        }
+
+        fn num_tasks_pending(&self) -> usize {
+            0
+        }
+
+        fn capacity(&self) -> usize {
+            1
+        }
+    }
+
+    for retire in [false, true] {
+        let attempts = Arc::new(AtomicUsize::new(0));
+        let dropped = Arc::new(AtomicUsize::new(0));
+        let mut scheduler = Scheduler::new(Reject(Arc::clone(&attempts)));
+        let id = scheduler.attach(plan(DropProbe(Arc::clone(&dropped))));
+        submit(&mut scheduler, id, 1, 1);
+        while attempts.load(Ordering::Relaxed) == 0 {
+            assert!(scheduler.tick().is_some());
+        }
+        assert!(scheduler.readiness().pending());
+        assert!(scheduler.readiness().deadline().is_some());
+        assert_eq!(dropped.load(Ordering::Relaxed), 0);
+        if retire {
+            scheduler.attachment(id).unwrap().detach();
+        }
+        drop(scheduler);
+        assert_eq!(attempts.load(Ordering::Relaxed), 1);
+        assert_eq!(dropped.load(Ordering::Relaxed), 1);
+    }
 }
