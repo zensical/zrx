@@ -25,52 +25,36 @@
 
 //! Movable invocation package for one committed action batch.
 
-use crate::scheduler::{Id, RevisionId};
+use crate::scheduler::Id;
+#[cfg(feature = "tracing")]
+use crate::scheduler::RevisionId;
+use crate::scheduler::action::control::Event;
+use crate::scheduler::action::{InputSegments, Job, Segment, WakeKey};
 
-use crate::scheduler::action::control::{Event, ProgressEvent};
-use crate::scheduler::action::{
-    EvaluationChanges, InputSegments, Instrumentation, Job, Outcomes, Segment,
-    WakeKey, WakeRequest,
+use super::super::transport::OutputReservations;
+#[cfg(feature = "tracing")]
+use super::Access;
+use super::{
+    InputAuthority, ProgressContinuation, Reconciliation, Returned, Started,
+    Ticket,
 };
 
 // ----------------------------------------------------------------------------
 // Structs
 // ----------------------------------------------------------------------------
 
-/// Successful result of one committed action batch.
-pub struct Completion<I>
-where
-    I: Id,
-{
-    /// Installed node whose job ran.
-    pub node: usize,
-    /// Persistent action state returned to its resident slot.
-    pub job: Job<I>,
-    /// Sealed output when the node is connected and emitted data.
-    pub output: Option<Segment<I>>,
-    /// Sparse historical errors.
-    pub outcomes: Outcomes,
-    /// Ordered current-error changes.
-    pub evaluations: EvaluationChanges<I>,
-    /// Ordered diagnostics and author annotations.
-    pub instrumentation: Instrumentation,
-    /// Keyed temporal requests produced by this invocation.
-    pub wakes: Vec<WakeRequest>,
-}
-
-// ----------------------------------------------------------------------------
-
-/// One job and its committed, revision-homogeneous lane segments.
+/// One committed job, its input authority and reserved output positions.
 pub struct Invocation<I>
 where
     I: Id,
 {
-    revision: RevisionId,
-    node: usize,
+    ticket: Ticket,
     job: Job<I>,
     inputs: InputSegments<I>,
     event: Option<Event>,
-    connected: bool,
+    authority: InputAuthority,
+    outputs: OutputReservations,
+    progress: Option<ProgressContinuation>,
 }
 
 // ----------------------------------------------------------------------------
@@ -82,8 +66,23 @@ where
     I: Id,
 {
     #[cfg(feature = "tracing")]
+    pub fn revision(&self) -> RevisionId {
+        self.authority.revision()
+    }
+
+    #[cfg(feature = "tracing")]
+    pub fn sequence(&self) -> u64 {
+        self.ticket.sequence
+    }
+
+    #[cfg(feature = "tracing")]
+    pub fn access(&self) -> Access {
+        self.ticket.access
+    }
+
+    #[cfg(feature = "tracing")]
     pub fn node(&self) -> usize {
-        self.node
+        self.ticket.node
     }
 
     #[cfg(feature = "tracing")]
@@ -99,9 +98,11 @@ where
     /// Creates one movable action batch from prevalidated plan lanes.
     #[must_use]
     pub fn new(
-        revision: RevisionId, node: usize, job: Job<I>,
-        inputs: impl IntoIterator<Item = Option<Segment<I>>>, connected: bool,
+        started: Started<I>, authority: InputAuthority,
+        inputs: impl IntoIterator<Item = Option<Segment<I>>>,
+        outputs: OutputReservations,
     ) -> Self {
+        let Started { ticket, job } = started;
         let inputs = InputSegments::collect(inputs, job.inputs().len());
         debug_assert!(inputs.as_slice().iter().zip(job.inputs()).all(
             |(input, &port)| {
@@ -109,12 +110,13 @@ where
             }
         ));
         Self {
-            revision,
-            node,
+            ticket,
             job,
             inputs,
             event: None,
-            connected,
+            authority,
+            outputs,
+            progress: None,
         }
     }
 
@@ -122,51 +124,80 @@ where
     ///
     #[must_use]
     pub fn wake(
-        revision: RevisionId, node: usize, job: Job<I>, key: WakeKey,
-        deadline: std::time::Instant, connected: bool,
+        started: Started<I>, authority: InputAuthority, key: WakeKey,
+        deadline: std::time::Instant, outputs: OutputReservations,
     ) -> Self {
+        let Started { ticket, job } = started;
         let inputs = InputSegments::empty(job.inputs().len());
         Self {
-            revision,
-            node,
+            ticket,
             job,
             inputs,
             event: Some(Event::Wake { key, deadline }),
-            connected,
+            authority,
+            outputs,
+            progress: None,
         }
     }
 
     /// Creates one movable shared progress event invocation.
     #[must_use]
     pub fn progress(
-        revision: RevisionId, node: usize, job: Job<I>,
-        progress: ProgressEvent, connected: bool,
+        started: Started<I>, authority: InputAuthority,
+        outputs: OutputReservations, progress: ProgressContinuation,
     ) -> Self {
+        let Started { ticket, job } = started;
         let inputs = InputSegments::empty(job.inputs().len());
         Self {
-            revision,
-            node,
+            ticket,
             job,
             inputs,
-            event: Some(Event::Progress(progress)),
-            connected,
+            event: Some(Event::Progress(progress.frame.event().clone())),
+            authority,
+            outputs,
+            progress: Some(progress),
         }
     }
 
     /// Runs the complete committed batch on the current thread.
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            level = "debug",
+            name = "action",
+            parent = None,
+            skip_all,
+            fields(
+                node = self.node(),
+                sequence = self.sequence(),
+                revision = %self.authority.revision(),
+                batch_items = self.batch_items(),
+                access = self.access().as_str(),
+            )
+        )
+    )]
     #[must_use]
-    pub fn run(mut self) -> Completion<I> {
-        let (output, outcomes, evaluations, wakes, instrumentation) = self
-            .job
-            .run(self.revision, self.inputs, self.event, self.connected);
-        Completion {
-            node: self.node,
+    pub(super) fn run(mut self) -> Returned<I> {
+        let (output, outcomes, evaluations, wakes, instrumentation) =
+            self.job.run(
+                self.authority.revision(),
+                self.inputs,
+                self.event,
+                !self.outputs.is_empty(),
+            );
+        Returned {
+            ticket: self.ticket,
             job: self.job,
-            output,
-            outcomes,
-            evaluations,
-            instrumentation,
-            wakes,
+            reconciliation: Reconciliation {
+                output,
+                outcomes,
+                evaluations,
+                instrumentation,
+                wakes,
+                inputs: self.authority,
+                outputs: self.outputs,
+                progress: self.progress,
+            },
         }
     }
 }
@@ -181,12 +212,34 @@ mod tests {
     use zrx_executor::task::Task;
     use zrx_executor::{Error as ExecutorError, Executor};
 
-    use super::{Completion, Invocation};
+    use super::{InputAuthority, Invocation, OutputReservations, Returned};
+    use crate::scheduler::runtime::execution::{Access, Started, Ticket};
+    use crate::scheduler::runtime::progress::Obligations;
+
     use crate::scheduler::Change;
     use crate::scheduler::RevisionId;
     use crate::scheduler::action::{
         Action, Concurrency, Context, Job, Record, Segment,
     };
+
+    fn invocation(
+        revision: RevisionId, node: usize, job: Job<u64>,
+        inputs: Vec<Option<Segment<u64>>>,
+    ) -> Invocation<u64> {
+        Invocation::new(
+            Started {
+                ticket: Ticket {
+                    node,
+                    sequence: 0,
+                    access: Access::Shared,
+                },
+                job,
+            },
+            InputAuthority::new(Obligations::for_revision(revision)),
+            inputs,
+            OutputReservations::empty(),
+        )
+    }
 
     fn input(key: u64, value: u64) -> Segment<u64> {
         Segment::new(vec![Change::Insert(key, value)])
@@ -210,23 +263,17 @@ mod tests {
     #[test]
     fn completion_returns_persistent_job_for_repeated_execution() {
         let calls = Arc::new(AtomicUsize::new(0));
-        let execution = Invocation::new(
+        let execution = invocation(
             RevisionId::test(0),
             7,
             Job::new(Count(Arc::clone(&calls))),
             vec![Some(input(1, 1))],
-            false,
         );
-        let Completion { node, job, .. } = execution.run();
-        assert_eq!(node, 7);
+        let Returned { ticket, job, .. } = execution.run();
+        assert_eq!(ticket.node, 7);
 
-        let second = Invocation::new(
-            RevisionId::test(0),
-            7,
-            job,
-            vec![Some(input(2, 2))],
-            false,
-        );
+        let second =
+            invocation(RevisionId::test(0), 7, job, vec![Some(input(2, 2))]);
         let _ = second.run();
         assert_eq!(calls.load(Ordering::Relaxed), 2);
     }
@@ -257,19 +304,17 @@ mod tests {
         let original =
             Job::<u64>::new::<Replicable>(Replicable(Arc::clone(&calls)));
         let replica = original.replica();
-        let first = Invocation::new(
+        let first = invocation(
             RevisionId::test(0),
             0,
             original,
             vec![Some(input(1, 1))],
-            false,
         );
-        let second = Invocation::new(
+        let second = invocation(
             RevisionId::test(0),
             0,
             replica,
             vec![Some(input(2, 2))],
-            false,
         );
 
         let first = std::thread::spawn(move || first.run());
@@ -324,12 +369,11 @@ mod tests {
     fn invocation_moves_to_worker_and_survives_rejection() {
         let caller = std::thread::current().id();
         let records = Arc::new(Mutex::new(Vec::new()));
-        let execution = Invocation::new(
+        let execution = invocation(
             RevisionId::test(0),
             0,
             Job::new(RecordThread(Arc::clone(&records))),
             vec![Some(input(1, 1))],
-            false,
         );
         let (sender, receiver) = mpsc::sync_channel(1);
         let task = AssertUnwindSafe(move || {
@@ -344,7 +388,8 @@ mod tests {
         Executor::new(WorkSharing::new(1)).submit(task).unwrap();
         let completion = receiver.recv().unwrap();
         assert_ne!(records.lock().unwrap()[0], caller);
-        let [record] = completion.instrumentation.records() else {
+        let [record] = completion.reconciliation.instrumentation.records()
+        else {
             panic!("worker instrumentation was not returned")
         };
         assert!(
@@ -363,12 +408,11 @@ mod tests {
 
     #[test]
     fn unread_input_panics() {
-        let execution = Invocation::new(
+        let execution = invocation(
             RevisionId::test(0),
             3,
             Job::new(Ignore),
             vec![Some(input(1, 1))],
-            false,
         );
         let result =
             std::panic::catch_unwind(AssertUnwindSafe(|| execution.run()));
@@ -388,12 +432,11 @@ mod tests {
 
     #[test]
     fn action_panic_escapes_execution() {
-        let execution = Invocation::new(
+        let execution = invocation(
             RevisionId::test(0),
             0,
             Job::new(Panic),
             vec![Some(input(1, 1))],
-            false,
         );
         let result =
             std::panic::catch_unwind(AssertUnwindSafe(|| execution.run()));
@@ -423,15 +466,14 @@ mod tests {
             Change::Insert(1_u64, 1_u64),
             Change::Insert(2_u64, 2_u64),
         ]);
-        let completion = Invocation::new(
+        let completion = invocation(
             RevisionId::test(0),
             0,
             Job::new(FailOne),
             vec![Some(segment)],
-            false,
         )
         .run();
 
-        assert_eq!(completion.outcomes.failures().len(), 1);
+        assert_eq!(completion.reconciliation.outcomes.failures().len(), 1);
     }
 }

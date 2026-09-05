@@ -641,7 +641,10 @@ where
     /// # Panics
     ///
     /// Resumes an action panic and panics if scheduler ownership is internally
-    /// inconsistent.
+    /// inconsistent. After an escaping action panic, discard the scheduler:
+    /// catching the panic does not restore the job or its revision obligations,
+    /// and subsequent scheduler use is unsupported. Drop still waits for other
+    /// executor-accepted work; it does not reconcile or report settlement.
     pub fn tick(&mut self) -> Option<Tick> {
         let candidates = self.order.len();
         for _ in 0..candidates {

@@ -24,6 +24,11 @@
 // ----------------------------------------------------------------------------
 
 //! Affine ownership carried from resident selection through reconciliation.
+//!
+//! Jobs issue identity and action state together. Invocation and return retain
+//! that identity until execution restores the job and orders its effects.
+//! An escaping panic destroys the invocation without restoring this authority;
+//! the scheduler must be discarded, not reused or treated as settled.
 
 use crossbeam::channel::Receiver;
 use std::time::Instant;
@@ -45,9 +50,9 @@ mod jobs;
 mod placement;
 mod scheduling;
 
-pub use invocation::{Completion, Invocation};
+pub use invocation::Invocation;
+pub use jobs::Access;
 use jobs::Jobs;
-pub use jobs::{Access, Started};
 use placement::Placement;
 pub use placement::{Backend, Return, Submission};
 pub use scheduling::InvocationClass;
@@ -70,23 +75,25 @@ where
 
 // ----------------------------------------------------------------------------
 
-pub struct InputAuthority {
-    obligations: Obligations,
-    wake: Option<Flight>,
+/// Job and immutable reconciliation identity issued together by execution.
+/// Dropping committed work does not settle its revision obligations.
+pub struct Started<I: Id> {
+    ticket: Ticket,
+    job: Job<I>,
+}
+
+/// Identity of one issued job; never independently supplied by runtime.
+struct Ticket {
+    node: usize,
+    sequence: u64,
+    access: Access,
 }
 
 // ----------------------------------------------------------------------------
 
-pub struct Dispatch<I>
-where
-    I: Id,
-{
-    pub invocation: Invocation<I>,
-    pub inputs: InputAuthority,
-    pub outputs: OutputReservations,
-    pub progress: Option<ProgressContinuation>,
-    pub sequence: u64,
-    pub access: Access,
+pub struct InputAuthority {
+    obligations: Obligations,
+    wake: Option<Flight>,
 }
 
 // ----------------------------------------------------------------------------
@@ -95,12 +102,9 @@ pub struct Returned<I>
 where
     I: Id,
 {
-    pub completion: Completion<I>,
-    pub inputs: InputAuthority,
-    pub outputs: OutputReservations,
-    pub progress: Option<ProgressContinuation>,
-    pub sequence: u64,
-    pub access: Access,
+    ticket: Ticket,
+    job: Job<I>,
+    reconciliation: Reconciliation<I>,
 }
 
 // ----------------------------------------------------------------------------
@@ -128,6 +132,14 @@ pub struct ProgressContinuation {
 
 // ----------------------------------------------------------------------------
 // Implementations
+// ----------------------------------------------------------------------------
+
+impl<I: Id> Started<I> {
+    pub const fn sequence(&self) -> u64 {
+        self.ticket.sequence
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 impl InputAuthority {
@@ -193,8 +205,10 @@ where
         self.placement.try_recv()
     }
 
-    pub fn submit(&mut self, dispatch: Dispatch<I>) -> Submission<Returned<I>> {
-        self.placement.submit(move || dispatch.run())
+    pub fn submit(
+        &mut self, invocation: Invocation<I>,
+    ) -> Submission<Returned<I>> {
+        self.placement.submit(move || invocation.run())
     }
 
     pub fn enqueue(&mut self, node: usize) {
@@ -233,73 +247,17 @@ where
         self.jobs.start(node, access)
     }
 
+    /// Restores physical job ownership before exposing ordered effects.
     pub fn complete(
-        &mut self, node: usize, sequence: u64, access: Access, job: Job<I>,
-        reconciliation: Reconciliation<I>,
-    ) -> Option<Reconciliation<I>> {
-        self.jobs
-            .complete(node, sequence, access, job, reconciliation)
+        &mut self, returned: Returned<I>,
+    ) -> (usize, Option<Reconciliation<I>>) {
+        let Returned { ticket, job, reconciliation } = returned;
+        let node = ticket.node;
+        let ready = self.jobs.complete(ticket, job, reconciliation);
+        (node, ready)
     }
 
     pub fn reconcile(&mut self, node: usize) -> Option<Reconciliation<I>> {
         self.jobs.pop_ready(node)
-    }
-}
-
-// ----------------------------------------------------------------------------
-
-impl<I> Dispatch<I>
-where
-    I: Id,
-{
-    pub fn new(
-        invocation: Invocation<I>, inputs: InputAuthority,
-        outputs: OutputReservations, progress: Option<ProgressContinuation>,
-        sequence: u64, access: Access,
-    ) -> Self {
-        Self {
-            invocation,
-            inputs,
-            outputs,
-            progress,
-            sequence,
-            access,
-        }
-    }
-
-    #[cfg_attr(
-        feature = "tracing",
-        tracing::instrument(
-            level = "debug",
-            name = "action",
-            parent = None,
-            skip_all,
-            fields(
-                node = self.invocation.node(),
-                sequence = self.sequence,
-                revision = %self.inputs.revision(),
-                batch_items = self.invocation.batch_items(),
-                access = self.access.as_str(),
-            )
-        )
-    )]
-    pub fn run(self) -> Returned<I> {
-        let Self {
-            invocation,
-            inputs,
-            outputs,
-            progress,
-            sequence,
-            access,
-        } = self;
-        let completion = invocation.run();
-        Returned {
-            completion,
-            inputs,
-            outputs,
-            progress,
-            sequence,
-            access,
-        }
     }
 }

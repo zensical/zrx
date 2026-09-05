@@ -56,9 +56,8 @@ mod wake;
 pub use execution::Backend;
 use execution::InvocationClass;
 use execution::{
-    Access, Completion, Dispatch, Execution, InputAuthority, Invocation,
-    ProgressContinuation, Reconciliation, Return, Returned, Started,
-    Submission,
+    Access, Execution, InputAuthority, Invocation, ProgressContinuation,
+    Reconciliation, Return, Returned, Submission,
 };
 use ingress::Sources;
 use progress::{
@@ -940,21 +939,15 @@ where
             if position == lane { slice.take() } else { None }
         });
 
-        let connected = !reservations.is_empty();
-        let Started { sequence, job } =
-            self.execution.start(node, Access::Shared);
-        self.transport.record_dispatch(node, lane, sequence);
-        let revision = obligation.revision();
-        let invocation =
-            Invocation::new(revision, node, job, segments, connected);
-        self.dispatch(
+        let started = self.execution.start(node, Access::Shared);
+        self.transport
+            .record_dispatch(node, lane, started.sequence());
+        self.dispatch(Invocation::new(
+            started,
             InputAuthority::new(obligation.into()),
+            segments,
             reservations,
-            None,
-            invocation,
-            sequence,
-            Access::Shared,
-        );
+        ));
         true
     }
 
@@ -985,26 +978,14 @@ where
         );
         assert_eq!(scheduled.owner, node, "wake reached another job");
         debug_assert!(scheduled.deadline <= Instant::now());
-        let connected = !reservations.is_empty();
-        let Started { sequence, job } =
-            self.execution.start(node, Access::Exclusive);
-        let revision = scheduled.authority.revision();
-        let invocation = Invocation::wake(
-            revision,
-            node,
-            job,
+        let started = self.execution.start(node, Access::Exclusive);
+        self.dispatch(Invocation::wake(
+            started,
+            InputAuthority::waking(scheduled.authority.fire().into(), flight),
             scheduled.key,
             scheduled.deadline,
-            connected,
-        );
-        self.dispatch(
-            InputAuthority::waking(scheduled.authority.fire().into(), flight),
             reservations,
-            None,
-            invocation,
-            sequence,
-            Access::Exclusive,
-        );
+        ));
         true
     }
 
@@ -1016,26 +997,15 @@ where
             skip_all,
             fields(
                 node = invocation.node(),
-                sequence,
-                revision = %inputs.revision(),
-                access = access.as_str(),
+                sequence = invocation.sequence(),
+                revision = %invocation.revision(),
+                access = invocation.access().as_str(),
             )
         )
     )]
-    fn dispatch(
-        &mut self, inputs: InputAuthority, reservations: OutputReservations,
-        progress: Option<ProgressContinuation>, invocation: Invocation<I>,
-        sequence: u64, access: Access,
-    ) {
-        let dispatch = Dispatch::new(
-            invocation,
-            inputs,
-            reservations,
-            progress,
-            sequence,
-            access,
-        );
-        if let Submission::Inline(returned) = self.execution.submit(dispatch) {
+    fn dispatch(&mut self, invocation: Invocation<I>) {
+        if let Submission::Inline(returned) = self.execution.submit(invocation)
+        {
             self.accept(returned);
         }
     }
@@ -1045,39 +1015,7 @@ where
             Return::Completed(returned) => returned,
             Return::Panicked(payload) => panic::resume_unwind(payload),
         };
-        let Returned {
-            completion,
-            inputs,
-            outputs,
-            progress,
-            sequence,
-            access,
-        } = returned;
-        let Completion {
-            node,
-            job,
-            output,
-            outcomes,
-            evaluations,
-            instrumentation,
-            wakes,
-        } = completion;
-        let ready = self.execution.complete(
-            node,
-            sequence,
-            access,
-            job,
-            Reconciliation {
-                output,
-                outcomes,
-                evaluations,
-                instrumentation,
-                wakes,
-                inputs,
-                outputs,
-                progress,
-            },
-        );
+        let (node, ready) = self.execution.complete(returned);
         self.reconcile(node, ready);
         self.schedule(node);
     }
@@ -1285,25 +1223,13 @@ where
             self.progress_branches.take(node, identity)
         };
         if subscriber {
-            let connected = !outputs.is_empty();
-            let event = frame.event().clone();
-            let Started { sequence, job } =
-                self.execution.start(node, Access::Exclusive);
-            let invocation = Invocation::progress(
-                identity.revision(),
-                node,
-                job,
-                event,
-                connected,
-            );
-            self.dispatch(
+            let started = self.execution.start(node, Access::Exclusive);
+            self.dispatch(Invocation::progress(
+                started,
                 InputAuthority::new(obligations),
                 outputs,
-                Some(ProgressContinuation { frame, routes }),
-                invocation,
-                sequence,
-                Access::Exclusive,
-            );
+                ProgressContinuation { frame, routes },
+            ));
             return true;
         }
         let successors = routes.len();

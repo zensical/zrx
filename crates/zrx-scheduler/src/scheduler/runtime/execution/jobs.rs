@@ -27,8 +27,9 @@
 
 use crate::scheduler::Id;
 use crate::scheduler::action::Job;
-use crate::scheduler::runtime::Reconciliation;
 use crate::scheduler::runtime::ordered::OrderedWindow;
+
+use super::{Reconciliation, Started, Ticket};
 
 // ----------------------------------------------------------------------------
 // Enums
@@ -42,16 +43,6 @@ pub enum Access {
 
 // ----------------------------------------------------------------------------
 // Structs
-// ----------------------------------------------------------------------------
-
-pub struct Started<I>
-where
-    I: Id,
-{
-    pub sequence: u64,
-    pub job: Job<I>,
-}
-
 // ----------------------------------------------------------------------------
 
 struct Replicas<I>
@@ -254,14 +245,17 @@ where
         self.reconciler.reconciled(sequence)
     }
 
-    fn start(&mut self, access: Access) -> Started<I> {
+    fn start(&mut self, node: usize, access: Access) -> Started<I> {
         assert!(
             self.ready(access),
             "node started work that was not admissible"
         );
         let sequence = self.reconciler.issue();
         let job = self.replicas.take(access);
-        Started { sequence, job }
+        Started {
+            ticket: Ticket { node, sequence, access },
+            job,
+        }
     }
 
     fn complete(
@@ -304,14 +298,23 @@ where
     }
 
     pub fn start(&mut self, node: usize, access: Access) -> Started<I> {
-        self.nodes[node].start(access)
+        self.nodes[node].start(node, access)
     }
 
-    pub fn complete(
-        &mut self, node: usize, sequence: u64, access: Access, job: Job<I>,
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "completion consumes the one-shot execution ticket"
+    )]
+    pub(super) fn complete(
+        &mut self, ticket: Ticket, job: Job<I>,
         reconciliation: Reconciliation<I>,
     ) -> Option<Reconciliation<I>> {
-        self.nodes[node].complete(sequence, access, job, reconciliation)
+        self.nodes[ticket.node].complete(
+            ticket.sequence,
+            ticket.access,
+            job,
+            reconciliation,
+        )
     }
 
     pub fn pop_ready(&mut self, node: usize) -> Option<Reconciliation<I>> {
