@@ -26,6 +26,7 @@
 //! Affine ownership carried from resident selection through reconciliation.
 
 use crossbeam::channel::Receiver;
+use std::time::Instant;
 
 use zrx_executor::Strategy;
 
@@ -174,6 +175,10 @@ where
 
     pub fn pending(&self) -> bool {
         !self.placement.is_idle()
+    }
+
+    pub fn deadline(&self) -> Option<Instant> {
+        self.placement.deadline()
     }
 
     pub fn accepts(&self) -> bool {

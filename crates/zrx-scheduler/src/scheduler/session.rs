@@ -28,6 +28,10 @@
 use ahash::HashMap;
 use crossbeam::channel::{self, Receiver, Select, Sender, TryRecvError};
 use std::mem;
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 use thiserror::Error as ThisError;
 
 use zrx_executor::Strategy;
@@ -104,7 +108,14 @@ pub struct Session<I, V> {
     aborts: Sender<Revision>,
     next_revision: u64,
     batch_items: usize,
+    // Must drop after both sender fields, to publish disconnection readiness.
+    notify: Notify,
 }
+
+// ----------------------------------------------------------------------------
+
+// Marks both publication and final sender teardown for the receiving inbox.
+struct Notify(Arc<AtomicBool>);
 
 // ----------------------------------------------------------------------------
 
@@ -141,6 +152,7 @@ where
     implicit_abort: Option<Revision>,
     events_open: bool,
     aborts_open: bool,
+    ready: Arc<AtomicBool>,
 }
 
 // ----------------------------------------------------------------------------
@@ -199,8 +211,7 @@ where
             .next_revision
             .checked_add(1)
             .ok_or(Error::RevisionExhausted)?;
-        self.events
-            .send(Event::new(revision, Kind::Begin))
+        self.publish(Event::new(revision, Kind::Begin))
             .map_err(|_| Error::Disconnected)?;
         Ok(Writer {
             session: Some(self),
@@ -208,6 +219,15 @@ where
             items: Vec::new(),
             closed: false,
         })
+    }
+
+    fn publish(
+        &self, event: SessionEvent<I, V>,
+    ) -> Result<(), channel::SendError<SessionEvent<I, V>>> {
+        let result = self.events.send(event);
+        // Publish readiness only after the bounded channel owns the event.
+        self.notify.mark();
+        result
     }
 }
 
@@ -345,8 +365,7 @@ where
         let items = mem::take(&mut self.items);
         match self
             .session()
-            .events
-            .send(Event::new(self.revision, Kind::Changes(items)))
+            .publish(Event::new(self.revision, Kind::Changes(items)))
         {
             Ok(()) => Ok(()),
             Err(error) => {
@@ -416,8 +435,7 @@ where
 
     fn send(&self, kind: Kind<Vec<Change<I, V>>>) -> Result<(), Error> {
         self.session()
-            .events
-            .send(Event::new(self.revision, kind))
+            .publish(Event::new(self.revision, kind))
             .map_err(|_| Error::Disconnected)
     }
 
@@ -548,6 +566,7 @@ where
             channel::bounded(BOOTSTRAP_EVENT_CAPACITY);
         let (aborts, abort_receiver) = channel::bounded(1);
         let index = self.states.len();
+        let ready = Arc::new(AtomicBool::new(false));
         self.states.push(State {
             input,
             receiver: Box::new(ReceiverFor::<I, V> {
@@ -559,6 +578,7 @@ where
             implicit_abort: None,
             events_open: true,
             aborts_open: true,
+            ready: Arc::clone(&ready),
         });
         assert!(self.by_input.insert(input, index).is_none());
         Ok(Session {
@@ -566,6 +586,7 @@ where
             aborts,
             next_revision: 0,
             batch_items: BOOTSTRAP_BATCH_ITEMS,
+            notify: Notify(ready),
         })
     }
 
@@ -576,6 +597,13 @@ where
             let index = self.next;
             self.next = (self.next + 1) % len;
             let state = &mut self.states[index];
+            // Clear before polling so concurrent publication stays marked.
+            // A restored event must be retried even without another send.
+            if state.pending.is_none()
+                && !state.ready.swap(false, Ordering::AcqRel)
+            {
+                continue;
+            }
 
             if state.aborts_open {
                 match state.receiver.abort() {
@@ -593,6 +621,7 @@ where
             }
 
             if let Some(event) = state.pending.take() {
+                state.ready.store(true, Ordering::Release);
                 return (
                     Some(Selected {
                         index,
@@ -606,6 +635,8 @@ where
             if state.events_open {
                 match state.receiver.event() {
                     Ok(event) => {
+                        // A send may have queued several events under one mark.
+                        state.ready.store(true, Ordering::Release);
                         return (
                             Some(Selected {
                                 index,
@@ -625,6 +656,7 @@ where
             if !state.events_open
                 && let Some(revision) = state.implicit_abort.take()
             {
+                state.ready.store(true, Ordering::Release);
                 return (
                     Some(Selected {
                         index,
@@ -686,6 +718,7 @@ impl<I, V> Drop for Writer<I, V> {
             // One affine writer can produce at most one implicit abort, so
             // the dedicated one-slot control path cannot fill.
             let _ = session.aborts.try_send(self.revision);
+            session.notify.mark();
         }
     }
 }
@@ -738,6 +771,22 @@ where
             by_input: HashMap::default(),
             next: 0,
         }
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl Notify {
+    fn mark(&self) {
+        self.0.store(true, Ordering::Release);
+    }
+}
+
+// ----------------------------------------------------------------------------
+
+impl Drop for Notify {
+    fn drop(&mut self) {
+        self.mark();
     }
 }
 

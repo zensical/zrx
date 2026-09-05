@@ -238,6 +238,10 @@ where
         self.runtime.register(select)
     }
 
+    pub(super) fn readiness(&self) -> Readiness {
+        self.runtime.readiness()
+    }
+
     /// Attempts to finish retirement, returning the fenced runtime unchanged
     /// while committed work remains.
     ///
@@ -272,7 +276,7 @@ impl Readiness {
         self.pending
     }
 
-    /// Returns the earliest wake deadline captured during registration.
+    /// Returns the earliest wake or submission-retry deadline.
     #[must_use]
     pub const fn deadline(self) -> Option<Instant> {
         self.deadline
@@ -598,8 +602,20 @@ where
                 .execution
                 .receiver()
                 .map(|receiver| select.recv(receiver)),
+            ..self.readiness()
+        }
+    }
+
+    pub(super) fn readiness(&self) -> Readiness {
+        Readiness {
+            completion: None,
             pending: self.execution.pending(),
-            deadline: self.wakes.next_deadline(),
+            deadline: self
+                .wakes
+                .next_deadline()
+                .into_iter()
+                .chain(self.execution.deadline())
+                .min(),
         }
     }
 

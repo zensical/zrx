@@ -28,10 +28,15 @@
 use crossbeam::channel::{self, Receiver, Sender, TryRecvError};
 use std::any::Any;
 use std::panic::{self, AssertUnwindSafe};
+use std::time::{Duration, Instant};
 
 use zrx_executor::strategy::Immediate;
 use zrx_executor::task::Task;
 use zrx_executor::{Error, Executor, Strategy};
+
+// Fallback readiness when executor capacity can return without a completion
+// on this runtime's port. Ordinary scheduler ticks may retry sooner.
+const RETRY_DELAY: Duration = Duration::from_millis(1);
 
 // ----------------------------------------------------------------------------
 // Enums
@@ -105,9 +110,17 @@ where
     executor: Executor<S>,
     sender: Sender<Return<T>>,
     receiver: Receiver<Return<T>>,
-    overflow: Option<Box<dyn Task>>,
+    overflow: Option<Retained>,
     outstanding: usize,
     limit: usize,
+}
+
+// ----------------------------------------------------------------------------
+
+/// One rejected task and the deadline that guarantees its next retry.
+struct Retained {
+    task: Box<dyn Task>,
+    deadline: Instant,
 }
 
 // ----------------------------------------------------------------------------
@@ -212,6 +225,16 @@ where
         }
     }
 
+    /// Returns the fallback deadline owned by a retained submission.
+    pub fn deadline(&self) -> Option<Instant> {
+        match &self.kind {
+            Kind::Inline => None,
+            Kind::Worker(worker) => {
+                worker.overflow.as_ref().map(|retained| retained.deadline)
+            }
+        }
+    }
+
     /// Imports one return without blocking.
     pub fn try_recv(&mut self) -> Option<Return<T>> {
         match &mut self.kind {
@@ -274,7 +297,7 @@ where
     }
 
     fn retry(&mut self) -> bool {
-        let Some(task) = self.overflow.take() else {
+        let Some(Retained { task, .. }) = self.overflow.take() else {
             return false;
         };
         match self.executor.submit(task) {
@@ -310,7 +333,12 @@ where
                     limit = self.limit,
                 );
                 assert!(
-                    self.overflow.replace(task).is_none(),
+                    self.overflow
+                        .replace(Retained {
+                            task,
+                            deadline: Instant::now() + RETRY_DELAY,
+                        })
+                        .is_none(),
                     "placement retained more than one rejected task"
                 );
             }
@@ -509,9 +537,15 @@ mod tests {
     fn one_rejected_task_blocks_submission_until_retry() {
         let mut placement = worker(RejectOnce::default(), 2);
 
+        assert!(placement.deadline().is_none());
         assert!(matches!(placement.submit(|| 1), Submission::Worker));
+        let deadline = placement
+            .deadline()
+            .expect("rejection owns retry readiness");
+        assert_eq!(placement.deadline(), Some(deadline));
         assert!(!placement.accepts());
         assert!(placement.retry());
+        assert!(placement.deadline().is_none());
         assert!(placement.accepts());
 
         let Return::Completed(value) = recv(&mut placement) else {

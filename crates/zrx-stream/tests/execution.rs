@@ -34,6 +34,72 @@ use zrx_stream::{Advance, Change, Error, Key, Workflow};
 // ----------------------------------------------------------------------------
 
 #[test]
+fn reusable_runner_settles_after_repeated_submission_rejection() {
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+        mpsc,
+    };
+    use std::time::Duration;
+    use zrx_executor::{Error, Strategy, task::Task};
+
+    #[derive(Debug)]
+    struct RejectFirst(Arc<AtomicUsize>);
+
+    impl Strategy for RejectFirst {
+        fn submit(&self, task: Box<dyn Task>) -> zrx_executor::Result {
+            if self.0.fetch_add(1, Ordering::Relaxed) < 3 {
+                return Err(Error::Submit(task));
+            }
+            task.execute().execute();
+            Ok(())
+        }
+
+        fn num_workers(&self) -> usize {
+            1
+        }
+        fn num_tasks_running(&self) -> usize {
+            0
+        }
+        fn num_tasks_pending(&self) -> usize {
+            0
+        }
+        fn capacity(&self) -> usize {
+            1
+        }
+    }
+
+    let attempts = Arc::new(AtomicUsize::new(0));
+    let strategy = RejectFirst(Arc::clone(&attempts));
+    let (completed, waiting) = mpsc::channel();
+    let thread = std::thread::spawn(move || {
+        let workflow = Workflow::<u64>::build(|workflow| {
+            let input = workflow.input::<u64>();
+            workflow.output(&input);
+        });
+        let mut runner = workflow.runner_with(strategy).unwrap();
+        let mut revision = runner.input::<u64>().unwrap().begin().unwrap();
+        revision.insert(Key::from(1), 42).unwrap();
+        let _input = revision.seal().unwrap();
+        let mut run = runner.settle().unwrap();
+        assert!(matches!(
+            run.report().settlements(),
+            [Settlement::Complete(_)]
+        ));
+        let changes: Vec<_> = run.output::<u64>().unwrap().collect();
+        assert!(
+            matches!(changes.as_slice(), [Change::Insert(key, 42)] if key == &Key::from(1))
+        );
+        completed.send(()).unwrap();
+    });
+    waiting
+        .recv_timeout(Duration::from_secs(2))
+        .expect("runner waited for a nonexistent completion");
+    thread.join().unwrap();
+    assert_eq!(attempts.load(Ordering::Relaxed), 4);
+}
+
+#[test]
 fn reusable_runner_advances_while_a_revision_is_open() {
     let workflow = Workflow::<u64>::build(|workflow| {
         let input = workflow.input::<u64>();

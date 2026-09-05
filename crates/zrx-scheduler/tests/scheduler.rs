@@ -40,6 +40,108 @@ use zrx_scheduler::{Error as SchedulerError, Scheduler, Settlement};
 
 const INPUT: InputId = InputId::new(1);
 
+#[test]
+fn rejected_only_work_retries_after_executor_capacity_returns() {
+    use crossbeam::channel::Select;
+    use std::time::Instant;
+    use zrx_executor::{Error, Strategy, task::Task};
+
+    for retire in [false, true] {
+        let strategy = WorkSharing::with_capacity(1, 0);
+        let (release, waiting) = mpsc::channel();
+        let mut task: Box<dyn Task> = Box::new(move || {
+            let _ = waiting.recv();
+        });
+        let limit = Instant::now() + Duration::from_secs(2);
+        loop {
+            match strategy.submit(task) {
+                Ok(()) => break,
+                Err(Error::Submit(returned)) => {
+                    task = returned;
+                    assert!(Instant::now() < limit, "worker did not start");
+                    thread::yield_now();
+                }
+                Err(error) => panic!("{error}"),
+            }
+        }
+        let order = Arc::new(Mutex::new(Vec::new()));
+        let mut scheduler = Scheduler::new(strategy);
+        let plan = scheduler.attach(plan(Record {
+            marker: 7,
+            order: Arc::clone(&order),
+        }));
+        let session = scheduler
+            .attachment(plan)
+            .unwrap()
+            .session::<u64>(INPUT)
+            .unwrap();
+        let mut writer = session.begin().unwrap();
+        writer.insert(1, 42).unwrap();
+        let session = writer.seal().unwrap();
+        while let Some(tick) = scheduler.tick() {
+            assert!(tick.into_report().settlements().is_empty());
+        }
+        if retire {
+            scheduler.attachment(plan).unwrap().detach();
+        }
+
+        // No callback belongs to this runtime yet, so only its retry deadline
+        // can wake orchestration. Keep the session connected during the test.
+        assert_readiness(&scheduler);
+        let first = {
+            let mut select = Select::new();
+            let readiness = scheduler.register(&mut select);
+            assert!(readiness.pending());
+            let deadline = readiness
+                .deadline()
+                .expect("retained task has retry readiness");
+            assert!(
+                select
+                    .ready_timeout(
+                        deadline.saturating_duration_since(Instant::now())
+                    )
+                    .is_err()
+            );
+            deadline
+        };
+        assert!(scheduler.tick().is_none());
+        assert_readiness(&scheduler);
+        {
+            let mut select = Select::new();
+            let readiness = scheduler.register(&mut select);
+            assert!(readiness.deadline().unwrap() > first);
+        }
+        release.send(()).unwrap();
+        let mut settlements = Vec::new();
+        while settlements.is_empty() {
+            while let Some(tick) = scheduler.tick() {
+                settlements.extend_from_slice(tick.into_report().settlements());
+            }
+            if !settlements.is_empty() {
+                break;
+            }
+            assert!(Instant::now() < limit, "retained task did not recover");
+            let mut select = Select::new();
+            let readiness = scheduler.register(&mut select);
+            let deadline = readiness.deadline().unwrap_or(limit).min(limit);
+            if let Ok(operation) = select.ready_timeout(
+                deadline.saturating_duration_since(Instant::now()),
+            ) {
+                assert!(readiness.contains(operation));
+            }
+        }
+        assert_eq!(settlements.len(), 1);
+        assert_eq!(matches!(settlements[0], Settlement::Aborted(_)), retire);
+        assert_eq!(*order.lock().unwrap(), [7]);
+        assert_readiness(&scheduler);
+        let mut select = Select::new();
+        let readiness = scheduler.register(&mut select);
+        assert!(!readiness.pending());
+        assert!(readiness.deadline().is_none());
+        drop(session);
+    }
+}
+
 fn plan<A>(action: A) -> Plan<u64>
 where
     A: Action<u64, Inputs = (u64,), Output = u64>,
@@ -298,7 +400,11 @@ fn detach_drains_in_background_while_other_plans_keep_running() {
         assert!(std::time::Instant::now() < deadline);
         thread::yield_now();
     }
+    assert_readiness(&scheduler);
+    assert!(scheduler.readiness().pending());
     scheduler.attachment(id).unwrap().detach();
+    assert_readiness(&scheduler);
+    assert!(scheduler.readiness().pending());
     assert!(matches!(
         scheduler.attachment(id),
         Err(SchedulerError::Plan(current)) if current == id
@@ -335,4 +441,67 @@ fn detach_drains_in_background_while_other_plans_keep_running() {
     assert_eq!(successors.load(Ordering::Relaxed), 0);
     assert!(matches!(retired.settlements(), [Settlement::Aborted(_)]));
     assert!(scheduler.attachment(live).is_ok());
+}
+
+fn assert_readiness<S: zrx_executor::Strategy>(scheduler: &Scheduler<u64, S>) {
+    let readiness = scheduler.readiness();
+    let mut select = crossbeam::channel::Select::new();
+    let registered = scheduler.register(&mut select);
+    assert_eq!(readiness.pending(), registered.pending());
+    assert_eq!(readiness.deadline(), registered.deadline());
+    assert!(!readiness.contains(0));
+}
+
+#[test]
+fn readiness_tracks_the_earliest_attached_wake() {
+    use std::time::Instant;
+    use zrx_scheduler::action::{Wake, WakeKey};
+
+    struct ArmWake(Instant);
+
+    impl Action<u64> for ArmWake {
+        type Inputs = (u64,);
+        type Output = u64;
+
+        fn execute(&mut self, context: Context<'_, u64, Self>) {
+            let Context { inputs: input, output, .. } = context;
+            input.for_each(output, |_, emit| {
+                emit.wake(Wake::at(WakeKey::new(0), self.0));
+                Ok(())
+            });
+        }
+    }
+
+    let mut scheduler = Scheduler::new(Immediate::new());
+    assert_readiness(&scheduler);
+    assert!(!scheduler.readiness().pending());
+    assert!(scheduler.readiness().deadline().is_none());
+    let earlier = Instant::now() + Duration::from_secs(60);
+    let later = earlier + Duration::from_secs(60);
+    let mut plans = Vec::new();
+    for deadline in [later, earlier] {
+        let id = scheduler.attach(plan(ArmWake(deadline)));
+        let mut writer = scheduler
+            .attachment(id)
+            .unwrap()
+            .session::<u64>(INPUT)
+            .unwrap()
+            .begin()
+            .unwrap();
+        writer.insert(1, 1).unwrap();
+        let session = writer.seal().unwrap();
+        while scheduler.tick().is_some() {}
+        assert_readiness(&scheduler);
+        assert!(!scheduler.readiness().pending());
+        assert_eq!(scheduler.readiness().deadline(), Some(deadline));
+        plans.push((id, session));
+    }
+    scheduler.attachment(plans[1].0).unwrap().detach();
+    while scheduler.tick().is_some() {}
+    assert_readiness(&scheduler);
+    assert_eq!(scheduler.readiness().deadline(), Some(later));
+    scheduler.attachment(plans[0].0).unwrap().detach();
+    while scheduler.tick().is_some() {}
+    assert_readiness(&scheduler);
+    assert!(scheduler.readiness().deadline().is_none());
 }

@@ -365,13 +365,13 @@ impl Readiness {
         self.operations.contains(&operation)
     }
 
-    /// Returns whether an accepted worker invocation can still complete.
+    /// Returns whether submitted or retained worker work remains outstanding.
     #[must_use]
     pub const fn pending(&self) -> bool {
         self.pending
     }
 
-    /// Returns the earliest wake deadline captured during registration.
+    /// Returns the earliest wake or submission-retry deadline.
     #[must_use]
     pub const fn deadline(&self) -> Option<Instant> {
         self.deadline
@@ -543,6 +543,37 @@ where
             .get(plan.0)
             .map(|attached| attached.runtime.errors())
             .ok_or(Error::Plan(plan))
+    }
+
+    /// Inspects outstanding worker work and deadlines without a selector.
+    ///
+    /// Includes attached and retiring runtimes. This does not poll input
+    /// sessions or consume completions; call [`Self::tick`] to import work.
+    /// Since no operations are registered, [`Readiness::contains`] is always
+    /// false for this snapshot. Use [`Self::register`] when waiting on channels.
+    #[must_use]
+    pub fn readiness(&self) -> Readiness {
+        let mut pending = false;
+        let mut deadline = None;
+        let attached = (&self.plans)
+            .into_iter()
+            .map(|(_, plan)| plan.runtime.readiness());
+        let retiring = (&self.retirements)
+            .into_iter()
+            .map(|(_, plan)| plan.runtime.readiness());
+        for readiness in attached.chain(retiring) {
+            pending |= readiness.pending();
+            if let Some(candidate) = readiness.deadline() {
+                deadline = Some(deadline.map_or(candidate, |current| {
+                    std::cmp::min(current, candidate)
+                }));
+            }
+        }
+        Readiness {
+            operations: 0..0,
+            pending,
+            deadline,
+        }
     }
 
     /// Registers all scheduler-owned operations and the earliest wake deadline.

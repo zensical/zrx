@@ -317,26 +317,29 @@ where
     }
 
     fn wait(&self) -> bool {
-        let mut select = Select::new();
-        let readiness = self.scheduler.register(&mut select);
-        match (readiness.pending(), readiness.deadline()) {
-            (true, Some(deadline)) => {
-                let timeout =
-                    deadline.saturating_duration_since(Instant::now());
-                if let Ok(operation) = select.ready_timeout(timeout) {
-                    assert!(readiness.contains(operation));
-                }
-            }
-            (true, None) => {
-                let operation = select.ready();
-                assert!(readiness.contains(operation));
-            }
-            (false, Some(deadline)) => {
+        let readiness = self.scheduler.readiness();
+        if !readiness.pending() {
+            if let Some(deadline) = readiness.deadline() {
                 std::thread::sleep(
                     deadline.saturating_duration_since(Instant::now()),
                 );
+                return true;
             }
-            (false, None) => return false,
+            return false;
+        }
+
+        // Pending work remains outstanding until a scheduler tick imports its
+        // completion. Only this path needs input and completion registrations.
+        let mut select = Select::new();
+        let readiness = self.scheduler.register(&mut select);
+        if let Some(deadline) = readiness.deadline() {
+            let timeout = deadline.saturating_duration_since(Instant::now());
+            if let Ok(operation) = select.ready_timeout(timeout) {
+                assert!(readiness.contains(operation));
+            }
+        } else {
+            let operation = select.ready();
+            assert!(readiness.contains(operation));
         }
         true
     }
