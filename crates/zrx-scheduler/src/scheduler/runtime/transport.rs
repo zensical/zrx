@@ -66,10 +66,10 @@ where
 
 // ----------------------------------------------------------------------------
 
-enum ReservationPositions {
+enum Positions<T> {
     Empty,
-    One(Option<DestinationReservation>),
-    Many(std::vec::IntoIter<DestinationReservation>),
+    One(Option<T>),
+    Many(std::vec::IntoIter<T>),
 }
 
 // ----------------------------------------------------------------------------
@@ -100,15 +100,15 @@ pub struct Reservation {
 
 // ----------------------------------------------------------------------------
 
-pub struct DestinationReservation {
-    pub destination: Destination,
-    pub position: Reservation,
+struct DestinationReservation {
+    destination: Destination,
+    position: Reservation,
 }
 
 // ----------------------------------------------------------------------------
 
 pub struct OutputReservations {
-    positions: ReservationPositions,
+    positions: Positions<DestinationReservation>,
 }
 
 // ----------------------------------------------------------------------------
@@ -219,26 +219,28 @@ where
 
 impl OutputReservations {
     pub(super) const fn empty() -> Self {
-        Self {
-            positions: ReservationPositions::Empty,
-        }
+        Self { positions: Positions::Empty }
     }
 
     const fn one(position: DestinationReservation) -> Self {
         Self {
-            positions: ReservationPositions::One(Some(position)),
+            positions: Positions::One(Some(position)),
         }
     }
 
     fn many(positions: Vec<DestinationReservation>) -> Self {
         debug_assert!(positions.len() > 1);
         Self {
-            positions: ReservationPositions::Many(positions.into_iter()),
+            positions: Positions::Many(positions.into_iter()),
         }
     }
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    pub fn len(&self) -> usize {
+        self.positions.len()
     }
 }
 
@@ -633,7 +635,69 @@ where
         Some((outputs, progress))
     }
 
-    pub fn commit(
+    /// Consumes every position, publishing data or closing unused reservations.
+    /// Successor authority is supplied by runtime's atomic revision replacement.
+    pub fn publish_data(
+        &mut self, reservations: OutputReservations,
+        output: Option<Segment<I>>, authorities: &mut Obligations,
+    ) -> impl Iterator<Item = TransportUpdate> + use<I> {
+        let count = output.as_ref().map_or(0, |_| reservations.len());
+        assert!(
+            authorities.len() >= count,
+            "missing data successor authority"
+        );
+        let mut segments = output.map(|output| output.fan_out(count));
+        self.complete(reservations, || {
+            segments.as_mut().map(|segments| {
+                Entry::data(
+                    segments.next().expect("reserved output segment"),
+                    authorities.next().expect("reserved data authority"),
+                )
+            })
+        })
+    }
+
+    /// Consumes progress positions, including every suppressed continuation.
+    pub fn publish_progress(
+        &mut self, reservations: OutputReservations,
+        frame: Option<&ProgressFrame>, authorities: &mut Obligations,
+    ) -> impl Iterator<Item = TransportUpdate> + use<I> {
+        let count = frame.as_ref().map_or(0, |_| reservations.len());
+        assert!(
+            authorities.len() >= count,
+            "missing progress successor authority"
+        );
+        self.complete(reservations, || {
+            frame.map(|frame| {
+                Entry::progress(
+                    frame.clone(),
+                    authorities.next().expect("reserved progress authority"),
+                )
+            })
+        })
+    }
+
+    /// Commits eagerly: dropping the returned notifications cannot leave a
+    /// reservation open. Preserve inline storage for zero/one destinations.
+    fn complete(
+        &mut self, reservations: OutputReservations,
+        mut entry: impl FnMut() -> Option<Entry<I>>,
+    ) -> Positions<TransportUpdate> {
+        match reservations.positions {
+            Positions::Empty => Positions::Empty,
+            Positions::One(position) => Positions::One(
+                position.map(|position| self.commit(position, entry())),
+            ),
+            Positions::Many(positions) => Positions::Many(
+                positions
+                    .map(|position| self.commit(position, entry()))
+                    .collect::<Vec<_>>()
+                    .into_iter(),
+            ),
+        }
+    }
+
+    fn commit(
         &mut self, reservation: DestinationReservation, entry: Option<Entry<I>>,
     ) -> TransportUpdate {
         let DestinationReservation { destination, position } = reservation;
@@ -768,32 +832,30 @@ where
 // Trait implementations
 // ----------------------------------------------------------------------------
 
-impl Iterator for OutputReservations {
-    type Item = DestinationReservation;
+impl<T> Iterator for Positions<T> {
+    type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match &mut self.positions {
-            ReservationPositions::Empty => None,
-            ReservationPositions::One(position) => position.take(),
-            ReservationPositions::Many(positions) => positions.next(),
+        match self {
+            Positions::Empty => None,
+            Positions::One(position) => position.take(),
+            Positions::Many(positions) => positions.next(),
         }
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let len = match &self.positions {
-            ReservationPositions::Empty => 0,
-            ReservationPositions::One(position) => {
-                usize::from(position.is_some())
-            }
-            ReservationPositions::Many(positions) => positions.len(),
+        let len = match self {
+            Positions::Empty => 0,
+            Positions::One(position) => usize::from(position.is_some()),
+            Positions::Many(positions) => positions.len(),
         };
         (len, Some(len))
     }
 }
 
-impl ExactSizeIterator for OutputReservations {}
+impl<T> ExactSizeIterator for Positions<T> {}
 
-impl iter::FusedIterator for OutputReservations {}
+impl<T> iter::FusedIterator for Positions<T> {}
 
 #[cfg(test)]
 mod tests {
@@ -824,16 +886,39 @@ mod tests {
 
         let mut one = OutputReservations::one(reservation(1));
         assert_eq!(one.len(), 1);
-        assert_eq!(one.next().unwrap().position.order, 1);
+        assert_eq!(one.positions.next().unwrap().position.order, 1);
         assert_eq!(one.len(), 0);
 
         let many =
             OutputReservations::many(vec![reservation(2), reservation(3)]);
         assert_eq!(
-            many.map(|reservation| reservation.position.order)
+            many.positions
+                .map(|reservation| reservation.position.order)
                 .collect::<Vec<_>>(),
             [2, 3]
         );
+    }
+
+    #[test]
+    fn discarded_batches_close_all_positions_even_if_notifications_are_dropped()
+    {
+        let mut transport = super::Transport::<u64> {
+            lanes: vec![vec![Lane::new(3)].into_boxed_slice()],
+            egress: super::Egresses::new(vec![]),
+        };
+        let route = Route::new(0, 0);
+        let first = transport.reserve_repeated(route, 1).unwrap();
+        let later = transport.reserve_repeated(route, 2).unwrap();
+        assert!(transport.reserve_repeated(route, 1).is_none());
+        let mut revisions = Revisions::default();
+        let revision = revisions.begin(InputIndex::new(1));
+        let mut authorities = Obligations::for_revision(revision);
+        // The later empty positions remain occupied behind the first gap.
+        drop(transport.publish_data(later, None, &mut authorities));
+        assert!(transport.reserve_repeated(route, 1).is_none());
+        // Completion is eager, independently of notification consumption.
+        drop(transport.publish_data(first, None, &mut authorities));
+        assert!(transport.reserve_repeated(route, 3).is_some());
     }
 
     #[test]

@@ -138,27 +138,134 @@ fn egress_acceptance_retires_the_boundary_obligation() {
     assert!(runtime.egress().is_none());
 }
 
+struct CountPass(Arc<Mutex<usize>>);
+
+impl Action<u64> for CountPass {
+    type Inputs = (u64,);
+    type Output = u64;
+
+    fn execute(&mut self, context: Context<'_, u64, Self>) {
+        let Context { inputs, output, events, .. } = context;
+        inputs.for_each(output, |change, emit| {
+            *self.0.lock().unwrap() += 1;
+            if let Change::Insert(key, value) = change {
+                emit.insert(key, value.into_owned());
+            }
+            Ok(())
+        });
+        events.for_each(output, |_, _| Ok(()));
+    }
+}
+
 #[test]
 fn full_egress_preserves_and_orders_later_dispatches() {
-    let mut runtime = Runtime::new(program(vec![vec![]], vec![Job::new(Pass)]));
+    // One batch per output position; this intentionally fills the bootstrap
+    // capacity, rather than assuming a small number of batches is saturation.
+    const CAPACITY: usize = 64;
+    let calls = Arc::new(Mutex::new(0));
+    let mut runtime = Runtime::new(program(
+        vec![vec![]],
+        vec![Job::new(CountPass(Arc::clone(&calls)))],
+    ));
     let revision = runtime.begin(INPUT).unwrap();
-
-    runtime
-        .ingress(revision, Batch::new(vec![item(1)]))
-        .unwrap();
-
-    runtime
-        .ingress(revision, Batch::new(vec![item(2)]))
-        .unwrap();
+    for value in 1..=CAPACITY {
+        runtime
+            .ingress(revision, Batch::new(vec![item(value as u64)]))
+            .unwrap();
+        assert!(runtime.run_until_idle().settlements().is_empty());
+    }
+    assert_eq!(*calls.lock().unwrap(), CAPACITY);
+    for value in CAPACITY + 1..=CAPACITY + 2 {
+        runtime
+            .ingress(revision, Batch::new(vec![item(value as u64)]))
+            .unwrap();
+    }
     runtime.seal(revision).unwrap();
+    assert!(runtime.run_until_idle().settlements().is_empty());
+    assert_eq!(
+        *calls.lock().unwrap(),
+        CAPACITY,
+        "full output must block callbacks"
+    );
 
-    let report = runtime.run_until_idle();
-    assert!(report.settlements().is_empty());
     assert_eq!(take(&mut runtime), [(1, 10)]);
-    let report = runtime.run_until_idle();
-    assert!(report.settlements().is_empty());
+    assert!(runtime.run_until_idle().settlements().is_empty());
+    assert_eq!(
+        *calls.lock().unwrap(),
+        CAPACITY + 1,
+        "one credit permits one callback"
+    );
     assert_eq!(take(&mut runtime), [(2, 20)]);
+    assert!(runtime.run_until_idle().settlements().is_empty());
+    assert_eq!(*calls.lock().unwrap(), CAPACITY + 2);
+    for value in 3..=CAPACITY + 2 {
+        assert_eq!(take(&mut runtime), [(value as u64, value as u64 * 10)]);
+    }
     assert_complete(runtime.tick().into_report().settlements());
+    assert!(runtime.egress().is_none());
+}
+
+#[test]
+fn abort_releases_saturated_egress_for_the_next_revision() {
+    let calls = Arc::new(Mutex::new(0));
+    let mut runtime = Runtime::new(program(
+        vec![vec![]],
+        vec![Job::new(CountPass(Arc::clone(&calls)))],
+    ));
+    let revision = runtime.begin(INPUT).unwrap();
+    for value in 1..=64 {
+        runtime
+            .ingress(revision, Batch::new(vec![item(value)]))
+            .unwrap();
+        let _ = runtime.run_until_idle();
+    }
+    runtime
+        .ingress(revision, Batch::new(vec![item(65)]))
+        .unwrap();
+    let _ = runtime.run_until_idle();
+    assert_eq!(*calls.lock().unwrap(), 64);
+    runtime.abort(revision).unwrap();
+    assert_aborted(runtime.run_until_idle().settlements());
+    assert!(runtime.egress().is_none());
+    let revision = runtime.begin(INPUT).unwrap();
+    for value in 1..=64 {
+        runtime
+            .ingress(revision, Batch::new(vec![item(value)]))
+            .unwrap();
+        let _ = runtime.run_until_idle();
+    }
+    runtime.seal(revision).unwrap();
+    let _ = runtime.run_until_idle();
+    assert_eq!(*calls.lock().unwrap(), 128);
+    for value in 1..=64 {
+        assert_eq!(take(&mut runtime), [(value, value * 10)]);
+    }
+    assert_complete(runtime.tick().into_report().settlements());
+}
+
+#[test]
+fn zero_output_closes_reservations_without_consumer_credit() {
+    let values = Arc::new(Mutex::new(Vec::new()));
+    let plan = Plan::builder(
+        vec![Job::new(Collect(Arc::clone(&values)))],
+        vec![vec![]],
+    )
+    .inputs(vec![InputBinding::new::<u64, u64>(INPUT, Route::new(0, 0))])
+    .outputs(vec![OutputBinding::new::<u64, ()>(OUTPUT, 0)])
+    .build()
+    .unwrap();
+    let mut runtime = Runtime::new(plan);
+    let revision = runtime.begin(INPUT).unwrap();
+    for value in 1..=128 {
+        runtime
+            .ingress(revision, Batch::new(vec![item(value)]))
+            .unwrap();
+        let _ = runtime.run_until_idle();
+    }
+    runtime.seal(revision).unwrap();
+    assert_complete(runtime.run_until_idle().settlements());
+    assert_eq!(values.lock().unwrap().len(), 128);
+    assert!(runtime.egress().is_none());
 }
 
 #[test]

@@ -64,8 +64,7 @@ use progress::{
     Obligation, ProgressBranches, ProgressIdentity, Progresses, Revisions,
 };
 use transport::{
-    Credit, Data, DestinationReservation, Entry, OutputReservations, Pruned,
-    Transport,
+    Credit, Data, OutputReservations, Pruned, Transport, TransportUpdate,
 };
 use wake::{Due, Wakes, deduplicate};
 
@@ -426,7 +425,7 @@ where
             }
             .into());
         }
-        let Some(mut reservations) =
+        let Some(reservations) =
             self.transport.reserve_repeated(source.route, 1)
         else {
             #[cfg(feature = "tracing")]
@@ -439,18 +438,13 @@ where
             return Ok(Admit::Full(segment));
         };
         let mut obligations = self.revisions.admit_many(revision, 1)?;
-        let data = obligations
-            .next()
-            .expect("data admission created one obligation");
-        let data_reservation = reservations
-            .next()
-            .expect("data admission reserved one destination");
-        self.commit_destination(
-            data_reservation,
-            Some(Entry::data(segment, data)),
+        let updates = self.transport.publish_data(
+            reservations,
+            Some(segment),
+            &mut obligations,
         );
+        self.apply_transport(updates);
         assert!(obligations.next().is_none());
-        assert!(reservations.next().is_none());
         Ok(Admit::Accepted(()))
     }
 
@@ -761,26 +755,19 @@ where
 
     fn enqueue_boundary(
         &mut self, revision: RevisionId, input: InputIndex,
-        event: ProgressEvent, mut reservations: OutputReservations,
+        event: ProgressEvent, reservations: OutputReservations,
     ) -> Result<(), OperationError> {
         let count = usize::from(self.progresses.contains(input));
         let obligations = self.revisions.admit_many(revision, count)?;
         let mut obligations = obligations.into_iter();
         let progress = self.progresses.boundary(input, event);
-        if let Some(frame) = progress {
-            let obligation = obligations
-                .next()
-                .expect("progress boundary created its obligation");
-            let reservation = reservations
-                .next()
-                .expect("progress boundary reserved its destination");
-            self.commit_destination(
-                reservation,
-                Some(Entry::progress(frame, obligation)),
-            );
-        }
+        let updates = self.transport.publish_progress(
+            reservations,
+            progress.as_ref(),
+            &mut obligations,
+        );
+        self.apply_transport(updates);
         assert!(obligations.next().is_none());
-        assert!(reservations.next().is_none());
         Ok(())
     }
 
@@ -1095,47 +1082,22 @@ where
             .replace_many(obligations, routes + progress_routes + timers);
         self.record_settlement(settlement);
         let mut authorities = authorities.into_iter();
-        if let Some(output) = output.filter(|_| !self.retiring) {
-            // fan_out is an owning iterator. Keep this zip streaming so the
-            // common one-destination path never allocates a lease vector.
-            let segments = output.fan_out(reservations.len());
-            for (reservation, segment) in reservations.into_iter().zip(segments)
-            {
-                let obligation = authorities
-                    .next()
-                    .expect("destination successor authority was allocated");
-                self.commit_destination(
-                    reservation,
-                    Some(Entry::data(segment, obligation)),
-                );
-            }
-        } else {
-            for reservation in reservations {
-                self.commit_destination(reservation, None);
-            }
-        }
+        let updates = self.transport.publish_data(
+            reservations,
+            output.filter(|_| !self.retiring),
+            &mut authorities,
+        );
+        self.apply_transport(updates);
         if let Some(mut progress) = progress {
-            if forward_progress {
-                if aborted && progress.frame.is_end() {
-                    progress.frame.abort_end();
-                }
-                for reservation in progress.routes {
-                    let obligation = authorities
-                        .next()
-                        .expect("progress successor authority was allocated");
-                    self.commit_destination(
-                        reservation,
-                        Some(Entry::progress(
-                            progress.frame.clone(),
-                            obligation,
-                        )),
-                    );
-                }
-            } else {
-                for reservation in progress.routes {
-                    self.commit_destination(reservation, None);
-                }
+            if forward_progress && aborted && progress.frame.is_end() {
+                progress.frame.abort_end();
             }
+            let updates = self.transport.publish_progress(
+                progress.routes,
+                forward_progress.then_some(&progress.frame),
+                &mut authorities,
+            );
+            self.apply_transport(updates);
         }
         for request in wakes {
             let (key, deadline) = request.into_parts();
@@ -1236,12 +1198,14 @@ where
         let (authorities, settlement) =
             self.revisions.replace_many(obligations, successors);
         self.record_settlement(settlement);
-        for (reservation, obligation) in routes.zip(authorities) {
-            self.commit_destination(
-                reservation,
-                Some(Entry::progress(frame.clone(), obligation)),
-            );
-        }
+        let mut authorities = authorities;
+        let updates = self.transport.publish_progress(
+            routes,
+            Some(&frame),
+            &mut authorities,
+        );
+        self.apply_transport(updates);
+        assert!(authorities.next().is_none());
         true
     }
 
@@ -1281,20 +1245,21 @@ where
         self.prune_wakes(revision);
     }
 
-    fn commit_destination(
-        &mut self, reservation: DestinationReservation, entry: Option<Entry<I>>,
+    fn apply_transport(
+        &mut self, updates: impl Iterator<Item = TransportUpdate>,
     ) {
-        let update = self.transport.commit(reservation, entry);
-        if let Some(credit) = update.credit {
-            match credit {
-                Credit::Lane(route) => {
-                    self.release_lane(route.node, route.lane);
+        for update in updates {
+            if let Some(credit) = update.credit {
+                match credit {
+                    Credit::Lane(route) => {
+                        self.release_lane(route.node, route.lane);
+                    }
+                    Credit::Output(source) => self.schedule(source),
                 }
-                Credit::Output(source) => self.schedule(source),
             }
-        }
-        if let Some(node) = update.ready {
-            self.schedule(node);
+            if let Some(node) = update.ready {
+                self.schedule(node);
+            }
         }
     }
 
