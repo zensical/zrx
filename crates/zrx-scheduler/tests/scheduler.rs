@@ -25,12 +25,15 @@
 
 //! Scheduler integration tests.
 
+use std::collections::VecDeque;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::Duration;
 
+use zrx_executor::Strategy;
 use zrx_executor::strategy::{Immediate, WorkSharing};
+use zrx_executor::task::Task;
 
 use zrx_scheduler::Change;
 use zrx_scheduler::action::control::Event;
@@ -39,6 +42,71 @@ use zrx_scheduler::plan::{InputBinding, InputId, Plan, Route};
 use zrx_scheduler::{Error as SchedulerError, Scheduler, Settlement};
 
 const INPUT: InputId = InputId::new(1);
+
+#[derive(Clone, Copy)]
+enum Terminal {
+    Open,
+    Sealed,
+    Aborted,
+}
+
+#[derive(Clone, Debug, Default)]
+struct Queued {
+    tasks: Arc<Mutex<VecDeque<Box<dyn Task>>>>,
+}
+
+impl Queued {
+    fn len(&self) -> usize {
+        self.tasks.lock().unwrap().len()
+    }
+
+    fn execute(&self, index: usize) {
+        let task = self.tasks.lock().unwrap().remove(index).unwrap();
+        task.execute().execute();
+    }
+}
+
+impl Strategy for Queued {
+    fn submit(&self, task: Box<dyn Task>) -> zrx_executor::Result {
+        self.tasks.lock().unwrap().push_back(task);
+        Ok(())
+    }
+
+    fn num_workers(&self) -> usize {
+        2
+    }
+
+    fn num_tasks_running(&self) -> usize {
+        0
+    }
+
+    fn num_tasks_pending(&self) -> usize {
+        self.len()
+    }
+
+    fn capacity(&self) -> usize {
+        2
+    }
+}
+
+struct Join;
+
+impl Action<u64> for Join {
+    type Inputs = (u64, u64);
+    type Output = u64;
+
+    fn execute(&mut self, context: Context<'_, u64, Self>) {
+        let Context {
+            inputs: (left, right),
+            output,
+            events,
+            ..
+        } = context;
+        left.for_each(output, |_, _| Ok(()));
+        right.for_each(output, |_, _| Ok(()));
+        events.for_each(output, |_, _| Ok(()));
+    }
+}
 
 #[test]
 fn rejected_only_work_retries_after_executor_capacity_returns() {
@@ -339,38 +407,45 @@ fn detach_drops_state_and_invalidates_a_reused_slot() {
 
 #[test]
 fn detach_does_not_dispatch_queued_progress() {
-    let calls = Arc::new(AtomicUsize::new(0));
-    let program = Plan::builder(
-        vec![Job::new(CountProgress(Arc::clone(&calls))).with_progress()],
-        vec![vec![]],
-    )
-    .inputs(vec![InputBinding::new::<u64, u64>(INPUT, Route::new(0, 0))])
-    .build()
-    .unwrap();
-    let mut scheduler = Scheduler::new(Immediate::new());
-    let id = scheduler.attach(program);
-    let session = scheduler
-        .attachment(id)
-        .unwrap()
-        .session::<u64>(INPUT)
+    // Open, sealed and explicitly aborted revisions all lose queued progress.
+    for terminal in [Terminal::Open, Terminal::Sealed, Terminal::Aborted] {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let program = Plan::builder(
+            vec![Job::new(CountProgress(Arc::clone(&calls))).with_progress()],
+            vec![vec![]],
+        )
+        .inputs(vec![InputBinding::new::<u64, u64>(INPUT, Route::new(0, 0))])
+        .build()
         .unwrap();
-    let writer = session.begin().unwrap();
-    let _session = writer.seal().unwrap();
+        let mut scheduler = Scheduler::new(Immediate::new());
+        let id = scheduler.attach(program);
+        let session = scheduler
+            .attachment(id)
+            .unwrap()
+            .session::<u64>(INPUT)
+            .unwrap();
+        let writer = session.begin().unwrap();
+        let (_writer, _session) = match terminal {
+            Terminal::Open => (Some(writer), None),
+            Terminal::Sealed => (None, Some(writer.seal().unwrap())),
+            Terminal::Aborted => (None, Some(writer.abort().unwrap())),
+        };
 
-    assert!(scheduler.tick().is_some());
-    assert!(scheduler.tick().is_some());
-    scheduler.attachment(id).unwrap().detach();
+        assert!(scheduler.tick().is_some());
+        if !matches!(terminal, Terminal::Open) {
+            assert!(scheduler.tick().is_some());
+        }
+        scheduler.attachment(id).unwrap().detach();
 
-    let mut aborted = false;
-    while let Some(tick) = scheduler.tick() {
-        aborted |= tick
-            .into_report()
-            .settlements()
-            .iter()
-            .any(|settlement| matches!(settlement, Settlement::Aborted(_)));
+        let mut settlements = Vec::new();
+        while let Some(tick) = scheduler.tick() {
+            settlements.extend_from_slice(tick.into_report().settlements());
+        }
+        assert!(matches!(settlements.as_slice(), [Settlement::Aborted(_)]));
+        assert!(!scheduler.readiness().pending());
+        assert!(scheduler.readiness().deadline().is_none());
+        assert_eq!(calls.load(Ordering::Relaxed), 0);
     }
-    assert!(aborted);
-    assert_eq!(calls.load(Ordering::Relaxed), 0);
 }
 
 #[test]
@@ -503,5 +578,134 @@ fn readiness_tracks_the_earliest_attached_wake() {
     scheduler.attachment(plans[0].0).unwrap().detach();
     while scheduler.tick().is_some() {}
     assert_readiness(&scheduler);
+    assert!(scheduler.readiness().deadline().is_none());
+}
+
+#[test]
+fn aborted_partial_convergence_retires_after_committed_return() {
+    // Both executor-owned work and an unimported return retain the continuation.
+    for returned in [false, true] {
+        let program = Plan::builder(
+            vec![
+                Job::forward::<u64>(),
+                Job::new(CountProgress(Arc::new(AtomicUsize::new(0))))
+                    .with_progress(),
+                Job::new(Join).with_progress(),
+            ],
+            vec![
+                vec![Route::new(1, 0), Route::new(2, 0)],
+                vec![Route::new(2, 1)],
+                vec![],
+            ],
+        )
+        .inputs(vec![InputBinding::new::<u64, u64>(INPUT, Route::new(0, 0))])
+        .build()
+        .unwrap();
+        let queue = Queued::default();
+        let mut scheduler = Scheduler::new(queue.clone());
+        let id = scheduler.attach(program);
+        let session = scheduler
+            .attachment(id)
+            .unwrap()
+            .session::<u64>(INPUT)
+            .unwrap();
+        let _session = session.begin().unwrap().abort().unwrap();
+        for _ in 0..20 {
+            if scheduler.tick().is_none() {
+                break;
+            }
+        }
+        assert_eq!(
+            queue.len(),
+            1,
+            "one abort callback is committed; other arrival is retained at join"
+        );
+        if returned {
+            queue.execute(0);
+        }
+        scheduler.attachment(id).unwrap().detach();
+        if !returned {
+            queue.execute(0);
+        }
+        let mut settlements = Vec::new();
+        for _ in 0..20 {
+            if let Some(tick) = scheduler.tick() {
+                settlements.extend_from_slice(tick.into_report().settlements());
+            } else {
+                break;
+            }
+        }
+        assert!(!scheduler.readiness().pending());
+        assert!(scheduler.readiness().deadline().is_none());
+        assert!(matches!(settlements.as_slice(), [Settlement::Aborted(_)]));
+        assert_eq!(queue.len(), 0);
+        assert!(scheduler.tick().is_none());
+    }
+}
+
+#[test]
+fn retirement_closes_output_reservations_behind_a_return_gap() {
+    let other = InputId::new(2);
+    let calls = Arc::new(AtomicUsize::new(0));
+    let program = Plan::builder(
+        vec![
+            Job::forward::<u64>(),
+            Job::forward::<u64>(),
+            Job::new(Count(Arc::clone(&calls))),
+        ],
+        vec![vec![Route::new(2, 0)], vec![Route::new(2, 0)], vec![]],
+    )
+    .inputs(vec![
+        InputBinding::new::<u64, u64>(INPUT, Route::new(0, 0)),
+        InputBinding::new::<u64, u64>(other, Route::new(1, 0)),
+    ])
+    .build()
+    .unwrap();
+    let queue = Queued::default();
+    let mut scheduler = Scheduler::new(queue.clone());
+    let id = scheduler.attach(program);
+    let mut sessions = Vec::new();
+    for input in [INPUT, other] {
+        let session = scheduler
+            .attachment(id)
+            .unwrap()
+            .session::<u64>(input)
+            .unwrap();
+        let mut writer = session.begin().unwrap();
+        writer.insert(1, 1).unwrap();
+        sessions.push(writer.seal().unwrap());
+    }
+    // Reserve two positions at the same destination without running either task.
+    for _ in 0..20 {
+        if scheduler.tick().is_none() {
+            break;
+        }
+    }
+    assert_eq!(queue.len(), 2);
+    // The second producer returns first, leaving its output behind the first
+    // producer's reserved position. Retirement must prune it without losing
+    // gap repair.
+    queue.execute(1);
+    assert!(
+        scheduler
+            .tick()
+            .unwrap()
+            .into_report()
+            .settlements()
+            .is_empty()
+    );
+    assert_eq!(calls.load(Ordering::Relaxed), 0);
+    scheduler.attachment(id).unwrap().detach();
+    queue.execute(0);
+    let mut settlements = Vec::new();
+    while let Some(tick) = scheduler.tick() {
+        settlements.extend_from_slice(tick.into_report().settlements());
+    }
+    assert!(
+        matches!(settlements.as_slice(), [Settlement::Aborted(first), Settlement::Aborted(second)] if first != second)
+    );
+    assert_eq!(calls.load(Ordering::Relaxed), 0);
+    assert_eq!(queue.len(), 0);
+    assert!(!scheduler.readiness().pending());
     assert!(scheduler.readiness().deadline().is_none());
 }

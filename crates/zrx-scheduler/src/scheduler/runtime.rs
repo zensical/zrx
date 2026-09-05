@@ -215,16 +215,15 @@ where
     I: Id,
     S: Strategy,
 {
-    /// Reconciles at most one immediately available committed invocation.
+    /// Imports one completion or retries one already committed invocation.
     ///
     /// # Panics
     ///
     /// Resumes an action panic and panics if resident ownership is internally
     /// inconsistent.
     pub fn tick(&mut self) -> bool {
-        let tick = self.runtime.tick();
-        let progressed = tick.progressed();
-        self.report.append(tick.into_report());
+        let progressed = self.runtime.drain_one();
+        self.report.append(std::mem::take(&mut self.runtime.report));
         progressed
     }
 
@@ -251,7 +250,8 @@ where
     ///
     /// # Panics
     ///
-    /// Panics if a completely drained retirement produced external output.
+    /// Panics if a settled retirement retains committed execution or external
+    /// output.
     #[allow(
         clippy::result_large_err,
         reason = "the affine transition must return the unboxed runtime intact"
@@ -260,6 +260,13 @@ where
         if !self.is_complete() {
             return Err(self);
         }
+        assert!(
+            !self.runtime.execution.pending()
+                && (0..self.runtime.graph.len()).all(|node| {
+                    self.runtime.execution.ready(node, Access::Exclusive)
+                }),
+            "settled retirement retained committed execution"
+        );
         assert!(self.runtime.egress().is_none());
         Ok(self.report)
     }
@@ -628,12 +635,17 @@ where
         }
     }
 
-    fn run_one(&mut self) -> bool {
+    /// Drains committed work without selecting or dispatching resident input.
+    fn drain_one(&mut self) -> bool {
         if let Some(returned) = self.execution.receive() {
             self.accept(returned);
             return true;
         }
-        if self.execution.retry() {
+        self.execution.retry()
+    }
+
+    fn run_one(&mut self) -> bool {
+        if self.drain_one() {
             return true;
         }
         if self.activate_due_wake() {
@@ -1320,27 +1332,25 @@ where
     }
 
     fn fence_revision(&mut self, revision: RevisionId) {
-        if self.revisions.is_aborted(revision) {
-            return;
+        if !self.revisions.is_aborted(revision) {
+            let input = self
+                .revisions
+                .input(revision)
+                .expect("resident revision retains source attribution");
+            if self.sources.active(input, revision).is_some() {
+                assert!(
+                    self.sources.close(input, revision),
+                    "retired source revision was not open"
+                );
+            }
+            let settlement = self
+                .revisions
+                .abort(revision)
+                .expect("resident revision remains valid during retirement");
+            self.record_settlement(settlement);
         }
-        let input = self
-            .revisions
-            .input(revision)
-            .expect("resident revision retains source attribution");
-        if self.sources.active(input, revision).is_some() {
-            assert!(
-                self.sources.close(input, revision),
-                "retired source revision was not open"
-            );
-        } else {
-            self.transport.abort_revision_end(revision);
-            self.progress_branches.abort_revision_end(revision);
-        }
-        let settlement = self
-            .revisions
-            .abort(revision)
-            .expect("resident revision remains valid during retirement");
-        self.record_settlement(settlement);
+        // Ordinary abort preserves terminal frames and partial convergences.
+        // Retirement discards these too, even if ingress was already fenced.
         self.prune_transport_all(revision);
         self.prune_wakes(revision);
     }
