@@ -226,6 +226,10 @@ impl ProgressBranches {
         self.nodes[node].ready.front().copied()
     }
 
+    pub fn is_end(&self, node: usize, identity: ProgressIdentity) -> bool {
+        self.nodes[node].partials[&identity].frame.is_end()
+    }
+
     pub fn take(
         &mut self, node: usize, identity: ProgressIdentity,
     ) -> (ProgressFrame, Obligations) {

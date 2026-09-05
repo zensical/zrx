@@ -29,14 +29,15 @@ use crossbeam::channel::Receiver;
 
 use zrx_executor::Strategy;
 
-use crate::scheduler::Id;
 use crate::scheduler::action::{
     EvaluationChanges, Instrumentation, Job, Outcomes, Segment, WakeRequest,
 };
+use crate::scheduler::{Id, RevisionId};
 
 use super::frame::ProgressFrame;
 use super::progress::Obligations;
 use super::transport::OutputReservations;
+use super::wake::Flight;
 
 mod invocation;
 mod jobs;
@@ -69,7 +70,8 @@ where
 // ----------------------------------------------------------------------------
 
 pub struct InputAuthority {
-    pub obligations: Obligations,
+    obligations: Obligations,
+    wake: Option<Flight>,
 }
 
 // ----------------------------------------------------------------------------
@@ -125,6 +127,26 @@ pub struct ProgressContinuation {
 
 // ----------------------------------------------------------------------------
 // Implementations
+// ----------------------------------------------------------------------------
+
+impl InputAuthority {
+    pub const fn revision(&self) -> RevisionId {
+        self.obligations.revision()
+    }
+
+    pub fn new(obligations: Obligations) -> Self {
+        Self { obligations, wake: None }
+    }
+
+    pub fn waking(obligations: Obligations, wake: Flight) -> Self {
+        Self { obligations, wake: Some(wake) }
+    }
+
+    pub fn into_parts(self) -> (Obligations, Option<Flight>) {
+        (self.obligations, self.wake)
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 impl<I, S> Execution<I, S>
@@ -250,7 +272,7 @@ where
             fields(
                 node = self.invocation.node(),
                 sequence = self.sequence,
-                revision = %self.inputs.obligations.revision(),
+                revision = %self.inputs.revision(),
                 batch_items = self.invocation.batch_items(),
                 access = self.access.as_str(),
             )

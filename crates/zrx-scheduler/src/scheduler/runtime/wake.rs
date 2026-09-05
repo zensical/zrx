@@ -72,12 +72,22 @@ pub struct Scheduled {
 
 // ----------------------------------------------------------------------------
 
+/// Affine release authority for one dispatched wake's terminal hold.
+#[must_use = "a dispatched wake must reconcile its terminal hold"]
+pub(super) struct Flight {
+    owner: usize,
+    revision: RevisionId,
+}
+
+// ----------------------------------------------------------------------------
+
 /// Authoritative keyed wake records and their deadline projection.
 pub struct Wakes {
     states: Slab<Scheduled>,
     current: HashMap<(usize, WakeKey), WakeId>,
     deadlines: Queue<WakeId, ()>,
     due: Vec<VecDeque<WakeId>>,
+    in_flight: Vec<Option<RevisionId>>,
 }
 
 // ----------------------------------------------------------------------------
@@ -111,6 +121,7 @@ impl Wakes {
             current: HashMap::default(),
             deadlines: Queue::new(),
             due: (0..nodes).map(|_| VecDeque::new()).collect(),
+            in_flight: vec![None; nodes],
         }
     }
 
@@ -174,13 +185,31 @@ impl Wakes {
     }
 
     /// Authenticates and transfers one due wake to its action invocation.
-    pub fn take_due(&mut self, owner: usize) -> Option<Scheduled> {
+    pub fn take_due(&mut self, owner: usize) -> Option<(Scheduled, Flight)> {
         loop {
             let id = self.due[owner].pop_front()?;
             if let Some(scheduled) = self.take_current(id) {
-                return Some(scheduled);
+                let revision = scheduled.authority.revision();
+                assert!(
+                    self.in_flight[owner].replace(revision).is_none(),
+                    "wake callbacks must have exclusive node ownership"
+                );
+                return Some((scheduled, Flight { owner, revision }));
             }
         }
+    }
+
+    /// Releases the hold after output and replacement wakes are reconciled.
+    #[allow(
+        clippy::needless_pass_by_value,
+        reason = "reconciliation consumes affine terminal-hold authority"
+    )]
+    pub fn reconcile(&mut self, flight: Flight) {
+        assert_eq!(
+            self.in_flight[flight.owner].take(),
+            Some(flight.revision),
+            "wake completion lost its terminal hold"
+        );
     }
 
     /// Authenticates and transfers one queued wake out of the registry.
@@ -197,14 +226,17 @@ impl Wakes {
     /// Returns whether current wake authority can still re-enter this node.
     ///
     /// A branch `End` for the same revision must remain behind this authority;
-    /// firing or clearing the wake releases the hold.
+    /// Dispatch transfers the hold to the callback until reconciliation has
+    /// installed its output and any replacement wakes. Pruning scheduled wakes
+    /// does not release a committed callback's hold.
     pub fn holds_end(&self, owner: usize, revision: RevisionId) -> bool {
-        self.states.iter().any(|(slot, scheduled)| {
-            scheduled.owner == owner
-                && scheduled.authority.revision() == revision
-                && self.current.get(&(owner, scheduled.key))
-                    == Some(&WakeId(slot))
-        })
+        self.in_flight[owner] == Some(revision)
+            || self.states.iter().any(|(slot, scheduled)| {
+                scheduled.owner == owner
+                    && scheduled.authority.revision() == revision
+                    && self.current.get(&(owner, scheduled.key))
+                        == Some(&WakeId(slot))
+            })
     }
 
     /// Removes every resident wake owned by one revision.
@@ -299,6 +331,36 @@ mod tests {
     enum Projection {
         Scheduled,
         Due,
+    }
+
+    #[test]
+    fn dispatched_hold_survives_cancellation_until_reconciliation() {
+        let mut revisions = Revisions::default();
+        let revision = revisions.begin(InputIndex::new(0));
+        let other = revisions.begin(InputIndex::new(1));
+        let mut wakes = Wakes::new(2);
+        wakes.install(
+            0,
+            WakeKey::new(1),
+            Instant::now(),
+            revisions.admit_many(revision, 1).unwrap().next().unwrap(),
+        );
+        assert!(matches!(wakes.mark_due(), Some(Due::Current(0))));
+        let (scheduled, flight) = wakes.take_due(0).unwrap();
+        assert!(wakes.holds_end(0, revision));
+        assert!(!wakes.holds_end(0, other));
+        assert!(!wakes.holds_end(1, revision));
+        assert!(wakes.clear(0, WakeKey::new(1)).is_none());
+        assert!(revisions.abort(revision).unwrap().is_none());
+        wakes.prune(revision, |_| panic!("dispatched wake was pruned"));
+        assert!(wakes.holds_end(0, revision));
+        assert_eq!(
+            revisions.retire(scheduled.authority.fire()),
+            Some(Settlement::Aborted(revision))
+        );
+        wakes.reconcile(flight);
+        assert!(!wakes.holds_end(0, revision));
+        assert_eq!(wakes.next_deadline(), None);
     }
 
     #[test]

@@ -2403,6 +2403,222 @@ fn replacing_a_wake_releases_the_prior_revision_authority() {
 
 struct WakeBeforeEnd(Arc<Mutex<bool>>);
 
+struct ConvergedWake {
+    count: usize,
+    events: Arc<Mutex<Vec<&'static str>>>,
+}
+
+impl Action<u64> for ConvergedWake {
+    type Inputs = (u64, u64);
+    type Output = ();
+
+    fn execute(&mut self, context: Context<'_, u64, Self>) {
+        let Context {
+            inputs: (left, right),
+            output,
+            events,
+            ..
+        } = context;
+        left.for_each(output, |_, _| Ok(()));
+        right.for_each(output, |_, _| Ok(()));
+        events.for_each(output, |event, emit| {
+            let name = match event {
+                Event::Progress(ProgressEvent::Begin) => {
+                    emit.wake(Wake::at(WakeKey::new(1), Instant::now()));
+                    "begin"
+                }
+                Event::Wake { .. } => {
+                    self.count += 1;
+                    if self.count == 1 {
+                        emit.wake(Wake::at(WakeKey::new(1), Instant::now()));
+                        "wake1"
+                    } else {
+                        "wake2"
+                    }
+                }
+                Event::Progress(ProgressEvent::End) => "end",
+                Event::Progress(ProgressEvent::Abort) => "abort",
+            };
+            self.events.lock().unwrap().push(name);
+            Ok(())
+        });
+    }
+}
+
+#[test]
+fn converged_end_rechecks_wakes_created_by_an_in_flight_begin() {
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let queue = Queued::default();
+    let plan = Plan::builder(
+        vec![
+            Job::<u64>::forward::<u64>(),
+            Job::new(ConvergedWake {
+                count: 0,
+                events: Arc::clone(&events),
+            })
+            .with_progress(),
+        ],
+        vec![vec![Route::new(1, 0), Route::new(1, 1)], vec![]],
+    )
+    .inputs(vec![InputBinding::new::<u64, u64>(
+        INPUT_A,
+        Route::new(0, 0),
+    )])
+    .build()
+    .unwrap();
+    let mut runtime = Runtime::with_strategy(plan, queue.clone());
+    let revision = runtime.begin(INPUT_A).unwrap();
+    runtime.seal(revision).unwrap();
+    let report = drain_delayed(&mut runtime, &queue);
+    assert_complete(report.settlements());
+    assert_eq!(*events.lock().unwrap(), ["begin", "wake1", "wake2", "end"]);
+}
+
+struct RearmingWake {
+    count: usize,
+    events: Arc<Mutex<Vec<&'static str>>>,
+}
+
+impl Action<u64> for RearmingWake {
+    type Inputs = (u64,);
+    type Output = u64;
+
+    fn execute(&mut self, context: Context<'_, u64, Self>) {
+        let Context { inputs, output, events, .. } = context;
+        inputs.for_each(output, |_, emit| {
+            self.events.lock().unwrap().push("input");
+            emit.wake(Wake::at(WakeKey::new(1), Instant::now()));
+            Ok(())
+        });
+        events.for_each(output, |event, emit| {
+            assert!(matches!(event, Event::Wake { .. }));
+            self.count += 1;
+            if self.count == 1 {
+                self.events.lock().unwrap().push("wake1");
+                emit.wake(Wake::at(WakeKey::new(1), Instant::now()));
+            } else {
+                self.events.lock().unwrap().push("wake2");
+                emit.insert(1, 42);
+            }
+            Ok(())
+        });
+    }
+}
+
+struct ObserveWakeEnd(Arc<Mutex<Vec<&'static str>>>);
+
+impl Action<u64> for ObserveWakeEnd {
+    type Inputs = (u64,);
+    type Output = ();
+
+    fn execute(&mut self, context: Context<'_, u64, Self>) {
+        let Context { inputs, output, events, .. } = context;
+        inputs.for_each(output, |_, _| {
+            self.0.lock().unwrap().push("output");
+            Ok(())
+        });
+        events.for_each(output, |event, _| {
+            match event {
+                Event::Progress(ProgressEvent::End) => {
+                    self.0.lock().unwrap().push("end");
+                }
+                Event::Progress(ProgressEvent::Abort) => {
+                    self.0.lock().unwrap().push("abort");
+                }
+                _ => {}
+            }
+            Ok(())
+        });
+    }
+}
+
+fn drain_delayed(runtime: &mut Runtime<u64, Queued>, queue: &Queued) -> Report {
+    let mut report = Report::default();
+    for _ in 0..100 {
+        loop {
+            let tick = runtime.tick();
+            let progressed = tick.progressed();
+            report.append(tick.into_report());
+            if !progressed {
+                break;
+            }
+        }
+        if !queue.execute_next() {
+            return report;
+        }
+    }
+    panic!("delayed execution did not drain");
+}
+
+fn rearming_plan(events: &Arc<Mutex<Vec<&'static str>>>) -> Plan<u64> {
+    Plan::builder(
+        vec![
+            Job::new(RearmingWake {
+                count: 0,
+                events: Arc::clone(events),
+            }),
+            Job::new(ObserveWakeEnd(Arc::clone(events))).with_progress(),
+        ],
+        vec![vec![Route::new(1, 0)], vec![]],
+    )
+    .inputs(vec![InputBinding::new::<u64, u64>(
+        INPUT_A,
+        Route::new(0, 0),
+    )])
+    .build()
+    .unwrap()
+}
+
+#[test]
+fn end_waits_for_reconciliation_and_rearmed_wakes() {
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let queue = Queued::default();
+    let mut runtime =
+        Runtime::with_strategy(rearming_plan(&events), queue.clone());
+    let revision = runtime.begin(INPUT_A).unwrap();
+    runtime
+        .ingress(revision, Batch::new(vec![item(1, 1, 1)]))
+        .unwrap();
+    runtime.seal(revision).unwrap();
+    let report = drain_delayed(&mut runtime, &queue);
+    assert_complete(report.settlements());
+    assert_eq!(
+        *events.lock().unwrap(),
+        ["input", "wake1", "wake2", "output", "end"]
+    );
+}
+
+#[test]
+fn aborting_a_dispatched_wake_discards_its_rearm_and_settles() {
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let queue = Queued::default();
+    let mut runtime =
+        Runtime::with_strategy(rearming_plan(&events), queue.clone());
+    let revision = runtime.begin(INPUT_A).unwrap();
+    runtime
+        .ingress(revision, Batch::new(vec![item(1, 1, 1)]))
+        .unwrap();
+    // Run the input callback, then let orchestration dispatch its wake without
+    // executing the queued wake callback.
+    for _ in 0..20 {
+        while runtime.tick().progressed() {}
+        if !events.lock().unwrap().is_empty() {
+            break;
+        }
+        assert!(queue.execute_next());
+    }
+    assert_eq!(*events.lock().unwrap(), ["input"]);
+    assert_ne!(queue.len(), 0);
+    runtime.abort(revision).unwrap();
+    let report = drain_delayed(&mut runtime, &queue);
+    assert_aborted(report.settlements());
+    assert_eq!(*events.lock().unwrap(), ["input", "wake1", "abort"]);
+    let mut select = Select::new();
+    let readiness = runtime.register(&mut select);
+    assert!(!readiness.pending());
+    assert_eq!(readiness.deadline(), None);
+}
+
 impl Action<u64> for WakeBeforeEnd {
     type Inputs = (u64,);
     type Output = u64;

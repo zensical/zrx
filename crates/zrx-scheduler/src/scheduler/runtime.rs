@@ -62,8 +62,7 @@ use execution::{
 };
 use ingress::Sources;
 use progress::{
-    Obligation, Obligations, ProgressBranches, ProgressIdentity, Progresses,
-    Revisions,
+    Obligation, ProgressBranches, ProgressIdentity, Progresses, Revisions,
 };
 use transport::{
     Credit, Data, DestinationReservation, Entry, OutputReservations, Pruned,
@@ -778,6 +777,11 @@ where
 
     fn ready_progress(&self, node: usize) -> Option<ProgressReady> {
         if let Some(identity) = self.progress_branches.ready(node) {
+            if self.progress_branches.is_end(node, identity)
+                && self.wakes.holds_end(node, identity.revision())
+            {
+                return None;
+            }
             return Some(ProgressReady::Complete(identity));
         }
         (0..self.transport.lane_count(node)).find_map(|lane| {
@@ -916,7 +920,7 @@ where
         let invocation =
             Invocation::new(revision, node, job, segments, connected);
         self.dispatch(
-            obligation.into(),
+            InputAuthority::new(obligation.into()),
             reservations,
             None,
             invocation,
@@ -940,7 +944,7 @@ where
             );
             return false;
         };
-        let scheduled = self
+        let (scheduled, flight) = self
             .wakes
             .take_due(node)
             .expect("ready wake remains resident");
@@ -966,7 +970,7 @@ where
             connected,
         );
         self.dispatch(
-            scheduled.authority.fire().into(),
+            InputAuthority::waking(scheduled.authority.fire().into(), flight),
             reservations,
             None,
             invocation,
@@ -985,19 +989,19 @@ where
             fields(
                 node = invocation.node(),
                 sequence,
-                revision = %obligations.revision(),
+                revision = %inputs.revision(),
                 access = access.as_str(),
             )
         )
     )]
     fn dispatch(
-        &mut self, obligations: Obligations, reservations: OutputReservations,
+        &mut self, inputs: InputAuthority, reservations: OutputReservations,
         progress: Option<ProgressContinuation>, invocation: Invocation<I>,
         sequence: u64, access: Access,
     ) {
         let dispatch = Dispatch::new(
             invocation,
-            InputAuthority { obligations },
+            inputs,
             reservations,
             progress,
             sequence,
@@ -1073,7 +1077,7 @@ where
                 outputs,
                 progress,
             } = current;
-            let revision = inputs.obligations.revision();
+            let revision = inputs.revision();
             self.apply_evaluations(node, evaluations);
             if !outcomes.is_empty() || !instrumentation.is_empty() {
                 self.report.invocations.push(InvocationReport {
@@ -1093,7 +1097,7 @@ where
         outputs: OutputReservations, progress: Option<ProgressContinuation>,
         output: Option<Segment<I>>, wakes: Vec<WakeRequest>,
     ) {
-        let InputAuthority { obligations } = inputs;
+        let (obligations, flight) = inputs.into_parts();
         let revision = obligations.revision();
         let reservations = outputs;
         let aborted = self.revisions.is_aborted(revision);
@@ -1186,6 +1190,9 @@ where
             authorities.next().is_none(),
             "successor authority was not installed"
         );
+        if let Some(flight) = flight {
+            self.wakes.reconcile(flight);
+        }
     }
 
     #[cfg_attr(
@@ -1262,7 +1269,7 @@ where
                 connected,
             );
             self.dispatch(
-                obligations,
+                InputAuthority::new(obligations),
                 outputs,
                 Some(ProgressContinuation { frame, routes }),
                 invocation,
