@@ -38,6 +38,10 @@ on:
 
 permissions: {}
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     name: Library (${{ matrix.name }})
