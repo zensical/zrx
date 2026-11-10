@@ -30,8 +30,7 @@ on:
     branches:
       - master
 
-permissions:
-  contents: write # Required for tags and releases
+permissions: {}
 
 jobs:
   build:
@@ -39,87 +38,151 @@ jobs:
     if: |
       github.event.pull_request.merged == true &&
       startsWith(github.event.pull_request.head.ref, 'release/')
-    uses: ./.github/workflows/build.yml
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build.yml # zizmor: ignore[self-repository]
     with:
       ref: ${{ github.event.pull_request.merge_commit_sha }}
 
   tag:
     name: Create tag
-    runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: write
+    runs-on: ubuntu-26.04
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - name: Checkout repository # zizmor: ignore[artipacked]
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
 
       - name: Determine version
         id: version
+        env:
+          RELEASE_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
-          BRANCH="${{ github.event.pull_request.head.ref }}"
-          VERSION=${BRANCH#release/}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          VERSION=${RELEASE_BRANCH#release/}
+          git check-ref-format "refs/tags/$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a $VERSION -m "Release $VERSION"
-          git push origin $VERSION
+          if git show-ref --verify --quiet "refs/tags/$VERSION"; then
+            test "$(git rev-parse "$VERSION^{commit}")" = \
+              "$(git rev-parse HEAD^{commit})"
+          else
+            git tag -a -m "Release $VERSION" -- "$VERSION"
+          fi
+          git push origin "refs/tags/$VERSION"
 
   release:
     name: Create release
-    runs-on: ubuntu-latest
     needs: tag
+    permissions:
+      contents: write
+    runs-on: ubuntu-26.04
     env:
       VERSION: ${{ needs.tag.outputs.version }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
 
       - name: Set up mono
-        uses: zensical/mono@v0
+        uses: zensical/mono@c6ece01fa0d0b2f46300e5998b1f07a5b77be616
 
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mono version changelog -s $VERSION > notes.txt
-          gh release create $VERSION \
-            --title ${VERSION#v} \
-            --notes-file notes.txt
+          error="$RUNNER_TEMP/release-error.txt"
+          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSION" \
+            > /dev/null 2> "$error"; then
+            echo "Release $VERSION already exists"
+          elif grep -q 'HTTP 404' "$error"; then
+            mono version changelog -s "$VERSION" > notes.txt
+            gh release create "$VERSION" \
+              --verify-tag \
+              --title "${VERSION#v}" \
+              --notes-file notes.txt \
+              --draft
+          else
+            cat "$error" >&2
+            exit 1
+          fi
 
   publish:
     name: Publish
-    runs-on: ubuntu-latest
     needs:
       - tag
       - release
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-26.04
+    environment: crates
     env:
       VERSION: ${{ needs.tag.outputs.version }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
 
       - name: Set up mono
-        uses: zensical/mono@v0
+        uses: zensical/mono@c6ece01fa0d0b2f46300e5998b1f07a5b77be616
+
+      - name: Sign in to crates.io
+        id: crates
+        uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
 
       - name: Publish to crates.io
         run: |
-          mono version changed $VERSION | while read -r package; do
-            cargo publish --package $package --no-verify --locked
+          cargo metadata --no-deps --format-version 1 --locked > metadata.json
+          mono version changed "$VERSION" | while read -r package; do
+            [ -n "$package" ] || continue
+            if cargo publish --package "$package" --no-verify --locked; then
+              continue
+            fi
+            version=$(jq -er --arg name "$package" \
+              '.packages[] | select(.name == $name) | .version' metadata.json)
+            if cargo info "$package@$version" --registry crates-io \
+              > /dev/null; then
+              echo "$package $version is already published"
+            else
+              echo "Could not publish or verify $package $version" >&2
+              exit 1
+            fi
           done
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates.outputs.token }}
+
+  publish-release:
+    name: Publish release
+    needs:
+      - tag
+      - publish
+    permissions:
+      contents: write
+    runs-on: ubuntu-26.04
+    env:
+      GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.tag.outputs.version }}
+    steps:
+      - name: Publish release
+        run: gh release edit "$VERSION" --draft=false
