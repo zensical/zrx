@@ -36,57 +36,87 @@ on:
         required: true
         type: string
 
+permissions: {}
+
 jobs:
   build:
     name: Library (${{ matrix.name }})
+    permissions:
+      contents: read
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - name: Linux, x64
-            os: ubuntu-latest
+            os: ubuntu-26.04
             target: x86_64-unknown-linux-gnu
+            test: true
           - name: Linux, arm64
-            os: ubuntu-latest
+            os: ubuntu-26.04-arm
             target: aarch64-unknown-linux-gnu
+            test: true
           - name: Linux, armv7
-            os: ubuntu-latest
+            os: ubuntu-26.04
             target: armv7-unknown-linux-gnueabihf
+            test: false
           - name: Linux, musl, x64
-            os: ubuntu-latest
+            os: ubuntu-26.04
             target: x86_64-unknown-linux-musl
+            test: true
           - name: Linux, musl, arm64
-            os: ubuntu-latest
+            os: ubuntu-26.04-arm
             target: aarch64-unknown-linux-musl
+            test: true
           - name: Windows, x64
             os: windows-2022
             target: x86_64-pc-windows-msvc
+            test: true
           - name: Windows, arm64
             os: windows-11-arm
             target: aarch64-pc-windows-msvc
+            test: true
           - name: macOS, x64
             os: macos-15-intel
             target: x86_64-apple-darwin
+            test: true
           - name: macOS, arm64
             os: macos-15
             target: aarch64-apple-darwin
+            test: true
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
           toolchain: 1.97.1
           targets: ${{ matrix.target }}
 
       - name: Set up Rust cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           key: ${{ matrix.target }}
+          save-if: >-
+            ${{ github.event_name == 'push' &&
+                github.ref == 'refs/heads/master' }}
+
+      - name: Install musl tools
+        if: endsWith(matrix.target, '-musl')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - name: Run tests
-        run: cargo test
+        if: matrix.test
+        env:
+          TARGET: ${{ matrix.target }}
+        run: cargo test --locked --workspace --target "$TARGET"
+
+      - name: Check target
+        if: ${{ !matrix.test }}
+        env:
+          TARGET: ${{ matrix.target }}
+        run: cargo check --locked --workspace --all-targets --target "$TARGET"
