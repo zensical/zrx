@@ -95,9 +95,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
+          persist-credentials: false
           fetch-depth: 0
           fetch-tags: true
-          persist-credentials: false
 
       - name: Set up mono
         uses: zensical/mono@c6ece01fa0d0b2f46300e5998b1f07a5b77be616
@@ -139,9 +139,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
+          persist-credentials: false
           fetch-depth: 0
           fetch-tags: true
-          persist-credentials: false
 
       - name: Set up mono
         uses: zensical/mono@c6ece01fa0d0b2f46300e5998b1f07a5b77be616
@@ -151,6 +151,8 @@ jobs:
         uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
 
       - name: Publish to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates.outputs.token }}
         run: |
           cargo metadata --no-deps --format-version 1 --locked > metadata.json
           mono version changed "$VERSION" | while read -r package; do
@@ -168,8 +170,6 @@ jobs:
               exit 1
             fi
           done
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ steps.crates.outputs.token }}
 
   publish-release:
     name: Publish release
