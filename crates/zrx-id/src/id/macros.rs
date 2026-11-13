@@ -60,7 +60,7 @@
 /// ```
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_id::{id, Id};
+/// use zrx_id::{Id, id};
 ///
 /// // Create identifier from string
 /// let id: Id = "zri:file:::docs:index.md:".parse()?;
