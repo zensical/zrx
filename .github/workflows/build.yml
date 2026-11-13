@@ -113,7 +113,6 @@ jobs:
 
       - name: Remove unused Rust toolchains
         run: |
-          # rust-cache fingerprints every installed toolchain.
           active="$(rustup show active-toolchain)"
           active="${active%% *}"
           rustup toolchain list --quiet | while read -r toolchain; do
@@ -136,12 +135,10 @@ jobs:
 
       - name: Run tests
         if: matrix.test
-        env:
-          TARGET: ${{ matrix.target }}
-        run: cargo test --locked --workspace --target "$TARGET"
+        run: cargo test --locked --workspace --target "${{ matrix.target }}"
 
       - name: Check target
         if: ${{ !matrix.test }}
-        env:
-          TARGET: ${{ matrix.target }}
-        run: cargo check --locked --workspace --all-targets --target "$TARGET"
+        run: >-
+          cargo check --locked --workspace --all-targets
+          --target "${{ matrix.target }}"
