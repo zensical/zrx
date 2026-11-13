@@ -32,6 +32,19 @@ on:
       - master
 
 permissions: {}
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{
+        github.event_name == 'pull_request' &&
+        github.event.action != 'closed' &&
+        github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: >-
+    ${{ github.event_name == 'pull_request' &&
+        github.event.action != 'closed' }}
 
 jobs:
   clippy:
@@ -39,6 +52,7 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-26.04
+    timeout-minutes: 60
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -49,8 +63,18 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
-          toolchain: 1.97.1
+          toolchain: 1.99.1
           components: clippy
+
+      - name: Remove unused Rust toolchains
+        run: |
+          active="$(rustup show active-toolchain)"
+          active="${active%% *}"
+          rustup toolchain list --quiet | while read -r toolchain; do
+            if [ "$toolchain" != "$active" ]; then
+              rustup toolchain uninstall "$toolchain"
+            fi
+          done
 
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
@@ -67,6 +91,9 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    env:
+      RUSTUP_TOOLCHAIN: 1.89.0
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -77,7 +104,17 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
-          toolchain: 1.89.0
+          toolchain: ${{ env.RUSTUP_TOOLCHAIN }}
+
+      - name: Remove unused Rust toolchains
+        run: |
+          active="$(rustup show active-toolchain)"
+          active="${active%% *}"
+          rustup toolchain list --quiet | while read -r toolchain; do
+            if [ "$toolchain" != "$active" ]; then
+              rustup toolchain uninstall "$toolchain"
+            fi
+          done
 
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
@@ -94,6 +131,7 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-26.04
+    timeout-minutes: 60
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -112,6 +150,7 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-26.04
+    timeout-minutes: 60
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -122,7 +161,8 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
-          toolchain: 1.97.1
+          toolchain: 1.99.1
+          components: rustfmt
 
       - name: Run rustfmt
         run: cargo fmt --all --check
@@ -134,6 +174,7 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-26.04
+    timeout-minutes: 60
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
