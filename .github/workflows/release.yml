@@ -31,6 +31,9 @@ on:
       - master
 
 permissions: {}
+defaults:
+  run:
+    shell: bash
 
 jobs:
   build:
@@ -50,6 +53,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-26.04
+    timeout-minutes: 60
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -88,6 +92,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-26.04
+    timeout-minutes: 60
     env:
       VERSION: ${{ needs.tag.outputs.version }}
     steps:
@@ -131,6 +136,7 @@ jobs:
       contents: read
       id-token: write
     runs-on: ubuntu-26.04
+    timeout-minutes: 60
     environment: crates
     env:
       VERSION: ${{ needs.tag.outputs.version }}
@@ -179,6 +185,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-26.04
+    timeout-minutes: 60
     env:
       GH_REPO: ${{ github.repository }}
       GH_TOKEN: ${{ github.token }}
