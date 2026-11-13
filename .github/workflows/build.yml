@@ -142,3 +142,20 @@ jobs:
         run: >-
           cargo check --locked --workspace --all-targets
           --target "${{ matrix.target }}"
+
+  release:
+    name: Release
+    if: |
+      always() &&
+      github.event.action != 'closed' &&
+      startsWith(github.head_ref, 'release/')
+    needs: build
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    steps:
+      - name: Check required jobs
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: >-
+          jq -e 'length > 0 and all(.[]; .result == "success")'
+          <<< "$RESULTS"
