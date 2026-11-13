@@ -60,7 +60,7 @@
 /// ```
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
-/// use zrx_id::{selector, Selector};
+/// use zrx_id::{Selector, selector};
 ///
 /// // Create selector from string
 /// let selector: Selector = "zrs:::::**/*.md:".parse()?;
