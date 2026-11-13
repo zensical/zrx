@@ -125,7 +125,7 @@ jobs:
           toolchain: 1.97.1
 
       - name: Run rustfmt
-        run: cargo fmt --all -- --check
+        run: cargo fmt --all --check
 
   release:
     name: Release
