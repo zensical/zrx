@@ -133,14 +133,14 @@ fn reduce_by_key_preserves_a_failed_aggregate_until_a_relevant_change() {
     revision.insert(Key::from(1_u64), 20).unwrap();
     input = revision.seal().unwrap();
     let mut run = runner.settle().unwrap();
-    assert!(values(&mut run).is_empty());
+    assert_eq!(values(&mut run), []);
     assert_eq!(failures(&run), 1);
     assert_eq!(runner.errors().len(), 1);
 
     let revision = input.begin().unwrap();
     input = revision.seal().unwrap();
     let mut run = runner.settle().unwrap();
-    assert!(values(&mut run).is_empty());
+    assert_eq!(values(&mut run), []);
     assert_eq!(failures(&run), 0);
     assert_eq!(runner.errors().len(), 1);
 
@@ -186,12 +186,12 @@ fn reduce_by_key_preserves_the_previous_group_after_selector_failure() {
     revision.insert(Key::from(1_u64), 99).unwrap();
     input = revision.seal().unwrap();
     let mut run = runner.settle().unwrap();
-    assert!(values(&mut run).is_empty());
+    assert_eq!(values(&mut run), []);
     assert_eq!(failures(&run), 1);
 
     let revision = input.begin().unwrap();
     input = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
 
     let mut revision = input.begin().unwrap();
     revision.insert(Key::from(1_u64), 11).unwrap();
@@ -235,7 +235,7 @@ fn reduce_by_key_recomputes_remaining_members_after_selector_failure() {
     revision.insert(Key::from(1_u64), 99).unwrap();
     input = revision.seal().unwrap();
     let mut run = runner.settle().unwrap();
-    assert!(values(&mut run).is_empty());
+    assert_eq!(values(&mut run), []);
     assert_eq!(failures(&run), 1);
 
     drop(input);
@@ -286,7 +286,7 @@ fn reduce_by_key_flushes_other_groups_when_one_reducer_fails() {
 
     let revision = input.begin().unwrap();
     input = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
 
     let mut revision = input.begin().unwrap();
     revision.insert(Key::from(1_u64), 20).unwrap();
@@ -326,7 +326,7 @@ fn reduce_by_key_observes_each_source_through_converging_lanes() {
     let mut revision = left.begin().unwrap();
     revision.insert(Key::from(1_u64), 1).unwrap();
     let mut left = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
 
     let mut revision = right.begin().unwrap();
     revision.insert(Key::from(1_u64), 2).unwrap();

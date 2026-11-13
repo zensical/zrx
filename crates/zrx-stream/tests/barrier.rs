@@ -120,7 +120,7 @@ fn fuzzy_barrier_removes_a_previously_required_unresolved_discovery() {
     let mut revision = discovered.begin().unwrap();
     revision.insert(Key::from(1), ()).unwrap();
     let discovered = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
     assert_eq!(runner.errors().len(), 1);
 
     let mut revision = discovered.begin().unwrap();
@@ -234,7 +234,7 @@ fn fuzzy_barrier_never_publishes_provisional_revision_state() {
         .unwrap();
     revision.remove(Key::from(1_u64)).unwrap();
     let completed = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
 
     drop((discovered, completed, configuration));
 }
@@ -341,14 +341,14 @@ fn fuzzy_barrier_replays_discovery_for_replaced_matchers() {
         revision.insert(Key::from(key), ()).unwrap();
     }
     let discovered = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
 
     let mut revision = completed.begin().unwrap();
     for key in 1..=2 {
         revision.insert(Key::from(key), key.to_string()).unwrap();
     }
     let mut completed = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
 
     let mut revision = configuration.begin().unwrap();
     revision
@@ -431,7 +431,7 @@ fn fuzzy_barrier_does_not_publish_aborted_pending_work() {
         revision.insert(Key::from(key), ()).unwrap();
     }
     let discovered = revision.abort().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
 
     drop((discovered, completed, configuration));
 }
@@ -484,7 +484,7 @@ fn fuzzy_barrier_does_not_treat_failed_work_as_completion() {
         .insert(Key::from(1_u64), String::from("bad"))
         .unwrap();
     let mut source = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
 
     let mut revision = source.begin().unwrap();
     revision
@@ -553,7 +553,7 @@ fn fuzzy_barrier_does_not_publish_while_a_match_is_unresolved() {
     revision.insert(Key::from(2_u64), ()).unwrap();
     discovered = revision.seal().unwrap();
     let mut run = runner.settle().unwrap();
-    assert!(values(&mut run).is_empty());
+    assert_eq!(values(&mut run), []);
     assert_eq!(failures(&run), 1);
     assert_eq!(runner.errors().len(), 1);
     assert_eq!(
@@ -564,7 +564,7 @@ fn fuzzy_barrier_does_not_publish_while_a_match_is_unresolved() {
     let mut revision = discovered.begin().unwrap();
     revision.insert(Key::from(3_u64), ()).unwrap();
     discovered = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
     assert_eq!(runner.errors().len(), 1);
 
     let mut revision = completed.begin().unwrap();
@@ -572,7 +572,7 @@ fn fuzzy_barrier_does_not_publish_while_a_match_is_unresolved() {
         .insert(Key::from(3_u64), String::from("three"))
         .unwrap();
     completed = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
     assert_eq!(runner.errors().len(), 1);
 
     let mut revision = discovered.begin().unwrap();

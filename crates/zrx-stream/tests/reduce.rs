@@ -119,7 +119,7 @@ fn reduce_evaluates_an_empty_first_revision_and_retracts_absence() {
 
     let revision = input.begin().unwrap();
     let mut input = revision.seal().unwrap();
-    assert!(scalar(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(scalar(&mut runner.settle().unwrap()), []);
     assert_eq!(calls.load(Ordering::Relaxed), 1);
 
     let mut revision = input.begin().unwrap();
@@ -165,7 +165,7 @@ fn reduce_initializes_after_an_aborted_first_revision() {
         }
     }
     let input = revision.abort().unwrap();
-    assert!(scalar(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(scalar(&mut runner.settle().unwrap()), []);
     assert_eq!(calls.load(Ordering::Relaxed), 0);
 
     let revision = input.begin().unwrap();
@@ -206,14 +206,14 @@ fn reduce_preserves_a_failed_aggregate_until_a_relevant_change() {
     revision.insert(Key::from(1_u64), 20).unwrap();
     input = revision.seal().unwrap();
     let mut run = runner.settle().unwrap();
-    assert!(scalar(&mut run).is_empty());
+    assert_eq!(scalar(&mut run), []);
     assert_eq!(failures(&run), 1);
     assert_eq!(runner.errors().len(), 1);
 
     let revision = input.begin().unwrap();
     input = revision.seal().unwrap();
     let mut run = runner.settle().unwrap();
-    assert!(scalar(&mut run).is_empty());
+    assert_eq!(scalar(&mut run), []);
     assert_eq!(failures(&run), 0);
     assert_eq!(runner.errors().len(), 1);
 

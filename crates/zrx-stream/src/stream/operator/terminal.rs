@@ -218,7 +218,7 @@ mod tests {
         terminal.mark(older, 7_u64);
         terminal.mark(newer, 7);
 
-        assert!(finish(&mut terminal, older).is_empty());
+        assert_eq!(finish(&mut terminal, older), []);
         assert_eq!(finish(&mut terminal, newer), [7]);
         assert!(terminal.currency.is_empty());
     }
@@ -238,7 +238,7 @@ mod tests {
         assert!(tickets.next().is_none());
         assert_eq!(terminal.rejected(ticket), 7);
 
-        assert!(finish(&mut terminal, unrelated).is_empty());
+        assert_eq!(finish(&mut terminal, unrelated), []);
         assert!(terminal.currency.is_empty());
     }
 
@@ -271,7 +271,7 @@ mod tests {
         terminal.mark(retained, 2);
 
         terminal.abort(aborted);
-        assert!(finish(&mut terminal, aborted).is_empty());
+        assert_eq!(finish(&mut terminal, aborted), []);
         terminal.begin(retained);
         assert_eq!(finish(&mut terminal, retained), [1, 2]);
         assert!(terminal.currency.is_empty());
@@ -288,7 +288,7 @@ mod tests {
         terminal.mark(*newer, 7);
 
         terminal.abort(*newer);
-        assert!(finish(&mut terminal, *older).is_empty());
+        assert_eq!(finish(&mut terminal, *older), []);
         terminal.begin(*newer);
         assert_eq!(finish(&mut terminal, *newer), [7]);
         assert!(terminal.currency.is_empty());

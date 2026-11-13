@@ -87,6 +87,7 @@ where
     }
 
     /// Returns scheduler diagnostics and revision settlements.
+    #[must_use]
     pub const fn report(&self) -> &Report {
         &self.report
     }

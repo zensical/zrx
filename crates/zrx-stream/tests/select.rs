@@ -119,8 +119,8 @@ fn selector_replacement_refreshes_only_unresolved_retained_members() {
     revision.insert(Key::from(1), String::from("new")).unwrap();
     let pages = revision.seal().unwrap();
     let mut failed = runner.settle().unwrap();
-    assert!(values(&mut failed).is_empty());
-    assert!(memberships(&mut failed).is_empty());
+    assert_eq!(values(&mut failed), []);
+    assert_eq!(memberships(&mut failed), []);
     assert_eq!(runner.errors().len(), 2);
 
     // A failed selector replacement must retain the unresolved member too.
@@ -128,8 +128,8 @@ fn selector_replacement_refreshes_only_unresolved_retained_members() {
     revision.insert(Key::from(10), false).unwrap();
     let configuration = revision.seal().unwrap();
     let mut failed = runner.settle().unwrap();
-    assert!(values(&mut failed).is_empty());
-    assert!(memberships(&mut failed).is_empty());
+    assert_eq!(values(&mut failed), []);
+    assert_eq!(memberships(&mut failed), []);
 
     let mut revision = configuration.begin().unwrap();
     revision.insert(Key::from(10), true).unwrap();
@@ -154,7 +154,7 @@ fn selector_replacement_refreshes_only_unresolved_retained_members() {
     let mut revision = configuration.begin().unwrap();
     revision.insert(Key::from(10), true).unwrap();
     let configuration = revision.seal().unwrap();
-    assert!(memberships(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(memberships(&mut runner.settle().unwrap()), []);
     drop((pages, configuration));
 }
 
@@ -200,7 +200,7 @@ fn select_by_emits_differential_memberships() {
         .insert(Key::from(10_u64), Rule { maximum: 2 })
         .unwrap();
     let mut configuration = revision.seal().unwrap();
-    assert!(memberships(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(memberships(&mut runner.settle().unwrap()), []);
 
     let mut revision = pages.begin().unwrap();
     revision
@@ -320,7 +320,7 @@ fn select_does_not_publish_an_aborted_pending_batch() {
     }
     let pages = revision.abort().unwrap();
 
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
     drop((pages, configuration));
 }
 
@@ -356,7 +356,7 @@ fn select_rebuilds_revision_complete_dynamic_snapshots() {
         .insert(Key::from(3_u64), String::from("three"))
         .unwrap();
     let mut pages = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
 
     let mut revision = configuration.begin().unwrap();
     revision
@@ -471,7 +471,7 @@ fn select_does_not_publish_an_empty_snapshot_for_a_failed_factory() {
         .unwrap();
     let mut configuration = revision.seal().unwrap();
     let mut run = runner.settle().unwrap();
-    assert!(values(&mut run).is_empty());
+    assert_eq!(values(&mut run), []);
     assert_eq!(failures(&run), 1);
     assert_eq!(runner.errors().len(), 1);
     assert_eq!(runner.errors()[0].key(), &Key::from(10_u64));
@@ -522,7 +522,7 @@ fn select_keeps_the_accepted_value_when_another_pair_publishes() {
         .insert(Key::from(2_u64), String::from("two"))
         .unwrap();
     let mut pages = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
 
     let mut revision = configuration.begin().unwrap();
     revision
@@ -546,7 +546,7 @@ fn select_keeps_the_accepted_value_when_another_pair_publishes() {
         .unwrap();
     pages = revision.seal().unwrap();
     let mut run = runner.settle().unwrap();
-    assert!(values(&mut run).is_empty());
+    assert_eq!(values(&mut run), []);
     assert_eq!(failures(&run), 1);
     assert_eq!(runner.errors().len(), 1);
     assert_eq!(

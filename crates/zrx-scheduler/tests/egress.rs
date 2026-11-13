@@ -130,7 +130,7 @@ fn egress_acceptance_retires_the_boundary_obligation() {
     runtime.seal(revision).unwrap();
 
     let report = runtime.run_until_idle();
-    assert!(report.settlements().is_empty());
+    assert_eq!(report.settlements(), []);
     assert_eq!(take(&mut runtime), [(1, 10), (2, 20)]);
     let tick = runtime.tick();
     assert!(!tick.progressed());
@@ -172,7 +172,7 @@ fn full_egress_preserves_and_orders_later_dispatches() {
         runtime
             .ingress(revision, Batch::new(vec![item(value as u64)]))
             .unwrap();
-        assert!(runtime.run_until_idle().settlements().is_empty());
+        assert_eq!(runtime.run_until_idle().settlements(), []);
     }
     assert_eq!(*calls.lock().unwrap(), CAPACITY);
     for value in CAPACITY + 1..=CAPACITY + 2 {
@@ -181,7 +181,7 @@ fn full_egress_preserves_and_orders_later_dispatches() {
             .unwrap();
     }
     runtime.seal(revision).unwrap();
-    assert!(runtime.run_until_idle().settlements().is_empty());
+    assert_eq!(runtime.run_until_idle().settlements(), []);
     assert_eq!(
         *calls.lock().unwrap(),
         CAPACITY,
@@ -189,14 +189,14 @@ fn full_egress_preserves_and_orders_later_dispatches() {
     );
 
     assert_eq!(take(&mut runtime), [(1, 10)]);
-    assert!(runtime.run_until_idle().settlements().is_empty());
+    assert_eq!(runtime.run_until_idle().settlements(), []);
     assert_eq!(
         *calls.lock().unwrap(),
         CAPACITY + 1,
         "one credit permits one callback"
     );
     assert_eq!(take(&mut runtime), [(2, 20)]);
-    assert!(runtime.run_until_idle().settlements().is_empty());
+    assert_eq!(runtime.run_until_idle().settlements(), []);
     assert_eq!(*calls.lock().unwrap(), CAPACITY + 2);
     for value in 3..=CAPACITY + 2 {
         assert_eq!(take(&mut runtime), [(value as u64, value as u64 * 10)]);
@@ -313,7 +313,7 @@ fn one_output_fans_out_to_internal_and_external_destinations() {
     runtime.seal(revision).unwrap();
 
     let report = runtime.run_until_idle();
-    assert!(report.settlements().is_empty());
+    assert_eq!(report.settlements(), []);
     assert_eq!(*internal.lock().unwrap(), [(1, 10)]);
     assert_eq!(take(&mut runtime), [(1, 10)]);
     assert_complete(runtime.tick().into_report().settlements());
@@ -328,7 +328,7 @@ fn abort_discards_unaccepted_egress_and_releases_its_obligation() {
         .ingress(revision, Batch::new(vec![item(1)]))
         .unwrap();
     let report = runtime.run_until_idle();
-    assert!(report.settlements().is_empty());
+    assert_eq!(report.settlements(), []);
 
     runtime.abort(revision).unwrap();
     let report = runtime.run_until_idle();

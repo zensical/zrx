@@ -85,7 +85,7 @@ fn take_updates_only_its_ordered_boundary() {
     let mut revision = input.begin().unwrap();
     revision.insert(Key::from(4), 41).unwrap();
     let input = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
 
     let mut revision = input.begin().unwrap();
     revision.remove(Key::from(1)).unwrap();
@@ -119,7 +119,7 @@ fn take_last_updates_only_its_ordered_boundary() {
     let mut revision = input.begin().unwrap();
     revision.insert(Key::from(1), 10).unwrap();
     let input = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
 
     let mut revision = input.begin().unwrap();
     revision.insert(Key::from(5), 50).unwrap();

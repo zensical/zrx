@@ -567,7 +567,7 @@ mod tests {
             job.run(RevisionId::test(0), inputs, None, true);
         assert!(outcomes.is_empty());
         assert!(instrumentation.is_empty());
-        assert!(wakes.is_empty());
+        assert_eq!(wakes, []);
         let mut lanes = Vec::new();
         output
             .expect("connected action emitted output")
@@ -593,7 +593,7 @@ mod tests {
             job.run(RevisionId::test(0), inputs, None, true);
         assert!(outcomes.is_empty());
         assert!(instrumentation.is_empty());
-        assert!(wakes.is_empty());
+        assert_eq!(wakes, []);
         let mut lanes = Vec::new();
         output
             .expect("connected action emitted output")
@@ -652,7 +652,7 @@ mod tests {
                 true,
             );
             assert!(outcomes.is_empty());
-            assert!(wakes.is_empty());
+            assert_eq!(wakes, []);
             assert!(instrumentation.is_empty());
 
             let mut changes = Vec::new();
@@ -679,7 +679,7 @@ mod tests {
             job.run(RevisionId::test(0), inputs, None, false);
         assert!(output.is_none());
         assert!(outcomes.is_empty());
-        assert!(wakes.is_empty());
+        assert_eq!(wakes, []);
         assert!(instrumentation.is_empty());
 
         let event = Event::Wake {
@@ -694,7 +694,7 @@ mod tests {
         );
         assert!(output.is_none());
         assert!(outcomes.is_empty());
-        assert!(wakes.is_empty());
+        assert_eq!(wakes, []);
         assert!(instrumentation.is_empty());
     }
 }

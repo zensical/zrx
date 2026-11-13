@@ -140,7 +140,7 @@ fn flat_map_rejects_duplicate_members_without_replacing_the_old_set() {
     revision.insert(Key::from(1_u64), vec![20, 20]).unwrap();
     input = revision.seal().unwrap();
     let mut run = runner.settle().unwrap();
-    assert!(values(&mut run).is_empty());
+    assert_eq!(values(&mut run), []);
     assert_eq!(failures(&run), 1);
     assert_eq!(runner.errors().len(), 1);
     assert_eq!(runner.errors()[0].key(), &Key::from(1_u64));

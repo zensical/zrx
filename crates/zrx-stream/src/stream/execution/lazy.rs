@@ -205,6 +205,7 @@ where
     T: Value,
 {
     /// Returns all scheduler consequences observed so far.
+    #[must_use]
     pub const fn report(&self) -> &Report {
         &self.report
     }

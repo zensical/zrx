@@ -475,7 +475,7 @@ impl ProgressOverlay {
             .unwrap();
         self.runtime.seal(revision).unwrap();
         let report = self.runtime.run_until_idle();
-        debug_assert!(report.settlements().is_empty());
+        debug_assert_eq!(report.settlements(), []);
         let mut checksum = 0_u64;
         let mut outputs = 0;
         while let Some(egress) = self.runtime.egress() {

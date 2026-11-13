@@ -74,7 +74,7 @@ fn product_reconciles_independent_lanes_and_retracts_pairs() {
     revision.insert(Key::from(1_u64), "a".to_owned()).unwrap();
     revision.insert(Key::from(2_u64), "b".to_owned()).unwrap();
     let mut left = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
 
     let mut revision = right.begin().unwrap();
     revision.insert(Key::from(3_u64), 30).unwrap();
@@ -182,7 +182,7 @@ fn product_reports_ambiguous_flattened_keys_without_committing_input() {
     revision.insert(Key::from(3_u64), 30).unwrap();
     right = revision.seal().unwrap();
     let mut run = runner.settle().unwrap();
-    assert!(values(&mut run).is_empty());
+    assert_eq!(values(&mut run), []);
     assert_eq!(
         run.report()
             .invocations()
@@ -197,7 +197,7 @@ fn product_reports_ambiguous_flattened_keys_without_committing_input() {
     let mut revision = right.begin().unwrap();
     revision.remove(Key::from(3_u64)).unwrap();
     right = revision.seal().unwrap();
-    assert!(values(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values(&mut runner.settle().unwrap()), []);
     assert!(runner.errors().is_empty());
 
     drop((left, right));

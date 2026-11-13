@@ -269,10 +269,10 @@ fn complete_lifecycle_closes_every_owned_boundary_once() {
     // Internal work, progress, and the wake may drain, but physical
     // settlement remains held by both unaccepted external output batches.
     let report = runtime.run_until_idle();
-    assert!(report.settlements().is_empty());
+    assert_eq!(report.settlements(), []);
     assert_eq!(failures(&report), 0);
     let first = take(&mut runtime);
-    assert!(runtime.run_until_idle().settlements().is_empty());
+    assert_eq!(runtime.run_until_idle().settlements(), []);
     let second = take(&mut runtime);
     let report = runtime.run_until_idle();
     let [Settlement::Complete(settled)] = report.settlements() else {
@@ -347,7 +347,7 @@ fn complete_lifecycle_closes_every_owned_boundary_once() {
     runtime.seal(failed).unwrap();
     let report = runtime.run_until_idle();
     assert_eq!(failures(&report), 1);
-    assert!(report.settlements().is_empty());
+    assert_eq!(report.settlements(), []);
     assert_eq!(take(&mut runtime), [(90, 198)]);
     let report = runtime.run_until_idle();
     assert!(matches!(report.settlements(), [Settlement::Complete(_)]));

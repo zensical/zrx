@@ -199,7 +199,7 @@ fn unique_by_key_collision_across_revisions_recovers() {
     assert_eq!(failures(&run), 0);
 
     let mut quiescent = runner.settle().unwrap();
-    assert!(values(&mut quiescent).is_empty());
+    assert_eq!(values(&mut quiescent), []);
     assert_eq!(failures(&quiescent), 0);
 
     drop(input);
@@ -282,7 +282,7 @@ fn unique_by_key_callback_failure_preserves_the_accepted_claim() {
     revision.insert(Key::from(1_u64), 99).unwrap();
     input = revision.seal().unwrap();
     let mut run = runner.settle().unwrap();
-    assert!(values(&mut run).is_empty());
+    assert_eq!(values(&mut run), []);
     assert_eq!(failures(&run), 1);
     assert_eq!(runner.errors().len(), 1);
     assert_eq!(runner.errors()[0].key(), &Key::from(1_u64));
@@ -364,7 +364,7 @@ fn unique_by_key_aborted_change_does_not_block_later_repair() {
     revision.insert(Key::from(1_u64), 10).unwrap();
     let mut input = revision.abort().unwrap();
     let mut run = runner.settle().unwrap();
-    assert!(values(&mut run).is_empty());
+    assert_eq!(values(&mut run), []);
     assert_eq!(failures(&run), 0);
 
     let mut revision = input.begin().unwrap();

@@ -108,7 +108,7 @@ fn aborted_dispatched_state_can_affect_a_later_revision() {
         }
     }
     let left = revision.abort().unwrap();
-    assert!(values::<(String, u64)>(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values::<(String, u64)>(&mut runner.settle().unwrap()), []);
 
     let mut revision = right.begin().unwrap();
     revision.insert(Key::from(0_u64), 7_u64).unwrap();
@@ -170,9 +170,9 @@ fn left_join_replaces_optional_right_values() {
     let mut revision = right.begin().unwrap();
     revision.insert(Key::from(1_u64), 10).unwrap();
     let mut right = revision.seal().unwrap();
-    assert!(
-        values::<(String, Option<u64>)>(&mut runner.settle().unwrap())
-            .is_empty()
+    assert_eq!(
+        values::<(String, Option<u64>)>(&mut runner.settle().unwrap()),
+        []
     );
 
     let mut revision = left.begin().unwrap();
@@ -266,7 +266,7 @@ fn semi_join_tracks_matching_membership_only() {
     let mut revision = left.begin().unwrap();
     revision.insert(Key::from(1_u64), "a".to_owned()).unwrap();
     let left = revision.seal().unwrap();
-    assert!(values::<String>(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values::<String>(&mut runner.settle().unwrap()), []);
 
     let mut revision = right.begin().unwrap();
     revision.insert(Key::from(1_u64), 10).unwrap();
@@ -279,7 +279,7 @@ fn semi_join_tracks_matching_membership_only() {
     let mut revision = right.begin().unwrap();
     revision.insert(Key::from(1_u64), 20).unwrap();
     right = revision.seal().unwrap();
-    assert!(values::<String>(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values::<String>(&mut runner.settle().unwrap()), []);
 
     let mut revision = right.begin().unwrap();
     revision.remove(Key::from(1_u64)).unwrap();
@@ -324,7 +324,7 @@ fn anti_join_tracks_absent_membership_only() {
     let mut revision = right.begin().unwrap();
     revision.insert(Key::from(1_u64), 20).unwrap();
     right = revision.seal().unwrap();
-    assert!(values::<String>(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values::<String>(&mut runner.settle().unwrap()), []);
 
     let mut revision = right.begin().unwrap();
     revision.remove(Key::from(1_u64)).unwrap();
@@ -377,7 +377,7 @@ fn coalesce_emits_only_visible_priority_changes() {
         .insert(Key::from(1_u64), "hidden".to_owned())
         .unwrap();
     fallback = revision.seal().unwrap();
-    assert!(values::<String>(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values::<String>(&mut runner.settle().unwrap()), []);
 
     let mut revision = preferred.begin().unwrap();
     revision
@@ -394,7 +394,7 @@ fn coalesce_emits_only_visible_priority_changes() {
         .insert(Key::from(1_u64), "updated".to_owned())
         .unwrap();
     alternate = revision.seal().unwrap();
-    assert!(values::<String>(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values::<String>(&mut runner.settle().unwrap()), []);
 
     let mut revision = preferred.begin().unwrap();
     revision.remove(Key::from(1_u64)).unwrap();
@@ -441,7 +441,7 @@ fn join_reconciles_independent_lanes_and_retains_only_semantic_state() {
     let mut revision = left.begin().unwrap();
     revision.insert(Key::from(1_u64), "a".to_owned()).unwrap();
     let mut left = revision.seal().unwrap();
-    assert!(values::<(String, u64)>(&mut runner.settle().unwrap()).is_empty());
+    assert_eq!(values::<(String, u64)>(&mut runner.settle().unwrap()), []);
 
     let mut revision = right.begin().unwrap();
     revision.insert(Key::from(1_u64), 10).unwrap();

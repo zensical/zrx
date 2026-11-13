@@ -2388,7 +2388,7 @@ fn replacing_a_wake_releases_the_prior_revision_authority() {
         .ingress(first, Batch::new(vec![item(1, 1, 10)]))
         .unwrap();
     runtime.seal(first).unwrap();
-    assert!(runtime.run_until_idle().settlements().is_empty());
+    assert_eq!(runtime.run_until_idle().settlements(), []);
 
     runtime
         .ingress(second, Batch::new(vec![item(2, 1, 20)]))
@@ -2883,7 +2883,7 @@ fn a_wake_holds_only_its_own_revision_end() {
         .unwrap();
     assert!(runtime.run_until_idle().is_empty());
     runtime.seal(first).unwrap();
-    assert!(runtime.run_until_idle().settlements().is_empty());
+    assert_eq!(runtime.run_until_idle().settlements(), []);
 
     runtime.seal(second).unwrap();
     let report = runtime.run_until_idle();

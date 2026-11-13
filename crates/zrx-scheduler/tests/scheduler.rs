@@ -187,7 +187,7 @@ fn rejected_only_work_retries_after_executor_capacity_returns() {
         writer.insert(1, 42).unwrap();
         let session = writer.seal().unwrap();
         while let Some(tick) = scheduler.tick() {
-            assert!(tick.into_report().settlements().is_empty());
+            assert_eq!(tick.into_report().settlements(), []);
         }
         if retire {
             scheduler.attachment(plan).unwrap().detach();
@@ -726,14 +726,7 @@ fn retirement_closes_output_reservations_behind_a_return_gap() {
     // producer's reserved position. Retirement must prune it without losing
     // gap repair.
     queue.execute(1);
-    assert!(
-        scheduler
-            .tick()
-            .unwrap()
-            .into_report()
-            .settlements()
-            .is_empty()
-    );
+    assert_eq!(scheduler.tick().unwrap().into_report().settlements(), []);
     assert_eq!(calls.load(Ordering::Relaxed), 0);
     scheduler.attachment(id).unwrap().detach();
     queue.execute(0);
